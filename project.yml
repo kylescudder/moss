@@ -1,0 +1,97 @@
+name: roam
+options:
+  bundleIdPrefix: com.roam
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: 6AAGJ9Y234
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    SWIFT_STRICT_CONCURRENCY: complete
+
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: 2.20.0
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    from: 8.40.0
+
+schemes:
+  roam:
+    build:
+      targets:
+        roam: all
+    run:
+      config: Debug
+      executable: roam
+      storeKitConfiguration: roam/Resources/StoreKit/roam.storekit
+
+targets:
+  roam:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: roam
+    resources:
+      - path: roam/Resources
+        optional: true
+    info:
+      path: roam/Info.plist
+      properties:
+        CFBundleDisplayName: roam
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen:
+          UIColorName: ""
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - roam
+            CFBundleURLName: club.roam.auth
+        ITSAppUsesNonExemptEncryption: false
+        UIBackgroundModes:
+          - remote-notification
+        NSLocationWhenInUseUsageDescription: roam uses your location to help plan nearby itinerary stops.
+        NSPhotoLibraryAddUsageDescription: roam saves trip exports you choose to create.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        SUPABASE_URL: $(SUPABASE_URL)
+        SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
+        SENTRY_DSN: $(SENTRY_DSN)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.roam.app
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SWIFT_EMIT_LOC_STRINGS: YES
+        CODE_SIGN_ENTITLEMENTS: roam/roam.entitlements
+      configs:
+        Release:
+          CODE_SIGN_IDENTITY: Apple Distribution
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: roam App Store
+    configFiles:
+      Debug: Config/Secrets.xcconfig
+      Release: Config/Secrets.xcconfig
+    dependencies:
+      - package: Supabase
+        product: Supabase
+      - package: Sentry
+        product: Sentry

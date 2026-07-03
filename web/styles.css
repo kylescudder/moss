@@ -1,0 +1,143 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f8f7f1;
+  --ink: #1d231c;
+  --muted: #60685d;
+  --accent: #076b5d;
+  --surface: #ffffff;
+  --line: #d9ddd2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+a {
+  color: inherit;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px clamp(20px, 5vw, 72px);
+}
+
+.brand {
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.nav nav {
+  display: flex;
+  gap: 18px;
+}
+
+.nav nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.hero {
+  min-height: 72vh;
+  display: flex;
+  align-items: center;
+  padding: 48px clamp(20px, 5vw, 72px);
+  background:
+    linear-gradient(rgba(248, 247, 241, 0.78), rgba(248, 247, 241, 0.88)),
+    url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=80") center/cover;
+}
+
+.hero-copy {
+  max-width: 680px;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+h1 {
+  font-size: clamp(56px, 12vw, 132px);
+  line-height: 0.9;
+  margin: 0 0 24px;
+}
+
+.hero p:not(.eyebrow) {
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+.button {
+  display: inline-flex;
+  margin-top: 18px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.features article {
+  background: var(--surface);
+  padding: 28px clamp(20px, 4vw, 42px);
+}
+
+.features p,
+.page p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.page {
+  max-width: 760px;
+  padding: 64px clamp(20px, 5vw, 72px);
+}
+
+.page h1 {
+  font-size: clamp(42px, 8vw, 72px);
+}
+
+@media (max-width: 760px) {
+  .features {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111411;
+    --ink: #f1f4ed;
+    --muted: #adb6a8;
+    --surface: #191e18;
+    --line: #2b3228;
+  }
+
+  .hero {
+    background:
+      linear-gradient(rgba(17, 20, 17, 0.52), rgba(17, 20, 17, 0.88)),
+      url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=80") center/cover;
+  }
+}
+

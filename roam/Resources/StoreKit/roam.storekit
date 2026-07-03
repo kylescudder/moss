@@ -1,0 +1,47 @@
+{
+  "identifier" : "roam",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {},
+  "subscriptionGroups" : [
+    {
+      "id" : "roam supporter",
+      "localizations" : [
+        {
+          "description" : "Unlimited trip planning and collaboration.",
+          "displayName" : "roam supporter",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "roam supporter",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "1.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "club.roam.supporter.monthly",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited trips, collaboration, and advanced planning tools.",
+              "displayName" : "Supporter Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "club.roam.supporter.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Supporter Monthly",
+          "subscriptionGroupID" : "roam supporter",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
+

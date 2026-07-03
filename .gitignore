@@ -1,0 +1,8 @@
+.DS_Store
+*.xcuserstate
+xcuserdata/
+DerivedData/
+.DerivedData/
+Config/Secrets.xcconfig
+.env
+.netlify/
