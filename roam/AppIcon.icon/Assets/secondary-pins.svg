@@ -1,25 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="tealPin" x1="248" y1="390" x2="398" y2="608" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2bd0c6"/>
-      <stop offset="1" stop-color="#087a8a"/>
+    <linearGradient id="tealPin" x1="216" y1="330" x2="398" y2="628" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#25d4c5"/>
+      <stop offset="1" stop-color="#006b7a"/>
     </linearGradient>
-    <linearGradient id="amberPin" x1="704" y1="252" x2="836" y2="446" gradientUnits="userSpaceOnUse">
+    <linearGradient id="amberPin" x1="676" y1="238" x2="850" y2="526" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#ffd166"/>
-      <stop offset="1" stop-color="#f47c3c"/>
+      <stop offset="1" stop-color="#e8582f"/>
     </linearGradient>
     <filter id="pinShadow" x="-35%" y="-25%" width="170%" height="170%">
-      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#23383c" flood-opacity="0.26"/>
+      <feDropShadow dx="0" dy="18" stdDeviation="17" flood-color="#10343a" flood-opacity="0.36"/>
     </filter>
   </defs>
   <g filter="url(#pinShadow)">
-    <path d="M324 388c-64 0-116 51-116 113 0 81 92 181 111 201a7 7 0 0 0 10 0c20-20 111-120 111-201 0-62-52-113-116-113Z" fill="url(#tealPin)"/>
-    <circle cx="324" cy="501" r="43" fill="#ffffff" fill-opacity="0.9"/>
-    <circle cx="324" cy="501" r="19" fill="#087a8a" fill-opacity="0.78"/>
+    <path d="M306 343c-77 0-139 61-139 136 0 97 111 218 134 242a8 8 0 0 0 11 0c24-24 134-145 134-242 0-75-62-136-140-136Z" fill="url(#tealPin)"/>
+    <circle cx="306" cy="479" r="51" fill="#ffffff"/>
+    <circle cx="306" cy="479" r="21" fill="#006f7d"/>
   </g>
   <g filter="url(#pinShadow)">
-    <path d="M780 244c-56 0-101 45-101 99 0 71 80 158 97 176a6 6 0 0 0 8 0c18-18 98-105 98-176 0-54-46-99-102-99Z" fill="url(#amberPin)"/>
-    <circle cx="780" cy="343" r="36" fill="#ffffff" fill-opacity="0.9"/>
-    <circle cx="780" cy="343" r="15" fill="#d95f2c" fill-opacity="0.8"/>
+    <path d="M776 252c-71 0-128 56-128 125 0 90 102 201 124 224a7 7 0 0 0 10 0c22-23 124-134 124-224 0-69-58-125-130-125Z" fill="url(#amberPin)"/>
+    <circle cx="776" cy="377" r="47" fill="#ffffff"/>
+    <circle cx="776" cy="377" r="19" fill="#d95a2d"/>
   </g>
 </svg>
