@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <filter id="routeShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#1b4f55" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <path d="M300 708c62-96 120-143 174-142 73 2 102 105 176 101 72-4 81-104 132-194" fill="none" stroke="#ffffff" stroke-width="58" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.82" filter="url(#routeShadow)"/>
+  <path d="M300 708c62-96 120-143 174-142 73 2 102 105 176 101 72-4 81-104 132-194" fill="none" stroke="#0d8c96" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 58"/>
+</svg>

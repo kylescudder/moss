@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="pin" x1="426" y1="206" x2="652" y2="700" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff6b66"/>
+      <stop offset="0.48" stop-color="#fa3d4e"/>
+      <stop offset="1" stop-color="#b91f45"/>
+    </linearGradient>
+    <radialGradient id="highlight" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(470 296) rotate(55) scale(182 116)">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="pinShadow" x="-35%" y="-25%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#65192a" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+  <ellipse cx="523" cy="770" rx="143" ry="35" fill="#163b42" fill-opacity="0.18"/>
+  <g filter="url(#pinShadow)">
+    <path d="M522 174c-122 0-221 97-221 216 0 154 176 348 212 386a13 13 0 0 0 18 0c38-38 213-232 213-386 0-119-99-216-222-216Z" fill="url(#pin)"/>
+    <path d="M522 174c-122 0-221 97-221 216 0 154 176 348 212 386a13 13 0 0 0 18 0c38-38 213-232 213-386 0-119-99-216-222-216Z" fill="url(#highlight)"/>
+    <circle cx="522" cy="390" r="84" fill="#ffffff" fill-opacity="0.94"/>
+    <circle cx="522" cy="390" r="35" fill="#e92e46"/>
+    <path d="M416 248c35-29 77-43 126-43 44 0 84 13 119 38" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" stroke-opacity="0.42"/>
+  </g>
+</svg>

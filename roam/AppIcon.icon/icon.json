@@ -1,0 +1,99 @@
+{
+  "color-space-for-untagged-svg-colors": "display-p3",
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "display-p3:0.95294,0.97647,0.93333,1.00000",
+          "display-p3:0.74118,0.90980,0.92157,1.00000"
+        ]
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "display-p3:0.06667,0.11765,0.14118,1.00000",
+          "display-p3:0.15686,0.21961,0.24314,1.00000"
+        ]
+      }
+    },
+    {
+      "appearance": "tinted",
+      "value": "automatic"
+    }
+  ],
+  "groups": [
+    {
+      "layers": [
+        {
+          "glass": false,
+          "image-name": "map-base.svg",
+          "name": "map base",
+          "opacity": 0.92
+        }
+      ],
+      "lighting": "combined",
+      "shadow": {
+        "kind": "none",
+        "opacity": 0.45
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
+      }
+    },
+    {
+      "layers": [
+        {
+          "blend-mode": "normal",
+          "glass": false,
+          "image-name": "route-line.svg",
+          "name": "itinerary route",
+          "opacity": 0.9
+        },
+        {
+          "glass": true,
+          "image-name": "secondary-pins.svg",
+          "name": "secondary pins",
+          "opacity": 0.96
+        }
+      ],
+      "blur": 0.18,
+      "lighting": "individual",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.45
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.28
+      }
+    },
+    {
+      "layers": [
+        {
+          "glass": true,
+          "image-name": "primary-pin.svg",
+          "name": "primary pin",
+          "opacity": 1
+        }
+      ],
+      "blur": 0.12,
+      "lighting": "combined",
+      "shadow": {
+        "kind": "layer-color",
+        "opacity": 0.62
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.18
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

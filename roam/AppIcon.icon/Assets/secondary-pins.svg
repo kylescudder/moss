@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tealPin" x1="248" y1="390" x2="398" y2="608" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2bd0c6"/>
+      <stop offset="1" stop-color="#087a8a"/>
+    </linearGradient>
+    <linearGradient id="amberPin" x1="704" y1="252" x2="836" y2="446" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#f47c3c"/>
+    </linearGradient>
+    <filter id="pinShadow" x="-35%" y="-25%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#23383c" flood-opacity="0.26"/>
+    </filter>
+  </defs>
+  <g filter="url(#pinShadow)">
+    <path d="M324 388c-64 0-116 51-116 113 0 81 92 181 111 201a7 7 0 0 0 10 0c20-20 111-120 111-201 0-62-52-113-116-113Z" fill="url(#tealPin)"/>
+    <circle cx="324" cy="501" r="43" fill="#ffffff" fill-opacity="0.9"/>
+    <circle cx="324" cy="501" r="19" fill="#087a8a" fill-opacity="0.78"/>
+  </g>
+  <g filter="url(#pinShadow)">
+    <path d="M780 244c-56 0-101 45-101 99 0 71 80 158 97 176a6 6 0 0 0 8 0c18-18 98-105 98-176 0-54-46-99-102-99Z" fill="url(#amberPin)"/>
+    <circle cx="780" cy="343" r="36" fill="#ffffff" fill-opacity="0.9"/>
+    <circle cx="780" cy="343" r="15" fill="#d95f2c" fill-opacity="0.8"/>
+  </g>
+</svg>
