@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import LegalArticle from "../components/LegalArticle.astro";
+---
+
+<BaseLayout
+  title="Support - Moss"
+  description="Support information for the Moss travel companion app."
+  bodyClass="legal-page"
+>
+  <LegalArticle title="Support">
+    <p>Moss is developed and supported by Kyle Scudder.</p>
+
+    <h2>Report a bug or request a feature</h2>
+    <p>
+      Email <a href="mailto:support@getmoss.app">support@getmoss.app</a> with
+      what you did, what you expected, and what happened instead.
+    </p>
+
+    <h2>Sign-in and account questions</h2>
+    <p>
+      Moss supports email, Apple, and Google sign-in. Password resets and
+      provider account access are handled by the provider you use to sign in.
+      For account deletion or data questions, use the in-app account deletion
+      flow or email <a href="mailto:support@getmoss.app"
+        >support@getmoss.app</a
+      >.
+    </p>
+
+    <h2>Subscription questions</h2>
+    <p>
+      Moss subscriptions are managed through your Apple ID. You can manage or
+      cancel a subscription in your App Store account settings.
+    </p>
+
+    <h2>Privacy questions</h2>
+    <p>
+      Start with the <a href="/privacy">privacy policy</a>. Anything it does not
+      answer can be raised by email.
+    </p>
+  </LegalArticle>
+</BaseLayout>

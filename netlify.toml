@@ -1,0 +1,16 @@
+[build]
+  base = "Site"
+  command = "bun run build"
+  publish = "dist"
+
+# Universal Links: Apple fetches this extensionless path and requires
+# Content-Type: application/json.
+[[headers]]
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type = "application/json"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

@@ -1,0 +1,66 @@
+# PowerSync sync rules for Moss.
+# Apply via the PowerSync dashboard's Sync Streams editor.
+
+config:
+  edition: 3
+
+streams:
+  user_profile:
+    auto_subscribe: true
+    query: |
+      select id, display_name, created_at, updated_at
+      from profiles
+      where id = auth.user_id()
+
+  user_devices:
+    auto_subscribe: true
+    query: select * from device_tokens where user_id = auth.user_id()
+
+  user_iap_entitlement:
+    auto_subscribe: true
+    query: |
+      select id, user_id, product_id, original_transaction_id, transaction_id, status, environment, expires_at, revoked_at, created_at, updated_at
+      from iap_entitlements
+      where user_id = auth.user_id()
+
+  owned_trips:
+    auto_subscribe: true
+    query: select * from trips where owner_id = auth.user_id() and deleted_at is null
+
+  member_trips:
+    auto_subscribe: true
+    query: |
+      select *
+      from trips
+      where id in (select trip_id from trip_members where user_id = auth.user_id())
+        and deleted_at is null
+
+  owned_trip_members:
+    auto_subscribe: true
+    query: |
+      select *
+      from trip_members
+      where trip_id in (select id from trips where owner_id = auth.user_id())
+
+  member_trip_members:
+    auto_subscribe: true
+    query: |
+      select *
+      from trip_members
+      where trip_id in (select trip_id from trip_members where user_id = auth.user_id())
+
+  owned_itinerary_items:
+    auto_subscribe: true
+    query: |
+      select *
+      from itinerary_items
+      where trip_id in (select id from trips where owner_id = auth.user_id())
+        and deleted_at is null
+
+  member_itinerary_items:
+    auto_subscribe: true
+    query: |
+      select *
+      from itinerary_items
+      where trip_id in (select trip_id from trip_members where user_id = auth.user_id())
+        and deleted_at is null

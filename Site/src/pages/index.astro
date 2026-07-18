@@ -1,0 +1,87 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SupportSection from "../components/SupportSection.astro";
+---
+
+<BaseLayout
+  title="Moss - your home for every journey"
+  description="Moss is a calm travel companion for planning trips, keeping places and notes together, and remembering every journey."
+  ogTitle="Moss"
+>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="kicker">A quiet home for travel</p>
+        <h1 id="hero-title">Moss</h1>
+        <p class="lede">
+          Plan what is ahead, hold onto what matters, and keep every trip
+          connected in one thoughtful place.
+        </p>
+        <div class="button-row">
+          <a
+            class="button button-moss"
+            href="mailto:support@getmoss.app?subject=Moss%20TestFlight"
+            >Request TestFlight access</a
+          >
+          <a class="button button-line" href="#journeys">Explore Moss</a>
+        </div>
+      </div>
+      <div class="journey-panel" aria-hidden="true">
+        <div class="memory-card card-primary">
+          <span>Kyoto</span>
+          <strong>Spring days, temple walks, quiet dinners.</strong>
+        </div>
+        <div class="memory-card card-secondary">
+          <span>Next</span>
+          <strong>Notes, places, stays, and plans in one place.</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="feature-band" id="journeys" aria-labelledby="journeys-title">
+      <p class="kicker">Before / During / After</p>
+      <h2 id="journeys-title">A place for the whole trip.</h2>
+      <div class="feature-grid">
+        <article>
+          <span>01</span>
+          <h3>Plan with room to breathe</h3>
+          <p>
+            Keep dates, destinations, travel times, activities, meals, and notes
+            together without turning the trip into a spreadsheet.
+          </p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Travel with context</h3>
+          <p>
+            Moss starts with itineraries and grows toward maps, stays,
+            recommendations, companions, and the details you need nearby.
+          </p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Return to the memory</h3>
+          <p>
+            Every journey should stay useful after it ends, with favourite
+            places, photos, notes, and journals ready to revisit.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="memory-section" id="memory" aria-labelledby="memory-title">
+      <div>
+        <p class="kicker">Built to grow</p>
+        <h2 id="memory-title">More than an itinerary.</h2>
+      </div>
+      <p>
+        Moss is beginning with planning because every trip needs a shape. The
+        long-term home is broader: shared trips, restaurants, hotels, flights,
+        packing, expenses, photos, journals, and the small details that make a
+        place feel yours.
+      </p>
+    </section>
+
+    <SupportSection />
+  </main>
+</BaseLayout>

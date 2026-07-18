@@ -1,0 +1,32 @@
+---
+import type { NavLink } from "./Header.astro";
+
+interface Props {
+  footerLabel?: string;
+  footerLinks?: NavLink[];
+}
+
+const defaultFooterLabel = "Moss";
+const defaultFooterLinks = [
+  { href: "/support", label: "Support" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+  { href: "mailto:support@getmoss.app", label: "Email" },
+];
+
+const { footerLabel = defaultFooterLabel, footerLinks = defaultFooterLinks } =
+  Astro.props;
+---
+
+<footer>
+  <span>{footerLabel}</span>
+  <span class="footer-links">
+    {
+      footerLinks.map((link) => (
+        <a class={link.class} href={link.href}>
+          {link.label}
+        </a>
+      ))
+    }
+  </span>
+</footer>

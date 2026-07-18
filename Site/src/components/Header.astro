@@ -1,0 +1,57 @@
+---
+export interface NavLink {
+  href: string;
+  label: string;
+  class?: string;
+}
+
+interface Props {
+  navLinks?: NavLink[];
+}
+
+const path = Astro.url.pathname;
+const defaultNavLinks =
+  path === "/"
+    ? [
+        { href: "#journeys", label: "Journeys", class: "nav-word" },
+        { href: "#memory", label: "Memory", class: "nav-word" },
+        { href: "/support", label: "Support", class: "nav-word" },
+      ]
+    : path.startsWith("/support")
+      ? [
+          { href: "/", label: "Home", class: "nav-word" },
+          { href: "/privacy", label: "Privacy", class: "nav-word" },
+          { href: "/terms", label: "Terms", class: "nav-word" },
+        ]
+      : path.startsWith("/privacy")
+        ? [
+            { href: "/support", label: "Support", class: "nav-word" },
+            { href: "/terms", label: "Terms", class: "nav-word" },
+          ]
+        : [
+            { href: "/support", label: "Support", class: "nav-word" },
+            { href: "/privacy", label: "Privacy", class: "nav-word" },
+          ];
+
+const { navLinks = defaultNavLinks } = Astro.props;
+---
+
+<header class="site-header">
+  <a class="brand-link" href="/" aria-label="Moss home">
+    <span class="logo" aria-hidden="true"
+      ><img src="/assets/moss-mark.svg" alt="" /></span
+    >
+    <span class="wordmark">Moss</span>
+  </a>
+  {
+    navLinks.length > 0 && (
+      <nav class="variant-nav" aria-label="Site links">
+        {navLinks.map((link) => (
+          <a class={link.class} href={link.href}>
+            {link.label}
+          </a>
+        ))}
+      </nav>
+    )
+  }
+</header>
