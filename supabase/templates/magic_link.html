@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in to Moss</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      background: #f8f7f1;
+      color: #1d231c;
+      font-family:
+        -apple-system, BlinkMacSystemFont, &quot;SF Pro Text&quot;,
+        &quot;Helvetica Neue&quot;, Arial, sans-serif;
+    "
+  >
+    <main style="max-width: 600px; margin: 0 auto; padding: 32px 16px">
+      <section
+        style="
+          background: #fffefa;
+          border: 1px solid rgba(29, 35, 28, 0.14);
+          border-radius: 16px;
+          padding: 34px;
+        "
+      >
+        <p
+          style="
+            margin: 0 0 14px;
+            color: #355f42;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          "
+        >
+          Moss
+        </p>
+        <h1 style="margin: 0 0 14px; font-size: 38px; line-height: 40px">
+          Open Moss.
+        </h1>
+        <p
+          style="
+            margin: 0 0 26px;
+            color: rgba(29, 35, 28, 0.68);
+            font-size: 17px;
+            line-height: 26px;
+          "
+        >
+          Use this secure link to sign in to your travel home.
+        </p>
+        <a
+          href="{{ .ConfirmationURL }}"
+          style="
+            display: inline-block;
+            background: #355f42;
+            color: #fbfbf3;
+            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 750;
+            text-decoration: none;
+          "
+          >Sign in</a
+        >
+        <p
+          style="
+            margin: 24px 0 0;
+            word-break: break-all;
+            color: rgba(29, 35, 28, 0.56);
+            font-size: 13px;
+            line-height: 20px;
+          "
+        >
+          {{ .ConfirmationURL }}
+        </p>
+      </section>
+      <p
+        style="
+          text-align: center;
+          color: rgba(29, 35, 28, 0.44);
+          font-size: 12px;
+          line-height: 18px;
+        "
+      >
+        Ignore this email if you did not ask for a sign-in link.
+      </p>
+    </main>
+  </body>
+</html>

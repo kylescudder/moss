@@ -61,6 +61,7 @@ create table public.iap_entitlements (
   product_id text not null,
   original_transaction_id text,
   transaction_id text,
+  status text not null default 'unknown' check (status in ('active', 'expired', 'revoked', 'unknown')),
   environment text,
   expires_at timestamptz,
   revoked_at timestamptz,
@@ -75,6 +76,7 @@ create index itinerary_items_trip_id_idx on public.itinerary_items(trip_id);
 create index trip_members_user_id_idx on public.trip_members(user_id);
 create index device_tokens_user_id_idx on public.device_tokens(user_id);
 create index iap_entitlements_user_id_idx on public.iap_entitlements(user_id);
+create index iap_entitlements_status_idx on public.iap_entitlements(status, expires_at);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -224,4 +226,3 @@ begin
   delete from auth.users where id = auth.uid();
 end;
 $$;
-

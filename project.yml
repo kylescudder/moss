@@ -1,6 +1,6 @@
-name: roam
+name: Moss
 options:
-  bundleIdPrefix: com.roam
+  bundleIdPrefix: app.moss
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -24,29 +24,29 @@ packages:
     from: 8.40.0
 
 schemes:
-  roam:
+  Moss:
     build:
       targets:
-        roam: all
+        Moss: all
     run:
       config: Debug
-      executable: roam
-      storeKitConfiguration: roam/Resources/StoreKit/roam.storekit
+      executable: Moss
+      storeKitConfiguration: Moss/Resources/StoreKit/Moss.storekit
 
 targets:
-  roam:
+  Moss:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - path: roam
+      - path: Moss
     resources:
-      - path: roam/Resources
+      - path: Moss/Resources
         optional: true
     info:
-      path: roam/Info.plist
+      path: Moss/Info.plist
       properties:
-        CFBundleDisplayName: roam
+        CFBundleDisplayName: Moss
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen:
@@ -55,13 +55,13 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         CFBundleURLTypes:
           - CFBundleURLSchemes:
-              - roam
-            CFBundleURLName: club.roam.auth
+              - moss
+            CFBundleURLName: app.moss.auth
         ITSAppUsesNonExemptEncryption: false
         UIBackgroundModes:
           - remote-notification
-        NSLocationWhenInUseUsageDescription: roam uses your location to help plan nearby itinerary stops.
-        NSPhotoLibraryAddUsageDescription: roam saves trip exports you choose to create.
+        NSLocationWhenInUseUsageDescription: Moss uses your location to help you understand places near your trip.
+        NSPhotoLibraryAddUsageDescription: Moss saves the trip memories and exports you choose to create.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
@@ -75,18 +75,18 @@ targets:
         SENTRY_DSN: $(SENTRY_DSN)
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.roam.app
+        PRODUCT_BUNDLE_IDENTIFIER: app.moss
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SWIFT_EMIT_LOC_STRINGS: YES
-        CODE_SIGN_ENTITLEMENTS: roam/roam.entitlements
+        CODE_SIGN_ENTITLEMENTS: Moss/Moss.entitlements
       configs:
         Release:
           CODE_SIGN_IDENTITY: Apple Distribution
           CODE_SIGN_STYLE: Manual
-          PROVISIONING_PROFILE_SPECIFIER: roam App Store
+          PROVISIONING_PROFILE_SPECIFIER: Moss App Store
     configFiles:
       Debug: Config/Secrets.xcconfig
       Release: Config/Secrets.xcconfig

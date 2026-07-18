@@ -1,0 +1,607 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0440249E42950D7D77F45BD8 /* TripsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7FE88ED26711B98A0E5324 /* TripsListView.swift */; };
+		0B0BE2616F013F0E4866DF66 /* ForgotPasswordSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7894C338DF6B3FF9C4E958A4 /* ForgotPasswordSheet.swift */; };
+		0E8B593BBFC47E99ACC3037C /* ItineraryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13D1FC222A6D9FA459AB167 /* ItineraryItem.swift */; };
+		14CEAC7233958B61BA9BF3DF /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE66454E306BF44868F40BEB /* TodayView.swift */; };
+		163E0BCFAEEF4AC8262D7E57 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9A83C97CD27F2CCEAFF27C3 /* SignInView.swift */; };
+		1CB7DD23E5A913EC9E41F538 /* ItineraryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8847C57A66FB0431185F2C12 /* ItineraryRepository.swift */; };
+		1CDE2E1C3AC4CD67A54DEA93 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124B349E360C316DADD39D35 /* LoadingView.swift */; };
+		23D4046B4318826478038CBD /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F05F1AD548F484975591D5B /* Logger.swift */; };
+		2FF9E3DE36DD20AB77FC0D23 /* Moss.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 101D8A77B323734F6E395182 /* Moss.storekit */; };
+		30AA2E07D84F649B0A9276A6 /* TripEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DF3AA0673ABEEB12780197 /* TripEditorView.swift */; };
+		320AC5BA4B64AA4C6EACA8BB /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2129365E0A705851C9C90857 /* PrimaryButton.swift */; };
+		51F333EC39C88D78F423080F /* AuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442E6AA80A84733672DEA594 /* AuthClient.swift */; };
+		620850E317119EB2D1779F1C /* String+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9FD44EDE121186F1161BA2 /* String+Helpers.swift */; };
+		685028C6E1ACDABE14F32DD6 /* BillingRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D5AECD028A7CB85F79A2C6 /* BillingRepository.swift */; };
+		6916FC445B65D8589F0ECBEB /* ProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F084E7DEEC276355002DEF95 /* ProfileRepository.swift */; };
+		6FC23CD8E4FCC21D61B6AB70 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 028E83DF069AE98620F7470F /* SettingsView.swift */; };
+		79355336621F730F66DAE0DA /* MossApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873C8ED1B4A7A20853B7CF84 /* MossApp.swift */; };
+		82A72A7B686D629FDBF8EC56 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42E33EEC5A6DDE990A91DE8F /* Assets.xcassets */; };
+		90BB464E3C229A21FDE02D2B /* ItineraryItemEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E683F86572AF8714CBEC5FA /* ItineraryItemEditorView.swift */; };
+		95C32A9BBA8D080CD0315AFF /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FABECEAC6FC6ADFA1C5CAD /* RootView.swift */; };
+		9858B2AD1A68F01E95C69FB1 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 091A5CCB3460B7702FC472AE /* NotificationManager.swift */; };
+		9B778A5D38B790BB2D2ACC63 /* AppSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8B8A1F8D4573418E37167B /* AppSecrets.swift */; };
+		A42984DF425CDF52C9B70412 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 493A0513B532AE2A2B882DB3 /* Trip.swift */; };
+		A533DD2E2FD68426E875DC6A /* AppServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = E588A0EA8B3E0E28C9A5AAFD /* AppServices.swift */; };
+		B31C45355AD3FB2596632E5A /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A934F026A9097A60D899B23 /* Profile.swift */; };
+		BD3B7D1E5E349EB135E63E33 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = B3D814599CC2CB4AB14856BC /* Supabase */; };
+		BEF758032F3DF4206D69F993 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0D77BB4F2142A17B0979C2 /* AppDelegate.swift */; };
+		CE4C1DF9FA5752C287E630F1 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64ECFA8685601CAB6C5C098E /* SignUpView.swift */; };
+		CFA8396DE04948DE9E4B95B4 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958101B0AF7263E1AA94577B /* Theme.swift */; };
+		D4AE741C9FFB39EAA6B68FBD /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3E46EEA000F91FAAEFE302 /* Formatting.swift */; };
+		F00976A0993DE8D93D7597EB /* EmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D264623DCA621313251292E9 /* EmptyState.swift */; };
+		F027395063B19D008EF1DD18 /* SubscriptionPaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F5A12DECFB56605159E09E3 /* SubscriptionPaywallView.swift */; };
+		F3A076B0169AB88DA7F2619B /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 247B3BAF5848356FDD77E023 /* TripDetailView.swift */; };
+		F74C49EA38DAB9698D98DA2C /* TripsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EED0D48AC82CEF22B64CE04 /* TripsRepository.swift */; };
+		FDD9A798A2493EFEE4623539 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = EE111ACC62E21364A22254DF /* Sentry */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		028E83DF069AE98620F7470F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		091A5CCB3460B7702FC472AE /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		0C74F3D99071516CA43F5A2A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		101D8A77B323734F6E395182 /* Moss.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Moss.storekit; sourceTree = "<group>"; };
+		124B349E360C316DADD39D35 /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
+		17D5AECD028A7CB85F79A2C6 /* BillingRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingRepository.swift; sourceTree = "<group>"; };
+		17FABECEAC6FC6ADFA1C5CAD /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		1D3E46EEA000F91FAAEFE302 /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
+		2129365E0A705851C9C90857 /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
+		215F45D89454DF108B7D3DB0 /* Moss.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Moss.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		247B3BAF5848356FDD77E023 /* TripDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailView.swift; sourceTree = "<group>"; };
+		3B7FE88ED26711B98A0E5324 /* TripsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripsListView.swift; sourceTree = "<group>"; };
+		3F9FD44EDE121186F1161BA2 /* String+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Helpers.swift"; sourceTree = "<group>"; };
+		42E33EEC5A6DDE990A91DE8F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		442E6AA80A84733672DEA594 /* AuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthClient.swift; sourceTree = "<group>"; };
+		493A0513B532AE2A2B882DB3 /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
+		4F05F1AD548F484975591D5B /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		5E683F86572AF8714CBEC5FA /* ItineraryItemEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItineraryItemEditorView.swift; sourceTree = "<group>"; };
+		64ECFA8685601CAB6C5C098E /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpView.swift; sourceTree = "<group>"; };
+		6A934F026A9097A60D899B23 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
+		7894C338DF6B3FF9C4E958A4 /* ForgotPasswordSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordSheet.swift; sourceTree = "<group>"; };
+		7EED0D48AC82CEF22B64CE04 /* TripsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripsRepository.swift; sourceTree = "<group>"; };
+		7F5A12DECFB56605159E09E3 /* SubscriptionPaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPaywallView.swift; sourceTree = "<group>"; };
+		83DF3AA0673ABEEB12780197 /* TripEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripEditorView.swift; sourceTree = "<group>"; };
+		873C8ED1B4A7A20853B7CF84 /* MossApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MossApp.swift; sourceTree = "<group>"; };
+		8847C57A66FB0431185F2C12 /* ItineraryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItineraryRepository.swift; sourceTree = "<group>"; };
+		8C0D77BB4F2142A17B0979C2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		958101B0AF7263E1AA94577B /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		A13D1FC222A6D9FA459AB167 /* ItineraryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItineraryItem.swift; sourceTree = "<group>"; };
+		B9A83C97CD27F2CCEAFF27C3 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		C13B231311A0736A91A57F75 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		D264623DCA621313251292E9 /* EmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyState.swift; sourceTree = "<group>"; };
+		DE66454E306BF44868F40BEB /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		E588A0EA8B3E0E28C9A5AAFD /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
+		EE8B8A1F8D4573418E37167B /* AppSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSecrets.swift; sourceTree = "<group>"; };
+		F084E7DEEC276355002DEF95 /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
+		FA3EDAAE780F3E0C97D90713 /* Moss.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Moss.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		42373A880B5F10E7F3BDB926 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD3B7D1E5E349EB135E63E33 /* Supabase in Frameworks */,
+				FDD9A798A2493EFEE4623539 /* Sentry in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0D52FA5802825137019DF5F5 /* Billing */ = {
+			isa = PBXGroup;
+			children = (
+				17D5AECD028A7CB85F79A2C6 /* BillingRepository.swift */,
+				7F5A12DECFB56605159E09E3 /* SubscriptionPaywallView.swift */,
+			);
+			path = Billing;
+			sourceTree = "<group>";
+		};
+		1AFC6837CBF1573F53E691CD /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				091A5CCB3460B7702FC472AE /* NotificationManager.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		1CEE7FE1191345431BF5913C /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				1D3E46EEA000F91FAAEFE302 /* Formatting.swift */,
+				4F05F1AD548F484975591D5B /* Logger.swift */,
+				3F9FD44EDE121186F1161BA2 /* String+Helpers.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		214356FD38BD0D096CEEAA1A /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				F084E7DEEC276355002DEF95 /* ProfileRepository.swift */,
+				028E83DF069AE98620F7470F /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		28B8F2A2F36EA3D1CCE4B8C7 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A13D1FC222A6D9FA459AB167 /* ItineraryItem.swift */,
+				6A934F026A9097A60D899B23 /* Profile.swift */,
+				493A0513B532AE2A2B882DB3 /* Trip.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3252D0D46CA90A4ABC93BCF8 = {
+			isa = PBXGroup;
+			children = (
+				4C525944AB3802DF9E012D27 /* Config */,
+				9425085B82AE09BFD598B075 /* Moss */,
+				D5644ED0893A3DC2E3CEFBF2 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4C525944AB3802DF9E012D27 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				C13B231311A0736A91A57F75 /* Secrets.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		7F3CD66F15CBF6289C100F23 /* StoreKit */ = {
+			isa = PBXGroup;
+			children = (
+				101D8A77B323734F6E395182 /* Moss.storekit */,
+			);
+			path = StoreKit;
+			sourceTree = "<group>";
+		};
+		9425085B82AE09BFD598B075 /* Moss */ = {
+			isa = PBXGroup;
+			children = (
+				0C74F3D99071516CA43F5A2A /* Info.plist */,
+				FA3EDAAE780F3E0C97D90713 /* Moss.entitlements */,
+				C971ABE666C8AB8D833717FE /* App */,
+				C9C510D5D6DD528693D2B2BE /* Auth */,
+				0D52FA5802825137019DF5F5 /* Billing */,
+				D99B7515939C4D0DC9085B23 /* Components */,
+				BE5F9D2B9E8287ACC5D79C9A /* Itineraries */,
+				28B8F2A2F36EA3D1CCE4B8C7 /* Models */,
+				1AFC6837CBF1573F53E691CD /* Notifications */,
+				F3A5BF97F247ABE3B6F517C4 /* Resources */,
+				214356FD38BD0D096CEEAA1A /* Settings */,
+				AA79AAEBD1731467D3B6FD2D /* Trips */,
+				1CEE7FE1191345431BF5913C /* Utilities */,
+			);
+			path = Moss;
+			sourceTree = "<group>";
+		};
+		AA79AAEBD1731467D3B6FD2D /* Trips */ = {
+			isa = PBXGroup;
+			children = (
+				247B3BAF5848356FDD77E023 /* TripDetailView.swift */,
+				83DF3AA0673ABEEB12780197 /* TripEditorView.swift */,
+				3B7FE88ED26711B98A0E5324 /* TripsListView.swift */,
+				7EED0D48AC82CEF22B64CE04 /* TripsRepository.swift */,
+			);
+			path = Trips;
+			sourceTree = "<group>";
+		};
+		BE5F9D2B9E8287ACC5D79C9A /* Itineraries */ = {
+			isa = PBXGroup;
+			children = (
+				5E683F86572AF8714CBEC5FA /* ItineraryItemEditorView.swift */,
+				8847C57A66FB0431185F2C12 /* ItineraryRepository.swift */,
+				DE66454E306BF44868F40BEB /* TodayView.swift */,
+			);
+			path = Itineraries;
+			sourceTree = "<group>";
+		};
+		C971ABE666C8AB8D833717FE /* App */ = {
+			isa = PBXGroup;
+			children = (
+				8C0D77BB4F2142A17B0979C2 /* AppDelegate.swift */,
+				EE8B8A1F8D4573418E37167B /* AppSecrets.swift */,
+				E588A0EA8B3E0E28C9A5AAFD /* AppServices.swift */,
+				873C8ED1B4A7A20853B7CF84 /* MossApp.swift */,
+				17FABECEAC6FC6ADFA1C5CAD /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C9C510D5D6DD528693D2B2BE /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				442E6AA80A84733672DEA594 /* AuthClient.swift */,
+				7894C338DF6B3FF9C4E958A4 /* ForgotPasswordSheet.swift */,
+				B9A83C97CD27F2CCEAFF27C3 /* SignInView.swift */,
+				64ECFA8685601CAB6C5C098E /* SignUpView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		D5644ED0893A3DC2E3CEFBF2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				215F45D89454DF108B7D3DB0 /* Moss.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D99B7515939C4D0DC9085B23 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				D264623DCA621313251292E9 /* EmptyState.swift */,
+				124B349E360C316DADD39D35 /* LoadingView.swift */,
+				2129365E0A705851C9C90857 /* PrimaryButton.swift */,
+				958101B0AF7263E1AA94577B /* Theme.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		F3A5BF97F247ABE3B6F517C4 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				42E33EEC5A6DDE990A91DE8F /* Assets.xcassets */,
+				7F3CD66F15CBF6289C100F23 /* StoreKit */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		602B81325850729F970140DA /* Moss */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A91CB950F45F4DA51203946 /* Build configuration list for PBXNativeTarget "Moss" */;
+			buildPhases = (
+				18A679111CD3D883DEEE8940 /* Sources */,
+				B70AE25EBC4BEF9BA14ADDD9 /* Resources */,
+				42373A880B5F10E7F3BDB926 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Moss;
+			packageProductDependencies = (
+				B3D814599CC2CB4AB14856BC /* Supabase */,
+				EE111ACC62E21364A22254DF /* Sentry */,
+			);
+			productName = Moss;
+			productReference = 215F45D89454DF108B7D3DB0 /* Moss.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		290E9C4CF1DADAC3D419B418 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = B9003A6432BCA8BB72337024 /* Build configuration list for PBXProject "Moss" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3252D0D46CA90A4ABC93BCF8;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DD26CB0E3E1E947ED923A387 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
+				9CF64DC3AB798076D9254426 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D5644ED0893A3DC2E3CEFBF2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				602B81325850729F970140DA /* Moss */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B70AE25EBC4BEF9BA14ADDD9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				82A72A7B686D629FDBF8EC56 /* Assets.xcassets in Resources */,
+				2FF9E3DE36DD20AB77FC0D23 /* Moss.storekit in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		18A679111CD3D883DEEE8940 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BEF758032F3DF4206D69F993 /* AppDelegate.swift in Sources */,
+				9B778A5D38B790BB2D2ACC63 /* AppSecrets.swift in Sources */,
+				A533DD2E2FD68426E875DC6A /* AppServices.swift in Sources */,
+				51F333EC39C88D78F423080F /* AuthClient.swift in Sources */,
+				685028C6E1ACDABE14F32DD6 /* BillingRepository.swift in Sources */,
+				F00976A0993DE8D93D7597EB /* EmptyState.swift in Sources */,
+				0B0BE2616F013F0E4866DF66 /* ForgotPasswordSheet.swift in Sources */,
+				D4AE741C9FFB39EAA6B68FBD /* Formatting.swift in Sources */,
+				0E8B593BBFC47E99ACC3037C /* ItineraryItem.swift in Sources */,
+				90BB464E3C229A21FDE02D2B /* ItineraryItemEditorView.swift in Sources */,
+				1CB7DD23E5A913EC9E41F538 /* ItineraryRepository.swift in Sources */,
+				1CDE2E1C3AC4CD67A54DEA93 /* LoadingView.swift in Sources */,
+				23D4046B4318826478038CBD /* Logger.swift in Sources */,
+				9858B2AD1A68F01E95C69FB1 /* NotificationManager.swift in Sources */,
+				320AC5BA4B64AA4C6EACA8BB /* PrimaryButton.swift in Sources */,
+				B31C45355AD3FB2596632E5A /* Profile.swift in Sources */,
+				6916FC445B65D8589F0ECBEB /* ProfileRepository.swift in Sources */,
+				95C32A9BBA8D080CD0315AFF /* RootView.swift in Sources */,
+				6FC23CD8E4FCC21D61B6AB70 /* SettingsView.swift in Sources */,
+				163E0BCFAEEF4AC8262D7E57 /* SignInView.swift in Sources */,
+				CE4C1DF9FA5752C287E630F1 /* SignUpView.swift in Sources */,
+				620850E317119EB2D1779F1C /* String+Helpers.swift in Sources */,
+				F027395063B19D008EF1DD18 /* SubscriptionPaywallView.swift in Sources */,
+				CFA8396DE04948DE9E4B95B4 /* Theme.swift in Sources */,
+				14CEAC7233958B61BA9BF3DF /* TodayView.swift in Sources */,
+				A42984DF425CDF52C9B70412 /* Trip.swift in Sources */,
+				F3A076B0169AB88DA7F2619B /* TripDetailView.swift in Sources */,
+				30AA2E07D84F649B0A9276A6 /* TripEditorView.swift in Sources */,
+				0440249E42950D7D77F45BD8 /* TripsListView.swift in Sources */,
+				F74C49EA38DAB9698D98DA2C /* TripsRepository.swift in Sources */,
+				79355336621F730F66DAE0DA /* MossApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		096417825FF1F37E8858096D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6AAGJ9Y234;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		1274BB5C4E28DDCF68ECC8BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6AAGJ9Y234;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		EB8A0B32E1143951A863B2E9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C13B231311A0736A91A57F75 /* Secrets.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Moss/Moss.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				INFOPLIST_FILE = Moss/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.moss;
+				PROVISIONING_PROFILE_SPECIFIER = "Moss App Store";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F0CF99A383C77256385E0A46 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C13B231311A0736A91A57F75 /* Secrets.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Moss/Moss.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 6AAGJ9Y234;
+				INFOPLIST_FILE = Moss/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.moss;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7A91CB950F45F4DA51203946 /* Build configuration list for PBXNativeTarget "Moss" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0CF99A383C77256385E0A46 /* Debug */,
+				EB8A0B32E1143951A863B2E9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B9003A6432BCA8BB72337024 /* Build configuration list for PBXProject "Moss" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				096417825FF1F37E8858096D /* Debug */,
+				1274BB5C4E28DDCF68ECC8BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9CF64DC3AB798076D9254426 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.20.0;
+			};
+		};
+		DD26CB0E3E1E947ED923A387 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.40.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B3D814599CC2CB4AB14856BC /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9CF64DC3AB798076D9254426 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		EE111ACC62E21364A22254DF /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DD26CB0E3E1E947ED923A387 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 290E9C4CF1DADAC3D419B418 /* Project object */;
+}

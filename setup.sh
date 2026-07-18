@@ -12,6 +12,6 @@ if [ ! -f Config/Secrets.xcconfig ]; then
 fi
 
 xcodegen generate
-echo "Generated roam.xcodeproj"
-echo "Next: open roam.xcodeproj and set your Apple Development Team."
+echo "Generated Moss.xcodeproj"
+echo "Next: open Moss.xcodeproj and set your Apple Development Team."
 
