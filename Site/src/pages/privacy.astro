@@ -18,10 +18,12 @@ import LegalArticle from "../components/LegalArticle.astro";
     <h2>Information we collect</h2>
     <ul>
       <li>
-        <strong>Account information.</strong> When you create an account we store
-        your email address and, optionally, profile details such as your display name.
-        Authentication is handled by Supabase and may use email, Apple, or Google
-        sign-in.
+        <strong>Account information.</strong> To create and manage your account, we
+        store your email address and, optionally, profile details such as your display
+        name. You may sign in with email, Sign in with Apple, or Google Sign-In. If
+        you choose Apple or Google, that provider processes the sign-in request and
+        sends us authentication data that may include a provider account identifier,
+        email address, and profile details you authorize it to share.
       </li>
       <li>
         <strong>Your travel content.</strong> Trips, destinations, itinerary items,
@@ -34,10 +36,9 @@ import LegalArticle from "../components/LegalArticle.astro";
         related app notifications.
       </li>
       <li>
-        <strong>Subscription information.</strong> If you subscribe to Supporter
-        Monthly, Apple handles payment. We store subscription entitlement status
-        and transaction identifiers needed to unlock paid features and keep access
-        in sync.
+        <strong>Subscription information.</strong> If you subscribe to Supporter Monthly,
+        Apple handles payment. We store subscription entitlement status and transaction
+        identifiers needed to unlock paid features and keep access in sync.
       </li>
     </ul>
 
@@ -55,12 +56,21 @@ import LegalArticle from "../components/LegalArticle.astro";
       <li>To maintain, secure, debug, and improve the service.</li>
     </ul>
 
+    <h2>Third-party website resources</h2>
+    <p>
+      The Moss website loads typefaces from Google Fonts. When your browser
+      requests those files, it connects directly to Google, which may receive
+      technical request information such as your IP address and browser details.
+      Google's handling of that information is governed by its own privacy
+      policy.
+    </p>
+
     <h2>How your information is shared</h2>
     <p>
       We do not sell your personal information. Information is shared only with
-      service providers needed to operate Moss, including Supabase for
-      authentication and app data storage, and Apple services for purchases and
-      notifications, or when required by law.
+      service providers needed to host and operate Moss; Apple and Google for sign-in
+      when selected; Apple for purchases and notifications; and Google Fonts for
+      website typefaces. We may also disclose information when required by law.
     </p>
 
     <h2>Data retention</h2>
@@ -72,9 +82,9 @@ import LegalArticle from "../components/LegalArticle.astro";
 
     <h2>Security</h2>
     <p>
-      We use reasonable safeguards to protect your information, including
-      encrypted connections, Supabase row-level security, and access controls.
-      No method of transmission or storage is completely secure.
+      We use reasonable safeguards to protect your information, including encrypted
+      connections and database access controls. No method of transmission or storage
+      is completely secure.
     </p>
 
     <h2>Your rights</h2>
