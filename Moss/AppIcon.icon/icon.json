@@ -1,99 +1,97 @@
 {
-  "color-space-for-untagged-svg-colors": "display-p3",
-  "fill-specializations": [
+  "color-space-for-untagged-svg-colors" : "display-p3",
+  "fill-specializations" : [
     {
-      "value": {
-        "linear-gradient": [
-          "display-p3:0.95294,0.97647,0.93333,1.00000",
-          "display-p3:0.74118,0.90980,0.92157,1.00000"
+      "value" : {
+        "linear-gradient" : [
+          "display-p3:0.25882,0.52941,0.33333,1.00000",
+          "display-p3:0.05098,0.21176,0.13725,1.00000"
         ]
       }
     },
     {
-      "appearance": "dark",
-      "value": {
-        "linear-gradient": [
-          "display-p3:0.06667,0.11765,0.14118,1.00000",
-          "display-p3:0.15686,0.21961,0.24314,1.00000"
+      "appearance" : "dark",
+      "value" : {
+        "linear-gradient" : [
+          "display-p3:0.01961,0.09020,0.07059,1.00000",
+          "display-p3:0.07451,0.25490,0.15686,1.00000"
         ]
       }
     },
     {
-      "appearance": "tinted",
-      "value": "automatic"
+      "appearance" : "tinted",
+      "value" : "automatic"
     }
   ],
-  "groups": [
+  "groups" : [
     {
-      "layers": [
+      "layers" : [
         {
-          "glass": false,
-          "image-name": "map-base.svg",
-          "name": "map base",
-          "opacity": 1
+          "fill" : "none",
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "journey-mark.svg",
+          "name" : "Journey M"
         }
       ],
-      "lighting": "combined",
-      "shadow": {
-        "kind": "none",
-        "opacity": 0.45
+      "blur" : 0,
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.3
       },
-      "translucency": {
-        "enabled": false,
-        "value": 0.5
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.1
       }
     },
     {
-      "layers": [
+      "layers" : [
         {
-          "blend-mode": "normal",
-          "glass": false,
-          "image-name": "route-line.svg",
-          "name": "itinerary route",
-          "opacity": 1
-        },
-        {
-          "glass": false,
-          "image-name": "secondary-pins.svg",
-          "name": "secondary pins",
-          "opacity": 1
+          "fill" : "none",
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "waypoints.svg",
+          "name" : "Waypoints"
         }
       ],
-      "blur": 0,
-      "lighting": "individual",
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.3
+      "blur" : 0,
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.36
       },
-      "specular": false,
-      "translucency": {
-        "enabled": false,
-        "value": 0.5
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.06
       }
     },
     {
-      "layers": [
+      "layers" : [
         {
-          "glass": false,
-          "image-name": "primary-pin.svg",
-          "name": "primary pin",
-          "opacity": 1
+          "fill" : "none",
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "leaf-destination.svg",
+          "name" : "Leaf destination"
         }
       ],
-      "blur": 0,
-      "lighting": "combined",
-      "shadow": {
-        "kind": "layer-color",
-        "opacity": 0.45
+      "blur" : 0,
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.38
       },
-      "specular": false,
-      "translucency": {
-        "enabled": false,
-        "value": 0.5
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.08
       }
     }
   ],
-  "supported-platforms": {
-    "squares": "shared"
+  "supported-platforms" : {
+    "squares" : "shared"
   }
 }

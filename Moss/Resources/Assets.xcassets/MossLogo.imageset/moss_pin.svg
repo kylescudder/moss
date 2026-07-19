@@ -1,24 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <defs>
-    <linearGradient id="pin" x1="384" y1="152" x2="684" y2="764" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#8da879"/>
-      <stop offset="0.42" stop-color="#4f7651"/>
-      <stop offset="1" stop-color="#263c2a"/>
-    </linearGradient>
-    <radialGradient id="highlight" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(470 296) rotate(55) scale(182 116)">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.62"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="pinShadow" x="-35%" y="-25%" width="170%" height="170%">
-      <feDropShadow dx="0" dy="32" stdDeviation="30" flood-color="#1f2f20" flood-opacity="0.42"/>
-    </filter>
-  </defs>
-  <ellipse cx="526" cy="805" rx="170" ry="43" fill="#253522" fill-opacity="0.22"/>
-  <g filter="url(#pinShadow)">
-    <path d="M525 134c-150 0-271 119-271 265 0 189 216 427 261 474a15 15 0 0 0 21 0c46-47 261-285 261-474 0-146-121-265-272-265Z" fill="url(#pin)"/>
-    <path d="M525 134c-150 0-271 119-271 265 0 189 216 427 261 474a15 15 0 0 0 21 0c46-47 261-285 261-474 0-146-121-265-272-265Z" fill="url(#highlight)"/>
-    <circle cx="525" cy="399" r="103" fill="#ffffff"/>
-    <circle cx="525" cy="399" r="42" fill="#355f42"/>
-    <path d="M397 224c43-35 96-53 157-53 54 0 103 16 146 47" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-opacity="0.48"/>
-  </g>
+  <circle cx="512" cy="512" r="448" fill="#24533A"/>
+  <path d="M184 690c31-158 84-324 174-328 91-4 102 260 163 258 68-3 77-258 166-258 86 0 114 168 143 307" fill="none" stroke="#F7F1DE" stroke-width="82" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="184" cy="690" r="53" fill="#E6B86F"/>
+  <circle cx="184" cy="690" r="21" fill="#FFF7E6"/>
+  <path d="M827 655c-10-63 29-113 97-126 4 68-30 118-97 126Z" fill="#B7D99E"/>
+  <path d="M822 661c-56-16-87-55-86-116 60 14 92 52 86 116Z" fill="#7FB178"/>
 </svg>

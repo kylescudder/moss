@@ -76,6 +76,10 @@ app.moss.supporter.monthly
 
 Create the matching auto-renewable subscription in App Store Connect before TestFlight/App Store builds. The local StoreKit config lets simulator builds exercise the purchase flow.
 
+## App Icon
+
+The editable Liquid Glass source is `Moss/AppIcon.icon`. Open it with Xcode's **Open Developer Tool → Icon Composer** to preview the default, dark, clear, and tinted appearances and tune the live material effects. The source uses three SVG groups—an abstract journey-shaped “M”, waypoints, and a leaf destination—so iOS can render independent depth, refraction, shadow, and motion-responsive specular highlights.
+
 ## Backend Layout
 
 ```text

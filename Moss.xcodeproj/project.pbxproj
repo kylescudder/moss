@@ -25,6 +25,7 @@
 		6FC23CD8E4FCC21D61B6AB70 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 028E83DF069AE98620F7470F /* SettingsView.swift */; };
 		79355336621F730F66DAE0DA /* MossApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873C8ED1B4A7A20853B7CF84 /* MossApp.swift */; };
 		82A72A7B686D629FDBF8EC56 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42E33EEC5A6DDE990A91DE8F /* Assets.xcassets */; };
+		8D7C6B5A4F3E2D1C0B9A8765 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 9D8C7B6A5F4E3D2C1B0A9876 /* AppIcon.icon */; };
 		90BB464E3C229A21FDE02D2B /* ItineraryItemEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E683F86572AF8714CBEC5FA /* ItineraryItemEditorView.swift */; };
 		95C32A9BBA8D080CD0315AFF /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FABECEAC6FC6ADFA1C5CAD /* RootView.swift */; };
 		9858B2AD1A68F01E95C69FB1 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 091A5CCB3460B7702FC472AE /* NotificationManager.swift */; };
@@ -72,6 +73,7 @@
 		873C8ED1B4A7A20853B7CF84 /* MossApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MossApp.swift; sourceTree = "<group>"; };
 		8847C57A66FB0431185F2C12 /* ItineraryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItineraryRepository.swift; sourceTree = "<group>"; };
 		8C0D77BB4F2142A17B0979C2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		9D8C7B6A5F4E3D2C1B0A9876 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		958101B0AF7263E1AA94577B /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		A13D1FC222A6D9FA459AB167 /* ItineraryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItineraryItem.swift; sourceTree = "<group>"; };
 		B9A83C97CD27F2CCEAFF27C3 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
@@ -171,6 +173,7 @@
 		9425085B82AE09BFD598B075 /* Moss */ = {
 			isa = PBXGroup;
 			children = (
+				9D8C7B6A5F4E3D2C1B0A9876 /* AppIcon.icon */,
 				0C74F3D99071516CA43F5A2A /* Info.plist */,
 				FA3EDAAE780F3E0C97D90713 /* Moss.entitlements */,
 				C971ABE666C8AB8D833717FE /* App */,
@@ -322,6 +325,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				82A72A7B686D629FDBF8EC56 /* Assets.xcassets in Resources */,
+				8D7C6B5A4F3E2D1C0B9A8765 /* AppIcon.icon in Resources */,
 				2FF9E3DE36DD20AB77FC0D23 /* Moss.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
