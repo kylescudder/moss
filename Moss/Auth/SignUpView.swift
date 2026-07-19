@@ -3,62 +3,152 @@ import SwiftUI
 struct SignUpView: View {
     @EnvironmentObject private var services: AppServices
     @Environment(\.dismiss) private var dismiss
-    @State private var displayName = ""
     @State private var email = ""
     @State private var password = ""
+    @State private var displayName = ""
     @State private var isWorking = false
-    @State private var confirmationMessage: String?
+    @State private var isResendingConfirmation = false
+    @State private var awaitingConfirmation: String?
+    @State private var resendConfirmationMessage: String?
 
     var body: some View {
-        Form {
-            Section("Profile") {
-                TextField("Display name", text: $displayName)
-                    .textContentType(.name)
-                TextField("Email", text: $email)
-                    .keyboardType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .textContentType(.emailAddress)
-                    .autocorrectionDisabled()
-                SecureField("Password", text: $password)
-                    .textContentType(.newPassword)
-            }
-
-            Section {
-                PrimaryButton(title: "Create account", systemImage: "person.badge.plus", isLoading: isWorking) {
-                    Task { await signUp() }
-                }
-                .disabled(displayName.isEmpty || email.isEmpty || password.count < 8)
-            }
-
-            if let confirmationMessage {
-                Section {
-                    Text(confirmationMessage)
+        ScrollView {
+            VStack(spacing: Theme.Spacing.xl) {
+                VStack(spacing: Theme.Spacing.sm) {
+                    Text("Create account")
+                        .font(.largeTitle.weight(.bold))
+                    Text("Your trips sync across devices automatically.")
+                        .font(.callout)
                         .foregroundStyle(Theme.Colors.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, Theme.Spacing.lg)
+
+                if let confirmationEmail = awaitingConfirmation {
+                    confirmationCard(email: confirmationEmail)
+                } else {
+                    formContent
                 }
             }
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.bottom, Theme.Spacing.xxl)
+        }
+        .background(Theme.Colors.background)
+        .navigationTitle("Sign up")
+        .navigationBarTitleDisplayMode(.inline)
+    }
 
-            if let message = services.auth.lastError {
-                Section {
-                    Text(message)
-                        .foregroundStyle(.red)
-                }
+    @ViewBuilder
+    private var formContent: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            TextField("Display name (optional)", text: $displayName)
+                .textContentType(.name)
+                .padding()
+                .background(Theme.Colors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
+
+            TextField("Email", text: $email)
+                .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding()
+                .background(Theme.Colors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
+
+            SecureField("Password (min 6 characters)", text: $password)
+                .textContentType(.newPassword)
+                .padding()
+                .background(Theme.Colors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
+        }
+
+        if let error = services.auth.lastError {
+            Text(error)
+                .font(.footnote)
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+
+        PrimaryButton(title: "Create account", isLoading: isWorking) {
+            Task { await signUp() }
+        }
+        .disabled(!isFormValid || isWorking)
+    }
+
+    private func confirmationCard(email: String) -> some View {
+        VStack(spacing: Theme.Spacing.lg) {
+            Image(systemName: "envelope.badge")
+                .font(.system(size: 56))
+                .foregroundStyle(Theme.Colors.accent)
+
+            VStack(spacing: Theme.Spacing.sm) {
+                Text("Check your inbox")
+                    .font(.title2.weight(.semibold))
+                Text("We sent a confirmation link to \(email). Tap it to finish signing up, then come back and sign in.")
+                    .font(.callout)
+                    .foregroundStyle(Theme.Colors.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            if let resendConfirmationMessage {
+                Text(resendConfirmationMessage)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.Colors.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            SecondaryButton(
+                title: isResendingConfirmation ? "Sending..." : "Resend confirmation email",
+                systemImage: isResendingConfirmation ? nil : "arrow.clockwise"
+            ) {
+                Task { await resendConfirmation(email: email) }
+            }
+            .disabled(isResendingConfirmation)
+
+            PrimaryButton(title: "Back to sign in") {
+                dismiss()
             }
         }
-        .navigationTitle("Create Account")
+        .padding(Theme.Spacing.lg)
+        .frame(maxWidth: .infinity)
+        .background(Theme.Colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg))
+    }
+
+    private var isFormValid: Bool {
+        email.contains("@") && email.contains(".") && password.count >= 6
     }
 
     private func signUp() async {
+        guard !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
-        let result = await services.auth.signUp(email: email, password: password, displayName: displayName)
+
+        let trimmedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let result = await services.auth.signUp(
+            email: email,
+            password: password,
+            displayName: trimmedDisplayName.isEmpty ? nil : trimmedDisplayName
+        )
+
         switch result {
-        case .signedIn:
-            dismiss()
-        case .needsEmailConfirmation(let email):
-            confirmationMessage = "Check \(email) to confirm your account."
-        case nil:
+        case .signedIn, .none:
             break
+        case .needsEmailConfirmation(let pendingEmail):
+            awaitingConfirmation = pendingEmail
+            resendConfirmationMessage = nil
         }
     }
-}
 
+    private func resendConfirmation(email: String) async {
+        guard !isResendingConfirmation else { return }
+        isResendingConfirmation = true
+        defer { isResendingConfirmation = false }
+
+        let sent = await services.auth.resendSignupConfirmation(email: email)
+        resendConfirmationMessage = sent
+            ? "We sent a fresh confirmation link."
+            : services.auth.lastError
+    }
+}

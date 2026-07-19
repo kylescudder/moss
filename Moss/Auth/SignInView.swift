@@ -1,4 +1,3 @@
-import AuthenticationServices
 import SwiftUI
 
 struct SignInView: View {
@@ -116,7 +115,7 @@ struct SignInView: View {
     }
 
     private var isFormValid: Bool {
-        !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !password.isEmpty
+        !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && password.count >= 6
     }
 
     private func signIn() async {
@@ -134,23 +133,5 @@ struct SignInView: View {
         isWorking = true
         defer { isWorking = false }
         await services.auth.signInWithGoogle()
-    }
-}
-
-private struct AppleSignInButton: View {
-    @EnvironmentObject private var services: AppServices
-
-    var body: some View {
-        SignInWithAppleButton(
-            .continue,
-            onRequest: { request in
-                services.auth.beginAppleSignIn(request: request)
-            },
-            onCompletion: { result in
-                Task { await services.auth.completeAppleSignIn(result: result) }
-            }
-        )
-        .signInWithAppleButtonStyle(.black)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
     }
 }

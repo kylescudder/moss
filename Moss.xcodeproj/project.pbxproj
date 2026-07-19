@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000000000000000000011 /* AppleSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* AppleSignIn.swift */; };
+		A10000000000000000000012 /* AppleSignInButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* AppleSignInButton.swift */; };
+		A10000000000000000000013 /* GoogleSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* GoogleSignIn.swift */; };
+		A10000000000000000000014 /* ResetPasswordSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* ResetPasswordSheet.swift */; };
 		0440249E42950D7D77F45BD8 /* TripsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7FE88ED26711B98A0E5324 /* TripsListView.swift */; };
 		0B0BE2616F013F0E4866DF66 /* ForgotPasswordSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7894C338DF6B3FF9C4E958A4 /* ForgotPasswordSheet.swift */; };
 		0E8B593BBFC47E99ACC3037C /* ItineraryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13D1FC222A6D9FA459AB167 /* ItineraryItem.swift */; };
@@ -46,6 +50,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A10000000000000000000001 /* AppleSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignIn.swift; sourceTree = "<group>"; };
+		A10000000000000000000002 /* AppleSignInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInButton.swift; sourceTree = "<group>"; };
+		A10000000000000000000003 /* GoogleSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignIn.swift; sourceTree = "<group>"; };
+		A10000000000000000000004 /* ResetPasswordSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPasswordSheet.swift; sourceTree = "<group>"; };
 		028E83DF069AE98620F7470F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		091A5CCB3460B7702FC472AE /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		0C74F3D99071516CA43F5A2A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -227,8 +235,12 @@
 		C9C510D5D6DD528693D2B2BE /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				A10000000000000000000001 /* AppleSignIn.swift */,
+				A10000000000000000000002 /* AppleSignInButton.swift */,
 				442E6AA80A84733672DEA594 /* AuthClient.swift */,
 				7894C338DF6B3FF9C4E958A4 /* ForgotPasswordSheet.swift */,
+				A10000000000000000000003 /* GoogleSignIn.swift */,
+				A10000000000000000000004 /* ResetPasswordSheet.swift */,
 				B9A83C97CD27F2CCEAFF27C3 /* SignInView.swift */,
 				64ECFA8685601CAB6C5C098E /* SignUpView.swift */,
 			);
@@ -337,6 +349,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000011 /* AppleSignIn.swift in Sources */,
+				A10000000000000000000012 /* AppleSignInButton.swift in Sources */,
 				BEF758032F3DF4206D69F993 /* AppDelegate.swift in Sources */,
 				9B778A5D38B790BB2D2ACC63 /* AppSecrets.swift in Sources */,
 				A533DD2E2FD68426E875DC6A /* AppServices.swift in Sources */,
@@ -345,6 +359,7 @@
 				F00976A0993DE8D93D7597EB /* EmptyState.swift in Sources */,
 				0B0BE2616F013F0E4866DF66 /* ForgotPasswordSheet.swift in Sources */,
 				D4AE741C9FFB39EAA6B68FBD /* Formatting.swift in Sources */,
+				A10000000000000000000013 /* GoogleSignIn.swift in Sources */,
 				0E8B593BBFC47E99ACC3037C /* ItineraryItem.swift in Sources */,
 				90BB464E3C229A21FDE02D2B /* ItineraryItemEditorView.swift in Sources */,
 				1CB7DD23E5A913EC9E41F538 /* ItineraryRepository.swift in Sources */,
@@ -354,6 +369,7 @@
 				320AC5BA4B64AA4C6EACA8BB /* PrimaryButton.swift in Sources */,
 				B31C45355AD3FB2596632E5A /* Profile.swift in Sources */,
 				6916FC445B65D8589F0ECBEB /* ProfileRepository.swift in Sources */,
+				A10000000000000000000014 /* ResetPasswordSheet.swift in Sources */,
 				95C32A9BBA8D080CD0315AFF /* RootView.swift in Sources */,
 				6FC23CD8E4FCC21D61B6AB70 /* SettingsView.swift in Sources */,
 				163E0BCFAEEF4AC8262D7E57 /* SignInView.swift in Sources */,
