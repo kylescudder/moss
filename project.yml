@@ -43,6 +43,7 @@ targets:
     resources:
       - path: Moss/Resources
         optional: true
+      - path: Moss/AppIcon.icon
     info:
       path: Moss/Info.plist
       properties:

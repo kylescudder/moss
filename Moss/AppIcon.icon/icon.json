@@ -1,99 +1,53 @@
 {
-  "color-space-for-untagged-svg-colors": "display-p3",
-  "fill-specializations": [
+  "color-space-for-untagged-svg-colors" : "display-p3",
+  "fill-specializations" : [
     {
-      "value": {
-        "linear-gradient": [
-          "display-p3:0.95294,0.97647,0.93333,1.00000",
-          "display-p3:0.74118,0.90980,0.92157,1.00000"
+      "value" : {
+        "linear-gradient" : [
+          "display-p3:0.96863,0.94510,0.84314,1.00000",
+          "display-p3:0.76863,0.84314,0.70196,1.00000"
         ]
       }
     },
     {
-      "appearance": "dark",
-      "value": {
-        "linear-gradient": [
-          "display-p3:0.06667,0.11765,0.14118,1.00000",
-          "display-p3:0.15686,0.21961,0.24314,1.00000"
+      "appearance" : "dark",
+      "value" : {
+        "linear-gradient" : [
+          "display-p3:0.02745,0.07451,0.05882,1.00000",
+          "display-p3:0.09020,0.16078,0.11373,1.00000"
         ]
       }
     },
     {
-      "appearance": "tinted",
-      "value": "automatic"
+      "appearance" : "tinted",
+      "value" : "automatic"
     }
   ],
-  "groups": [
+  "groups" : [
     {
-      "layers": [
+      "layers" : [
         {
-          "glass": false,
-          "image-name": "map-base.svg",
-          "name": "map base",
-          "opacity": 1
+          "fill" : "none",
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "moss-ball.svg",
+          "name" : "Moss ball"
         }
       ],
-      "lighting": "combined",
-      "shadow": {
-        "kind": "none",
-        "opacity": 0.45
+      "blur" : 0,
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.42
       },
-      "translucency": {
-        "enabled": false,
-        "value": 0.5
-      }
-    },
-    {
-      "layers": [
-        {
-          "blend-mode": "normal",
-          "glass": false,
-          "image-name": "route-line.svg",
-          "name": "itinerary route",
-          "opacity": 1
-        },
-        {
-          "glass": false,
-          "image-name": "secondary-pins.svg",
-          "name": "secondary pins",
-          "opacity": 1
-        }
-      ],
-      "blur": 0,
-      "lighting": "individual",
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.3
-      },
-      "specular": false,
-      "translucency": {
-        "enabled": false,
-        "value": 0.5
-      }
-    },
-    {
-      "layers": [
-        {
-          "glass": false,
-          "image-name": "primary-pin.svg",
-          "name": "primary pin",
-          "opacity": 1
-        }
-      ],
-      "blur": 0,
-      "lighting": "combined",
-      "shadow": {
-        "kind": "layer-color",
-        "opacity": 0.45
-      },
-      "specular": false,
-      "translucency": {
-        "enabled": false,
-        "value": 0.5
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.06
       }
     }
   ],
-  "supported-platforms": {
-    "squares": "shared"
+  "supported-platforms" : {
+    "squares" : "shared"
   }
 }

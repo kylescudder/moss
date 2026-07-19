@@ -13,8 +13,21 @@ struct RootView: View {
                     SignInView()
                 }
             case .signedIn:
-                AppTabView()
+                if services.auth.isPasswordRecovery {
+                    NavigationStack {
+                        SignInView()
+                    }
+                } else {
+                    AppTabView()
+                }
             }
+        }
+        .sheet(isPresented: Binding(
+            get: { services.auth.isPasswordRecovery },
+            set: { services.auth.isPasswordRecovery = $0 }
+        )) {
+            ResetPasswordSheet()
+                .presentationDetents([.medium, .large])
         }
     }
 }
@@ -45,4 +58,3 @@ private struct AppTabView: View {
         }
     }
 }
-

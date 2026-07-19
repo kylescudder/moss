@@ -1,5 +1,7 @@
 # Moss
 
+**Travel, together**
+
 Moss is a native iOS travel companion: a calm place to plan upcoming journeys, keep travel details together, and build toward shared trips, places, notes, photos, and memories over time.
 
 - SwiftUI, iOS 17+
@@ -56,13 +58,15 @@ bun run dev
 
 ## Supabase Auth
 
-Enable Email in Supabase Auth. Apple and Google buttons are present in the native UI, but their native token exchange still needs final provider configuration once the Apple Services ID and Google OAuth client are known.
+Enable Email, Apple, and Google in Supabase Auth. Moss uses Apple's native Authentication Services flow and presents Google OAuth through the secure system authentication session. Provider secrets belong in the Supabase dashboard, never in the app or `Secrets.xcconfig`.
 
 Use this redirect URL:
 
 ```text
 moss://auth-callback
 ```
+
+Add that URL to the Supabase Auth redirect allow list. Configure the native app ID `app.moss` as an accepted Apple client ID. For Google, create a web OAuth client and use Supabase's callback URL (`https://<project-ref>.supabase.co/auth/v1/callback`) as its authorized redirect URI.
 
 ## Subscription
 
@@ -73,6 +77,10 @@ app.moss.supporter.monthly
 ```
 
 Create the matching auto-renewable subscription in App Store Connect before TestFlight/App Store builds. The local StoreKit config lets simulator builds exercise the purchase flow.
+
+## App Icon
+
+The editable Liquid Glass source is `Moss/AppIcon.icon`. Open it with Xcode's **Open Developer Tool → Icon Composer** to preview the default, dark, clear, and tinted appearances and tune the live material effects. The mark is a deliberately simple moss-ball silhouette with one broad highlight, so it remains legible from a 16-point favicon to large-format artwork. The same canonical SVG construction is used by the app icon, in-app logo, and website mark; Icon Composer adds depth, refraction, shadow, and motion-responsive specular highlights without changing the identity itself.
 
 ## Backend Layout
 
