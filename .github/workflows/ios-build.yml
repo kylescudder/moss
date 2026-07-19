@@ -1,0 +1,59 @@
+name: iOS · Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Moss/**'
+      - 'project.yml'
+      - 'Config/Secrets.xcconfig.example'
+      - 'Scripts/ci/**'
+      - '.github/workflows/ios-build.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moss-ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build for simulator
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      SCHEME: Moss
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install iOS platform (if missing)
+        run: sudo xcodebuild -downloadPlatform iOS || true
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Write build xcconfig
+        run: cp Config/Secrets.xcconfig.example Config/Secrets.xcconfig
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -project Moss.xcodeproj -scheme "$SCHEME"
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Moss.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO

@@ -1,0 +1,214 @@
+name: iOS · TestFlight
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'Moss/**'
+      - 'project.yml'
+      - 'Config/Secrets.xcconfig.example'
+      - 'Scripts/ci/**'
+      - '.github/workflows/ios-testflight.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moss-ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Archive & upload
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      SCHEME: Moss
+      ARCHIVE_PATH: build/Moss.xcarchive
+      EXPORT_PATH: build/ipa
+      EXPORT_OPTIONS: Scripts/ci/ExportOptions.plist
+      APP_STORE_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+      APP_STORE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+      IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+      IOS_MOSS_PROFILE_BASE64: ${{ secrets.IOS_MOSS_PROFILE_BASE64 }}
+      IOS_KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install iOS platform (if missing)
+        run: sudo xcodebuild -downloadPlatform iOS || true
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Write Secrets.xcconfig
+        env:
+          IOS_SECRETS: ${{ secrets.IOS_SECRETS_XCCONFIG }}
+        run: |
+          test -n "${IOS_SECRETS}" || (echo "::error::IOS_SECRETS_XCCONFIG is empty" && exit 1)
+          mkdir -p Config
+          printf '%s\n' "$IOS_SECRETS" > Config/Secrets.xcconfig
+
+      - name: Validate app secrets
+        run: |
+          value_for() {
+            awk -F= -v key="$1" '$1 ~ "^[[:space:]]*" key "[[:space:]]*$" {
+              v=$2
+              for (i=3; i<=NF; i++) v=v "=" $i
+              gsub(/^[ \t]+|[ \t]+$/, "", v)
+              print v
+            }' Config/Secrets.xcconfig
+          }
+
+          supabase_url="$(value_for SUPABASE_URL)"
+          supabase_key="$(value_for SUPABASE_ANON_KEY)"
+          resolved_supabase_url="$(printf '%s' "$supabase_url" | sed 's#/[$]()#/#g')"
+
+          case "$resolved_supabase_url" in
+            ""|*\$"("*|*your-project-ref.supabase.co*|*placeholder.supabase.co*)
+              echo "::error::SUPABASE_URL is missing, unresolved, or still a placeholder"
+              exit 1
+              ;;
+          esac
+
+          case "$supabase_key" in
+            ""|*\$"("*|*your-anon-key*|*your-supabase-anon-key*)
+              echo "::error::SUPABASE_ANON_KEY is missing, unresolved, or still a placeholder"
+              exit 1
+              ;;
+          esac
+
+          test "${#supabase_key}" -gt 40 || (echo "::error::SUPABASE_ANON_KEY is unexpectedly short" && exit 1)
+
+      - name: Write App Store Connect API key
+        env:
+          API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: |
+          if [ -z "${API_KEY_P8}" ] || [ -z "${APP_STORE_KEY_ID}" ] || [ -z "${APP_STORE_ISSUER_ID}" ]; then
+            echo "::error::APP_STORE_CONNECT_API_KEY_P8 / _KEY_ID / _ISSUER_ID secret(s) missing"
+            exit 1
+          fi
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s\n' "$API_KEY_P8" > "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_KEY_ID}.p8"
+          chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_KEY_ID}.p8"
+
+      - name: Install signing certificate and profile
+        run: |
+          test -n "${IOS_DISTRIBUTION_CERTIFICATE_BASE64}" || (echo "::error::IOS_DISTRIBUTION_CERTIFICATE_BASE64 is empty" && exit 1)
+          test -n "${IOS_DISTRIBUTION_CERTIFICATE_PASSWORD}" || (echo "::error::IOS_DISTRIBUTION_CERTIFICATE_PASSWORD is empty" && exit 1)
+          test -n "${IOS_MOSS_PROFILE_BASE64}" || (echo "::error::IOS_MOSS_PROFILE_BASE64 is empty" && exit 1)
+          test -n "${IOS_KEYCHAIN_PASSWORD}" || (echo "::error::IOS_KEYCHAIN_PASSWORD is empty" && exit 1)
+
+          certificate_path="$RUNNER_TEMP/moss-distribution.p12"
+          keychain_path="$RUNNER_TEMP/moss-signing.keychain-db"
+          profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
+          profile_path="$RUNNER_TEMP/Moss_App_Store.mobileprovision"
+          profile_plist="$RUNNER_TEMP/Moss_App_Store.plist"
+
+          printf '%s' "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+
+          security create-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$keychain_path"
+          security import "$certificate_path" -P "$IOS_DISTRIBUTION_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain_path"
+          security list-keychain -d user -s "$keychain_path"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$IOS_KEYCHAIN_PASSWORD" "$keychain_path"
+
+          mkdir -p "$profiles_dir"
+          printf '%s' "$IOS_MOSS_PROFILE_BASE64" | base64 --decode > "$profile_path"
+          security cms -D -i "$profile_path" > "$profile_plist"
+
+          profile_name=$(/usr/libexec/PlistBuddy -c "Print :Name" "$profile_plist")
+          profile_uuid=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$profile_plist")
+
+          if [ "$profile_name" != "Moss App Store" ]; then
+            echo "::error::Expected provisioning profile 'Moss App Store' but secret contains '$profile_name'"
+            exit 1
+          fi
+
+          cp "$profile_path" "$profiles_dir/$profile_uuid.mobileprovision"
+          echo "Installed provisioning profile '$profile_name' as $profile_uuid.mobileprovision"
+
+      - name: Set CURRENT_PROJECT_VERSION to run number
+        run: |
+          perl -0pi -e 's/CURRENT_PROJECT_VERSION: "?[0-9]+"?/CURRENT_PROJECT_VERSION: "${{ github.run_number }}"/' project.yml
+
+      - name: Set DEVELOPMENT_TEAM
+        if: env.APP_STORE_TEAM_ID != ''
+        run: |
+          perl -0pi -e 's/DEVELOPMENT_TEAM: "?[^"\n]+"?/DEVELOPMENT_TEAM: "${{ env.APP_STORE_TEAM_ID }}"/' project.yml
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -project Moss.xcodeproj -scheme "$SCHEME"
+
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Moss.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$ARCHIVE_PATH"
+
+      - name: Validate archived app config
+        run: |
+          app_plist="$ARCHIVE_PATH/Products/Applications/Moss.app/Info.plist"
+          test -f "$app_plist" || (echo "::error::Archived app Info.plist not found" && exit 1)
+
+          supabase_url="$(plutil -extract SUPABASE_URL raw -o - "$app_plist")"
+          supabase_key="$(plutil -extract SUPABASE_ANON_KEY raw -o - "$app_plist")"
+
+          case "$supabase_url" in
+            ""|*\$"("*|*your-project-ref.supabase.co*|*placeholder.supabase.co*)
+              echo "::error::Archived app has missing, unresolved, or placeholder SUPABASE_URL"
+              exit 1
+              ;;
+          esac
+
+          case "$supabase_key" in
+            ""|*\$"("*|*your-anon-key*|*your-supabase-anon-key*)
+              echo "::error::Archived app has missing, unresolved, or placeholder SUPABASE_ANON_KEY"
+              exit 1
+              ;;
+          esac
+
+          test "${#supabase_key}" -gt 40 || (echo "::error::Archived app SUPABASE_ANON_KEY is unexpectedly short" && exit 1)
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$EXPORT_PATH" \
+            -exportOptionsPlist "$EXPORT_OPTIONS"
+
+      - name: Upload to TestFlight
+        run: |
+          shopt -s nullglob
+          ipas=("$EXPORT_PATH"/*.ipa)
+          IPA="${ipas[0]:-}"
+          test -n "$IPA" || (echo "::error::No .ipa produced by export" && exit 1)
+          xcrun altool --upload-app \
+            --file "$IPA" \
+            --type ios \
+            --apiKey "$APP_STORE_KEY_ID" \
+            --apiIssuer "$APP_STORE_ISSUER_ID"
+
+      - name: Upload archive as artifact (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moss-failed-archive
+          path: ${{ env.ARCHIVE_PATH }}
+          retention-days: 7

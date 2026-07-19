@@ -50,6 +50,11 @@ xcodegen generate
 open Moss.xcodeproj
 ```
 
+Pull requests receive an unsigned simulator build, and iOS changes merged to
+`main` are archived and uploaded to TestFlight. See
+[`docs/ci-testflight.md`](docs/ci-testflight.md) for the one-time signing and
+GitHub secrets setup.
+
 Run the site:
 
 ```sh
