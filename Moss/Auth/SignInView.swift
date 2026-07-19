@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 struct SignInView: View {
@@ -6,80 +7,150 @@ struct SignInView: View {
     @State private var password = ""
     @State private var isWorking = false
     @State private var showSignUp = false
-    @State private var showReset = false
+    @State private var showForgotPassword = false
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
-                VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            VStack(spacing: Theme.Spacing.xl) {
+                VStack(spacing: Theme.Spacing.sm) {
+                    Image("MossLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 96, height: 96)
+                        .accessibilityHidden(true)
+
                     Text("Moss")
-                        .font(.largeTitle.bold())
+                        .font(.largeTitle.weight(.bold))
                     Text("Keep every journey in one thoughtful place, from early plans to the memories you bring home.")
+                        .font(.callout)
                         .foregroundStyle(Theme.Colors.textSecondary)
+                        .multilineTextAlignment(.center)
                 }
-                .padding(.top, 48)
+                .padding(.top, Theme.Spacing.xxl)
 
                 VStack(spacing: Theme.Spacing.md) {
                     TextField("Email", text: $email)
                         .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
                         .textContentType(.emailAddress)
+                        .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .padding()
+                        .background(Theme.Colors.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
+
                     SecureField("Password", text: $password)
                         .textContentType(.password)
-                    PrimaryButton(title: "Sign in", systemImage: "arrow.right", isLoading: isWorking) {
-                        Task { await signIn() }
-                    }
-                    Button("Forgot password?") {
-                        showReset = true
-                    }
-                    .font(.footnote)
-                }
-                .textFieldStyle(.roundedBorder)
+                        .submitLabel(.go)
+                        .padding()
+                        .background(Theme.Colors.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
+                        .onSubmit {
+                            guard isFormValid else { return }
+                            Task { await signIn() }
+                        }
 
-                VStack(spacing: Theme.Spacing.sm) {
-                    Button {
-                        services.auth.beginProviderSignIn(providerName: "Apple")
-                    } label: {
-                        Label("Continue with Apple", systemImage: "apple.logo")
-                            .frame(maxWidth: .infinity)
+                    HStack {
+                        Spacer()
+                        Button("Forgot password?") {
+                            showForgotPassword = true
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(Theme.Colors.accent)
                     }
-                    .buttonStyle(.bordered)
-
-                    Button {
-                        services.auth.beginProviderSignIn(providerName: "Google")
-                    } label: {
-                        Label("Continue with Google", systemImage: "globe")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
                 }
 
                 if let message = services.auth.lastError {
                     Text(message)
                         .font(.footnote)
                         .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                VStack(spacing: Theme.Spacing.md) {
+                    PrimaryButton(title: "Sign in", isLoading: isWorking) {
+                        Task { await signIn() }
+                    }
+                    .disabled(!isFormValid || isWorking)
+
+                    HStack {
+                        Rectangle()
+                            .fill(Theme.Colors.separator)
+                            .frame(height: 1)
+                        Text("or")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.Colors.textTertiary)
+                        Rectangle()
+                            .fill(Theme.Colors.separator)
+                            .frame(height: 1)
+                    }
+
+                    AppleSignInButton()
+                        .frame(height: 50)
+                        .disabled(isWorking)
+
+                    SecondaryButton(title: "Continue with Google", assetImage: "GoogleLogo") {
+                        Task { await googleSignIn() }
+                    }
+                    .disabled(isWorking)
                 }
 
                 Button("Create an account") {
                     showSignUp = true
                 }
-                .frame(maxWidth: .infinity)
+                .font(.callout)
+                .padding(.top, Theme.Spacing.sm)
             }
-            .padding(Theme.Spacing.xl)
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.bottom, Theme.Spacing.xxl)
         }
         .background(Theme.Colors.background)
+        .scrollDismissesKeyboard(.interactively)
         .navigationDestination(isPresented: $showSignUp) {
             SignUpView()
         }
-        .sheet(isPresented: $showReset) {
+        .sheet(isPresented: $showForgotPassword) {
             ForgotPasswordSheet(email: email)
+                .presentationDetents([.medium, .large])
         }
     }
 
+    private var isFormValid: Bool {
+        !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !password.isEmpty
+    }
+
     private func signIn() async {
+        guard !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
-        await services.auth.signIn(email: email, password: password)
+        await services.auth.signIn(
+            email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+            password: password
+        )
+    }
+
+    private func googleSignIn() async {
+        guard !isWorking else { return }
+        isWorking = true
+        defer { isWorking = false }
+        await services.auth.signInWithGoogle()
+    }
+}
+
+private struct AppleSignInButton: View {
+    @EnvironmentObject private var services: AppServices
+
+    var body: some View {
+        SignInWithAppleButton(
+            .continue,
+            onRequest: { request in
+                services.auth.beginAppleSignIn(request: request)
+            },
+            onCompletion: { result in
+                Task { await services.auth.completeAppleSignIn(result: result) }
+            }
+        )
+        .signInWithAppleButtonStyle(.black)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
     }
 }

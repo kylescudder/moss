@@ -56,13 +56,15 @@ bun run dev
 
 ## Supabase Auth
 
-Enable Email in Supabase Auth. Apple and Google buttons are present in the native UI, but their native token exchange still needs final provider configuration once the Apple Services ID and Google OAuth client are known.
+Enable Email, Apple, and Google in Supabase Auth. Moss uses Apple's native Authentication Services flow and presents Google OAuth through the secure system authentication session. Provider secrets belong in the Supabase dashboard, never in the app or `Secrets.xcconfig`.
 
 Use this redirect URL:
 
 ```text
 moss://auth-callback
 ```
+
+Add that URL to the Supabase Auth redirect allow list. Configure the native app ID `app.moss` as an accepted Apple client ID. For Google, create a web OAuth client and use Supabase's callback URL (`https://<project-ref>.supabase.co/auth/v1/callback`) as its authorized redirect URI.
 
 ## Subscription
 

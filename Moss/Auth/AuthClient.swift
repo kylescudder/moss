@@ -1,5 +1,8 @@
+import AuthenticationServices
 import Combine
+import CryptoKit
 import Foundation
+import Security
 import Supabase
 
 @MainActor
@@ -16,6 +19,7 @@ final class AuthClient: ObservableObject {
 
     let supabase: SupabaseClient
     private var stateTask: Task<Void, Never>?
+    private var pendingAppleNonce: String?
     private let configurationError = AppSecrets.supabaseConfigurationError
 
     init() {
@@ -163,8 +167,75 @@ final class AuthClient: ObservableObject {
         }
     }
 
-    func beginProviderSignIn(providerName: String) {
-        lastError = "\(providerName) sign-in is scaffolded. Add the provider client IDs in Supabase, then wire the native token exchange in AuthClient."
+    func beginAppleSignIn(request: ASAuthorizationAppleIDRequest) {
+        lastError = nil
+        let nonce = AppleNonce.random()
+        pendingAppleNonce = nonce
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = AppleNonce.sha256(nonce)
+    }
+
+    func completeAppleSignIn(result: Result<ASAuthorization, Error>) async {
+        defer { pendingAppleNonce = nil }
+
+        switch result {
+        case .failure(let error):
+            if (error as? ASAuthorizationError)?.code == .canceled {
+                return
+            }
+            lastError = error.localizedDescription
+            Log.error(error, category: "auth.apple")
+
+        case .success(let authorization):
+            guard ensureSupabaseConfigured(category: "auth.apple.configuration") else { return }
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let tokenData = credential.identityToken,
+                  let token = String(data: tokenData, encoding: .utf8),
+                  let nonce = pendingAppleNonce else {
+                lastError = "Apple did not return a valid identity token."
+                return
+            }
+
+            do {
+                let session = try await supabase.auth.signInWithIdToken(
+                    credentials: .init(provider: .apple, idToken: token, nonce: nonce)
+                )
+                apply(session: session)
+
+                if let firstName = credential.fullName?.givenName?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                   !firstName.isEmpty {
+                    _ = try? await supabase
+                        .from("profiles")
+                        .update(["display_name": firstName])
+                        .eq("id", value: session.user.id.uuidString)
+                        .execute()
+                }
+            } catch {
+                lastError = error.localizedDescription
+                Log.error(error, category: "auth.apple")
+            }
+        }
+    }
+
+    func signInWithGoogle() async {
+        lastError = nil
+        guard ensureSupabaseConfigured(category: "auth.google.configuration") else { return }
+
+        do {
+            let session = try await supabase.auth.signInWithOAuth(
+                provider: .google,
+                redirectTo: AppSecrets.authRedirectURL,
+                scopes: "openid email profile"
+            )
+            apply(session: session)
+        } catch {
+            if (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin {
+                return
+            }
+            lastError = error.localizedDescription
+            Log.error(error, category: "auth.google")
+        }
     }
 
     private func apply(session: Session?) {
@@ -183,9 +254,33 @@ final class AuthClient: ObservableObject {
     }
 }
 
+private enum AppleNonce {
+    private static let characters = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._")
+
+    static func random(length: Int = 32) -> String {
+        var result = ""
+        var randomByte: UInt8 = 0
+
+        while result.count < length {
+            guard SecRandomCopyBytes(kSecRandomDefault, 1, &randomByte) == errSecSuccess else {
+                return UUID().uuidString.replacingOccurrences(of: "-", with: "")
+            }
+            if Int(randomByte) < characters.count {
+                result.append(characters[Int(randomByte)])
+            }
+        }
+        return result
+    }
+
+    static func sha256(_ input: String) -> String {
+        SHA256.hash(data: Data(input.utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
+}
+
 struct AppConfigurationError: LocalizedError {
     let message: String
 
     var errorDescription: String? { message }
 }
-
