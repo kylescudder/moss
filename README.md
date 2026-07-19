@@ -1,5 +1,7 @@
 # Moss
 
+**Travel, together**
+
 Moss is a native iOS travel companion: a calm place to plan upcoming journeys, keep travel details together, and build toward shared trips, places, notes, photos, and memories over time.
 
 - SwiftUI, iOS 17+

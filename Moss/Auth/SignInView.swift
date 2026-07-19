@@ -20,7 +20,7 @@ struct SignInView: View {
 
                     Text("Moss")
                         .font(.largeTitle.weight(.bold))
-                    Text("Keep every journey in one thoughtful place, from early plans to the memories you bring home.")
+                    Text("Travel, together")
                         .font(.callout)
                         .foregroundStyle(Theme.Colors.textSecondary)
                         .multilineTextAlignment(.center)
