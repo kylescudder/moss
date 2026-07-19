@@ -66,7 +66,7 @@ Use this redirect URL:
 moss://auth-callback
 ```
 
-Add that URL to the Supabase Auth redirect allow list. Configure the native app ID `app.moss` as an accepted Apple client ID. For Google, create a web OAuth client and use Supabase's callback URL (`https://<project-ref>.supabase.co/auth/v1/callback`) as its authorized redirect URI.
+Add that URL to the Supabase Auth redirect allow list. Configure the native app ID `app.getmoss.moss` as an accepted Apple client ID. For Google, create a web OAuth client and use Supabase's callback URL (`https://<project-ref>.supabase.co/auth/v1/callback`) as its authorized redirect URI.
 
 ## Subscription
 

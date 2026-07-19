@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["6AAGJ9Y234.app.moss"],
+        "appIDs": ["6AAGJ9Y234.app.getmoss.moss"],
         "components": [
           {
             "/": "/*"

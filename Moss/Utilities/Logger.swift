@@ -2,7 +2,7 @@ import Foundation
 import OSLog
 
 enum Log {
-    private static let subsystem = Bundle.main.bundleIdentifier ?? "app.moss"
+    private static let subsystem = Bundle.main.bundleIdentifier ?? "app.getmoss.moss"
 
     private static func logger(_ category: String) -> Logger {
         Logger(subsystem: subsystem, category: category)
