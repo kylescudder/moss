@@ -45,50 +45,6 @@
         "enabled" : true,
         "value" : 0.06
       }
-    },
-    {
-      "layers" : [
-        {
-          "fill" : "none",
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "moss-shade.svg",
-          "name" : "Moss shade"
-        }
-      ],
-      "blur" : 0,
-      "lighting" : "individual",
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 0.18
-      },
-      "specular" : true,
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.1
-      }
-    },
-    {
-      "layers" : [
-        {
-          "fill" : "none",
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "moss-light.svg",
-          "name" : "Moss light"
-        }
-      ],
-      "blur" : 0,
-      "lighting" : "individual",
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 0.16
-      },
-      "specular" : true,
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.12
-      }
     }
   ],
   "supported-platforms" : {
