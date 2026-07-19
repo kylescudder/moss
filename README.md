@@ -78,7 +78,7 @@ Create the matching auto-renewable subscription in App Store Connect before Test
 
 ## App Icon
 
-The editable Liquid Glass source is `Moss/AppIcon.icon`. Open it with Xcode's **Open Developer Tool → Icon Composer** to preview the default, dark, clear, and tinted appearances and tune the live material effects. The source uses three SVG groups—an abstract journey-shaped “M”, waypoints, and a leaf destination—so iOS can render independent depth, refraction, shadow, and motion-responsive specular highlights.
+The editable Liquid Glass source is `Moss/AppIcon.icon`. Open it with Xcode's **Open Developer Tool → Icon Composer** to preview the default, dark, clear, and tinted appearances and tune the live material effects. The mark is a deliberately simple moss-ball silhouette with three broad tonal fields, so it remains legible from a 16-point favicon to large-format artwork. Its SVG groups stay independent so iOS can render depth, refraction, shadow, and motion-responsive specular highlights without baking those effects into the core logo.
 
 ## Backend Layout
 

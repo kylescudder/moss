@@ -4,8 +4,8 @@
     {
       "value" : {
         "linear-gradient" : [
-          "display-p3:0.25882,0.52941,0.33333,1.00000",
-          "display-p3:0.05098,0.21176,0.13725,1.00000"
+          "display-p3:0.96863,0.94510,0.84314,1.00000",
+          "display-p3:0.76863,0.84314,0.70196,1.00000"
         ]
       }
     },
@@ -13,8 +13,8 @@
       "appearance" : "dark",
       "value" : {
         "linear-gradient" : [
-          "display-p3:0.01961,0.09020,0.07059,1.00000",
-          "display-p3:0.07451,0.25490,0.15686,1.00000"
+          "display-p3:0.02745,0.07451,0.05882,1.00000",
+          "display-p3:0.09020,0.16078,0.11373,1.00000"
         ]
       }
     },
@@ -30,37 +30,15 @@
           "fill" : "none",
           "glass" : true,
           "hidden" : false,
-          "image-name" : "journey-mark.svg",
-          "name" : "Journey M"
+          "image-name" : "moss-ball.svg",
+          "name" : "Moss ball"
         }
       ],
       "blur" : 0,
       "lighting" : "individual",
       "shadow" : {
         "kind" : "layer-color",
-        "opacity" : 0.3
-      },
-      "specular" : true,
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.1
-      }
-    },
-    {
-      "layers" : [
-        {
-          "fill" : "none",
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "waypoints.svg",
-          "name" : "Waypoints"
-        }
-      ],
-      "blur" : 0,
-      "lighting" : "individual",
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.36
+        "opacity" : 0.42
       },
       "specular" : true,
       "translucency" : {
@@ -74,20 +52,42 @@
           "fill" : "none",
           "glass" : true,
           "hidden" : false,
-          "image-name" : "leaf-destination.svg",
-          "name" : "Leaf destination"
+          "image-name" : "moss-shade.svg",
+          "name" : "Moss shade"
         }
       ],
       "blur" : 0,
       "lighting" : "individual",
       "shadow" : {
         "kind" : "layer-color",
-        "opacity" : 0.38
+        "opacity" : 0.18
       },
       "specular" : true,
       "translucency" : {
         "enabled" : true,
-        "value" : 0.08
+        "value" : 0.1
+      }
+    },
+    {
+      "layers" : [
+        {
+          "fill" : "none",
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "moss-light.svg",
+          "name" : "Moss light"
+        }
+      ],
+      "blur" : 0,
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.16
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.12
       }
     }
   ],
