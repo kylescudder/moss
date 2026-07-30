@@ -3,81 +3,168 @@ import SwiftUI
 struct SubscriptionPaywallView: View {
     @EnvironmentObject private var services: AppServices
     @Environment(\.dismiss) private var dismiss
+
     @State private var isPurchasing = false
+    @State private var isRestoring = false
+    @State private var tripCount: Int?
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
-                VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                    Text("Moss Supporter")
-                        .font(.largeTitle.bold())
-                    Text("Keep more journeys, notes, and shared plans together as Moss grows with every trip.")
-                        .foregroundStyle(Theme.Colors.textSecondary)
-                }
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(spacing: Theme.Spacing.xl) {
+                        Spacer(minLength: Theme.Spacing.lg)
 
-                VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                    PaywallRow(systemImage: "suitcase.fill", title: "Unlimited journeys")
-                    PaywallRow(systemImage: "person.2.fill", title: "Ready for shared planning")
-                    PaywallRow(systemImage: "bell.badge.fill", title: "Gentle reminders while you travel")
-                }
+                        Image("MossBallLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 78, height: 78)
 
-                Spacer()
+                        VStack(spacing: Theme.Spacing.sm) {
+                            Text("Keep planning your journeys")
+                                .font(.title2.weight(.semibold))
+                                .multilineTextAlignment(.center)
+                            Text("Your first \(AppServices.freeTripLimit) trips are free. Subscribe to keep unlimited journeys, notes, and shared plans together.")
+                                .font(.body)
+                                .foregroundStyle(Theme.Colors.textSecondary)
+                                .multilineTextAlignment(.center)
+                        }
 
-                PrimaryButton(
-                    title: subscribeButtonTitle,
-                    systemImage: "sparkles",
-                    isLoading: isPurchasing
-                ) {
-                    Task { await purchase() }
-                }
+                        VStack(spacing: Theme.Spacing.sm) {
+                            PrimaryButton(
+                                title: subscribeTitle,
+                                systemImage: "checkmark.seal.fill",
+                                isLoading: isPurchasing,
+                                action: { Task { await subscribe() } }
+                            )
+                            .disabled(isPurchasing || services.billing.subscriptionProduct == nil)
 
-                Button("Restore purchases") {
-                    Task { _ = await services.billing.restorePurchases() }
-                }
-                .frame(maxWidth: .infinity)
+                            Button {
+                                Task { await restore() }
+                            } label: {
+                                if isRestoring {
+                                    ProgressView()
+                                } else {
+                                    Text("Restore purchases")
+                                }
+                            }
+                            .disabled(isRestoring || isPurchasing)
+                        }
 
-                if let message = services.billing.lastError {
-                    Text(message)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
+                        if services.billing.isLoadingProducts {
+                            ProgressView()
+                        } else if services.billing.subscriptionProduct == nil {
+                            Text("Subscription details are unavailable. Try again later.")
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                                .multilineTextAlignment(.center)
+                        } else if let message = services.billing.lastError {
+                            Text(message)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                                .multilineTextAlignment(.center)
+                        }
+
+                        if let tripCount {
+                            Text("\(tripCount) \(tripCount == 1 ? "trip" : "trips") created")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.Colors.textTertiary)
+                        }
+
+                        subscriptionDisclosure
+
+                        Spacer(minLength: Theme.Spacing.lg)
+                    }
+                    .padding(Theme.Spacing.xl)
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
                 }
+                .scrollBounceBehavior(.basedOnSize)
+                .background(Theme.Colors.background)
             }
-            .padding(Theme.Spacing.xl)
-            .navigationTitle("Upgrade")
+            .navigationTitle("Supporter Monthly")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Not now") { dismiss() }
                 }
             }
             .task {
                 await services.billing.loadProducts()
+                await services.billing.syncEntitlements()
+                await loadCount()
+                if services.billing.isSubscribed {
+                    dismiss()
+                }
+            }
+            .onChange(of: services.billing.isSubscribed) { _, subscribed in
+                if subscribed { dismiss() }
             }
         }
     }
 
-    private var subscribeButtonTitle: String {
-        if let displayPrice = services.billing.subscriptionProduct?.displayPrice {
-            return "Subscribe for \(displayPrice)"
+    private var subscribeTitle: String {
+        guard let product = services.billing.subscriptionProduct else {
+            return "Subscribe"
         }
-        return "Subscribe"
+        return "Subscribe \(product.displayPrice) / month"
     }
 
-    private func purchase() async {
+    @ViewBuilder
+    private var subscriptionDisclosure: some View {
+        VStack(spacing: Theme.Spacing.xs) {
+            Text("Supporter Monthly")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.Colors.textSecondary)
+            Text(subscriptionDetailText)
+                .font(.footnote)
+                .foregroundStyle(Theme.Colors.textTertiary)
+                .multilineTextAlignment(.center)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Theme.Spacing.sm) {
+                    Link("Privacy Policy", destination: Self.privacyPolicyURL)
+                    Text("•")
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                    Link("Terms of Use", destination: Self.termsOfUseURL)
+                }
+                .fixedSize(horizontal: true, vertical: false)
+
+                VStack(spacing: Theme.Spacing.xs) {
+                    Link("Privacy Policy", destination: Self.privacyPolicyURL)
+                    Link("Terms of Use", destination: Self.termsOfUseURL)
+                }
+            }
+            .font(.footnote.weight(.semibold))
+        }
+        .padding(.top, Theme.Spacing.sm)
+    }
+
+    private var subscriptionDetailText: String {
+        guard let product = services.billing.subscriptionProduct else {
+            return "Monthly auto-renewable subscription. Payment is charged to your Apple ID after purchase confirmation."
+        }
+        return "Monthly auto-renewable subscription: \(product.displayPrice) per month. Payment is charged to your Apple ID after purchase confirmation."
+    }
+
+    private static let privacyPolicyURL = URL(string: "https://getmoss.app/privacy")!
+    private static let termsOfUseURL = URL(string: "https://getmoss.app/terms")!
+
+    private func subscribe() async {
         isPurchasing = true
         defer { isPurchasing = false }
         if await services.billing.purchase() {
             dismiss()
         }
     }
-}
 
-private struct PaywallRow: View {
-    let systemImage: String
-    let title: String
+    private func restore() async {
+        isRestoring = true
+        defer { isRestoring = false }
+        if await services.billing.restorePurchases() {
+            dismiss()
+        }
+    }
 
-    var body: some View {
-        Label(title, systemImage: systemImage)
-            .font(.headline)
+    private func loadCount() async {
+        tripCount = await services.trips.activeTripCount()
     }
 }
