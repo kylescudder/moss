@@ -15,10 +15,11 @@ struct SubscriptionPaywallView: View {
                     VStack(spacing: Theme.Spacing.xl) {
                         Spacer(minLength: Theme.Spacing.lg)
 
-                        Image("MossBallLogo")
+                        Image("AppLogoIcon")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 78, height: 78)
+                            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
 
                         VStack(spacing: Theme.Spacing.sm) {
                             Text("Keep planning your trips")
