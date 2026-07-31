@@ -46,7 +46,6 @@ final class BillingRepository: ObservableObject {
         do {
             let products = try await Product.products(for: [Self.supporterMonthlyProductID])
             subscriptionProduct = products.first
-            lastError = nil
         } catch {
             lastError = error.localizedDescription
             Log.error(error, category: "billing.products")
