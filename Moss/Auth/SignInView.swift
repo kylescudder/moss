@@ -12,7 +12,7 @@ struct SignInView: View {
         ScrollView {
             VStack(spacing: Theme.Spacing.xl) {
                 VStack(spacing: Theme.Spacing.sm) {
-                    Image("MossBallLogo")
+                    Image("AppLogoIcon")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 96, height: 96)
