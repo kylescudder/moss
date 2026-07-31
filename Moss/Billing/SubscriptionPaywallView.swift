@@ -37,7 +37,7 @@ struct SubscriptionPaywallView: View {
                                 isLoading: isPurchasing,
                                 action: { Task { await subscribe() } }
                             )
-                            .disabled(isPurchasing || services.billing.subscriptionProduct == nil)
+                            .disabled(services.billing.isLoadingProducts)
 
                             Button {
                                 Task { await restore() }
@@ -54,7 +54,7 @@ struct SubscriptionPaywallView: View {
                         if services.billing.isLoadingProducts {
                             ProgressView()
                         } else if services.billing.subscriptionProduct == nil {
-                            Text("Subscription details are unavailable. Try again later.")
+                            Text("Subscription details are unavailable. Tap Subscribe to try again.")
                                 .font(.footnote)
                                 .foregroundStyle(.red)
                                 .multilineTextAlignment(.center)
