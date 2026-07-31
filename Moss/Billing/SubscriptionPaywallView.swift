@@ -21,10 +21,10 @@ struct SubscriptionPaywallView: View {
                             .frame(width: 78, height: 78)
 
                         VStack(spacing: Theme.Spacing.sm) {
-                            Text("Keep planning your journeys")
+                            Text("Keep planning your trips")
                                 .font(.title2.weight(.semibold))
                                 .multilineTextAlignment(.center)
-                            Text("Your first \(AppServices.freeTripLimit) trips are free. Subscribe to keep unlimited journeys, notes, and shared plans together.")
+                            Text("Your first \(AppServices.freeTripLimit) trips are free. Subscribe to create unlimited trips, notes, and shared plans.")
                                 .font(.body)
                                 .foregroundStyle(Theme.Colors.textSecondary)
                                 .multilineTextAlignment(.center)
