@@ -40,6 +40,7 @@ final class BillingRepository: ObservableObject {
     }
 
     func loadProducts() async {
+        lastError = nil
         isLoadingProducts = true
         defer { isLoadingProducts = false }
         do {
@@ -186,4 +187,3 @@ private extension Transaction {
         return true
     }
 }
-
