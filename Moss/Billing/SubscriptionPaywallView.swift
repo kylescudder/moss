@@ -38,7 +38,10 @@ struct SubscriptionPaywallView: View {
                                 isLoading: isPurchasing,
                                 action: { Task { await subscribe() } }
                             )
-                            .disabled(services.billing.isLoadingProducts)
+                            .disabled(
+                                services.billing.isLoadingProducts
+                                    && services.billing.subscriptionProduct == nil
+                            )
 
                             Button {
                                 Task { await restore() }
