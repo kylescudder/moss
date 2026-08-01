@@ -66,7 +66,7 @@ struct SettingsView: View {
             } header: {
                 Text("Subscription")
             } footer: {
-                Text("Free accounts can create \(AppServices.freeTripLimit) trips over the lifetime of the account. Trips created while subscribed also count toward lifetime usage, and deleting a trip does not restore a free creation.")
+                Text("Free accounts can create \(AppServices.freeTripCreationLimit) trips over the lifetime of the account. Trips created while subscribed also count toward lifetime usage, and deleting a trip does not restore a free creation.")
             }
 
             Section("Account") {

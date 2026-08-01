@@ -6,7 +6,7 @@ struct SubscriptionPaywallView: View {
 
     @State private var isPurchasing = false
     @State private var isRestoring = false
-    @State private var tripCount: Int?
+    @State private var createdTripCount: Int?
 
     var body: some View {
         NavigationStack {
@@ -25,7 +25,7 @@ struct SubscriptionPaywallView: View {
                             Text("Keep planning your trips")
                                 .font(.title2.weight(.semibold))
                                 .multilineTextAlignment(.center)
-                            Text("Create \(AppServices.freeTripLimit) trips free over the lifetime of your account. Deleting a trip doesn't restore a free creation. Subscribe for unlimited trip creation while your subscription is active.")
+                            Text("Create \(AppServices.freeTripCreationLimit) trips free over the lifetime of your account. Deleting a trip doesn't restore a free creation. Subscribe for unlimited trip creation while your subscription is active.")
                                 .font(.body)
                                 .foregroundStyle(Theme.Colors.textSecondary)
                                 .multilineTextAlignment(.center)
@@ -73,8 +73,8 @@ struct SubscriptionPaywallView: View {
                                 .multilineTextAlignment(.center)
                         }
 
-                        if let tripCount {
-                            Text(tripUsageText(tripCount))
+                        if let createdTripCount {
+                            Text(tripUsageText(createdTripCount))
                                 .font(.footnote)
                                 .foregroundStyle(Theme.Colors.textTertiary)
                         }
@@ -195,12 +195,12 @@ struct SubscriptionPaywallView: View {
     }
 
     private func loadCount() async {
-        tripCount = try? await services.trips.lifetimeTripCount()
+        createdTripCount = try? await services.trips.lifetimeTripCount()
     }
 
     private func tripUsageText(_ count: Int) -> String {
-        if count <= AppServices.freeTripLimit {
-            return "\(count) of \(AppServices.freeTripLimit) lifetime free trip creations used"
+        if count <= AppServices.freeTripCreationLimit {
+            return "\(count) of \(AppServices.freeTripCreationLimit) lifetime free trip creations used"
         }
         return "\(count) lifetime trip creations used"
     }

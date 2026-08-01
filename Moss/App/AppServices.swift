@@ -3,7 +3,7 @@ import Foundation
 
 @MainActor
 final class AppServices: ObservableObject {
-    static let freeTripLimit = 2
+    static let freeTripCreationLimit = 2
 
     let auth: AuthClient
     let billing: BillingRepository
