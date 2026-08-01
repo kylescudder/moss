@@ -39,8 +39,9 @@ struct SubscriptionPaywallView: View {
                                 action: { Task { await subscribe() } }
                             )
                             .disabled(
-                                services.billing.isLoadingProducts
-                                    && services.billing.subscriptionProduct == nil
+                                isRestoring
+                                    || (services.billing.isLoadingProducts
+                                        && services.billing.subscriptionProduct == nil)
                             )
 
                             Button {
