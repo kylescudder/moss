@@ -3,6 +3,7 @@ import Supabase
 import XCTest
 @testable import Moss
 
+@MainActor
 final class SubscriptionQuotaTests: XCTestCase {
     func testCreationStatusDecodesAuthoritativeLifetimeUsage() throws {
         let status = try JSONDecoder().decode(
