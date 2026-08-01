@@ -6,7 +6,7 @@ struct SubscriptionPaywallView: View {
 
     @State private var isPurchasing = false
     @State private var isRestoring = false
-    @State private var tripCount: Int?
+    @State private var createdTripCount: Int?
 
     var body: some View {
         NavigationStack {
@@ -25,7 +25,7 @@ struct SubscriptionPaywallView: View {
                             Text("Keep planning your trips")
                                 .font(.title2.weight(.semibold))
                                 .multilineTextAlignment(.center)
-                            Text("Your first \(AppServices.freeTripLimit) trips are free. Subscribe to create unlimited trips, notes, and shared plans.")
+                            Text("Free accounts can create \(AppServices.freeTripCreationLimit) trips in total. Subscribe to create unlimited trips, notes, and shared plans. Deleted trips still count toward the free limit.")
                                 .font(.body)
                                 .foregroundStyle(Theme.Colors.textSecondary)
                                 .multilineTextAlignment(.center)
@@ -70,8 +70,8 @@ struct SubscriptionPaywallView: View {
                                 .multilineTextAlignment(.center)
                         }
 
-                        if let tripCount {
-                            Text("\(tripCount) \(tripCount == 1 ? "trip" : "trips") created")
+                        if let createdTripCount {
+                            Text("Total trips created: \(createdTripCount)")
                                 .font(.footnote)
                                 .foregroundStyle(Theme.Colors.textTertiary)
                         }
@@ -170,6 +170,6 @@ struct SubscriptionPaywallView: View {
     }
 
     private func loadCount() async {
-        tripCount = await services.trips.activeTripCount()
+        createdTripCount = await services.trips.createdTripCount()
     }
 }

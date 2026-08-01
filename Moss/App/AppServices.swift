@@ -3,7 +3,7 @@ import Foundation
 
 @MainActor
 final class AppServices: ObservableObject {
-    static let freeTripLimit = 2
+    static let freeTripCreationLimit = 2
 
     let auth: AuthClient
     let billing: BillingRepository
@@ -61,7 +61,7 @@ final class AppServices: ObservableObject {
 
     func canCreateTrip() async -> Bool {
         guard !billing.isSubscribed else { return true }
-        return await trips.activeTripCount() < Self.freeTripLimit
+        guard let createdTripCount = await trips.createdTripCount() else { return false }
+        return createdTripCount < Self.freeTripCreationLimit
     }
 }
-

@@ -58,7 +58,7 @@ struct SettingsView: View {
             } header: {
                 Text("Subscription")
             } footer: {
-                Text("Free accounts can keep up to \(AppServices.freeTripLimit) trips.")
+                Text("Free accounts can create \(AppServices.freeTripCreationLimit) trips in total. Deleted trips still count toward this limit.")
             }
 
             Section("Account") {
