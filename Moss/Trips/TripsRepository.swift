@@ -37,11 +37,22 @@ final class TripsRepository: ObservableObject {
         }
     }
 
-    func activeTripCount() async -> Int {
-        if trips.isEmpty {
-            await refresh()
+    func createdTripCount() async -> Int? {
+        guard let userID = auth.currentUserID else { return nil }
+        do {
+            // Deleted trips still consume the account's lifetime free allowance.
+            let createdTrips: [TripIdentifier] = try await auth.supabase
+                .from("trips")
+                .select("id")
+                .eq("owner_id", value: userID.uuidString)
+                .execute()
+                .value
+            return createdTrips.count
+        } catch {
+            lastError = error.localizedDescription
+            Log.error(error, category: "trips.createdCount")
+            return nil
         }
-        return trips.count
     }
 
     func create(_ draft: TripDraft) async -> Trip? {
@@ -113,6 +124,10 @@ final class TripsRepository: ObservableObject {
     }
 }
 
+private struct TripIdentifier: Decodable {
+    let id: UUID
+}
+
 private struct TripInsert: Encodable {
     let ownerID: UUID
     let title: String
@@ -146,4 +161,3 @@ private struct TripUpdate: Encodable {
         case notes
     }
 }
-
