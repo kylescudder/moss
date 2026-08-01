@@ -1,60 +1,24 @@
 // Supabase Edge Function: iap-app-store-notifications
 //
-// Endpoint for App Store Server Notifications V2. It decodes the notification
-// payload and mirrors subscription state into public.iap_entitlements.
-//
-// Required Edge Function secrets:
-//   SUPABASE_SERVICE_ROLE_KEY
-//   SUPABASE_URL
+// Verifies App Store Server Notifications V2 and the nested transaction JWS
+// with Apple's server library before updating public.iap_entitlements.
+// Required/optional secrets match iap-sync-transaction.
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  assertTransactionClaims,
+  dateFromMillis,
+  IAPVerificationError,
+  verifyNotification,
+} from "../_shared/apple-iap.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PRODUCT_ID = "app.moss.supporter.monthly";
-
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
 interface NotificationRequest {
   signedPayload: string;
-}
-
-interface AppleNotificationPayload {
-  notificationType?: string;
-  subtype?: string;
-  data?: {
-    signedTransactionInfo?: string;
-  };
-}
-
-interface AppleTransaction {
-  appAccountToken?: string;
-  productId?: string;
-  originalTransactionId?: string;
-  transactionId?: string;
-  expiresDate?: number | string;
-  revocationDate?: number | string;
-  environment?: string;
-}
-
-function decodeJWS<T>(jws: string): T {
-  const [, payload] = jws.split(".");
-  if (!payload) throw new Error("Invalid JWS");
-  const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  return JSON.parse(
-    new TextDecoder().decode(
-      Uint8Array.from(atob(padded), (c) => c.charCodeAt(0)),
-    ),
-  );
-}
-
-function dateFromMillis(value?: number | string): string | null {
-  if (value == null) return null;
-  const numeric = typeof value === "string" ? Number(value) : value;
-  if (!Number.isFinite(numeric)) return null;
-  return new Date(numeric).toISOString();
 }
 
 function statusFor(
@@ -66,35 +30,15 @@ function statusFor(
     revokedAt ||
     notificationType === "REFUND" ||
     notificationType === "REVOKE"
-  )
+  ) {
     return "revoked";
+  }
   if (notificationType === "EXPIRED") return "expired";
-  if (expiresAt && new Date(expiresAt).getTime() <= Date.now())
+  if (expiresAt && new Date(expiresAt).getTime() <= Date.now()) {
     return "expired";
+  }
   if (notificationType == null) return "unknown";
   return "active";
-}
-
-async function updateByOriginalTransactionID(
-  tx: AppleTransaction,
-  status: string,
-  expiresAt: string | null,
-  revokedAt: string | null,
-) {
-  if (!tx.originalTransactionId) return;
-  const { error } = await supabase
-    .from("iap_entitlements")
-    .update({
-      product_id: tx.productId ?? PRODUCT_ID,
-      transaction_id: tx.transactionId ?? null,
-      status,
-      expires_at: expiresAt,
-      revoked_at: revokedAt,
-      environment: tx.environment ?? null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("original_transaction_id", tx.originalTransactionId);
-  if (error) throw error;
 }
 
 serve(async (req) => {
@@ -104,49 +48,67 @@ serve(async (req) => {
     }
 
     const body = (await req.json()) as NotificationRequest;
-    const notification = decodeJWS<AppleNotificationPayload>(
-      body.signedPayload,
-    );
+    if (!body.signedPayload) {
+      throw new IAPVerificationError("Missing signed notification.");
+    }
+
+    const verifiedNotification = await verifyNotification(body.signedPayload);
+    const notification = verifiedNotification.payload;
     const signedTransactionInfo = notification.data?.signedTransactionInfo;
-    if (!signedTransactionInfo)
-      return new Response("no transaction", { status: 200 });
+    if (!signedTransactionInfo) {
+      return Response.json({ confirmed: true, result: "no transaction" });
+    }
 
-    const tx = decodeJWS<AppleTransaction>(signedTransactionInfo);
-    if (tx.productId !== PRODUCT_ID)
-      return new Response("ignored product", { status: 200 });
+    const transaction = await verifiedNotification.verifier
+      .verifyAndDecodeTransaction(signedTransactionInfo);
+    assertTransactionClaims(transaction, verifiedNotification.environment);
 
-    const expiresAt = dateFromMillis(tx.expiresDate);
-    const revokedAt = dateFromMillis(tx.revocationDate);
+    const expiresAt = dateFromMillis(transaction.expiresDate);
+    const revokedAt = dateFromMillis(transaction.revocationDate);
     const status = statusFor(
       notification.notificationType,
       expiresAt,
       revokedAt,
     );
 
-    if (tx.appAccountToken) {
+    const values = {
+      product_id: transaction.productId,
+      transaction_id: transaction.transactionId ?? null,
+      status,
+      expires_at: expiresAt,
+      revoked_at: revokedAt,
+      environment: verifiedNotification.environment,
+      last_signed_transaction: signedTransactionInfo,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (transaction.appAccountToken) {
       const { error } = await supabase.from("iap_entitlements").upsert(
         {
-          user_id: tx.appAccountToken.toLowerCase(),
-          product_id: tx.productId,
-          original_transaction_id: tx.originalTransactionId ?? null,
-          transaction_id: tx.transactionId ?? null,
-          status,
-          expires_at: expiresAt,
-          revoked_at: revokedAt,
-          environment: tx.environment ?? null,
-          last_signed_transaction: signedTransactionInfo,
-          updated_at: new Date().toISOString(),
+          user_id: transaction.appAccountToken.toLowerCase(),
+          original_transaction_id: transaction.originalTransactionId ?? null,
+          ...values,
         },
         { onConflict: "user_id,product_id" },
       );
       if (error) throw error;
+    } else if (transaction.originalTransactionId) {
+      const { error } = await supabase
+        .from("iap_entitlements")
+        .update(values)
+        .eq("original_transaction_id", transaction.originalTransactionId);
+      if (error) throw error;
     } else {
-      await updateByOriginalTransactionID(tx, status, expiresAt, revokedAt);
+      throw new IAPVerificationError(
+        "Verified transaction has no account or original transaction identifier.",
+      );
     }
 
-    return new Response("ok", { status: 200 });
-  } catch (e) {
-    console.error(e);
-    return new Response(String(e), { status: 500 });
+    return Response.json({ confirmed: true, status });
+  } catch (error) {
+    console.error(error);
+    const status = error instanceof IAPVerificationError ? error.status : 500;
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return Response.json({ confirmed: false, error: message }, { status });
   }
 });

@@ -25,7 +25,7 @@ struct SubscriptionPaywallView: View {
                             Text("Keep planning your trips")
                                 .font(.title2.weight(.semibold))
                                 .multilineTextAlignment(.center)
-                            Text("Your first \(AppServices.freeTripLimit) trips are free. Subscribe to create unlimited trips, notes, and shared plans.")
+                            Text("Create \(AppServices.freeTripLimit) trips free over the lifetime of your account. Deleting a trip doesn't restore a free creation. Subscribe for unlimited trip creation while your subscription is active.")
                                 .font(.body)
                                 .foregroundStyle(Theme.Colors.textSecondary)
                                 .multilineTextAlignment(.center)
@@ -40,6 +40,7 @@ struct SubscriptionPaywallView: View {
                             )
                             .disabled(
                                 isRestoring
+                                    || services.billing.hasStoreKitEntitlement
                                     || (services.billing.isLoadingProducts
                                         && services.billing.subscriptionProduct == nil)
                             )
@@ -56,6 +57,8 @@ struct SubscriptionPaywallView: View {
                             .disabled(isRestoring || isPurchasing)
                         }
 
+                        entitlementVerificationStatus
+
                         if services.billing.isLoadingProducts {
                             ProgressView()
                         } else if services.billing.subscriptionProduct == nil {
@@ -71,7 +74,7 @@ struct SubscriptionPaywallView: View {
                         }
 
                         if let tripCount {
-                            Text("\(tripCount) \(tripCount == 1 ? "trip" : "trips") created")
+                            Text(tripUsageText(tripCount))
                                 .font(.footnote)
                                 .foregroundStyle(Theme.Colors.textTertiary)
                         }
@@ -115,6 +118,28 @@ struct SubscriptionPaywallView: View {
     }
 
     @ViewBuilder
+    private var entitlementVerificationStatus: some View {
+        switch services.billing.entitlementVerificationState {
+        case .verifying:
+            ProgressView("Confirming your subscription with Moss…")
+                .font(.footnote)
+        case .verificationFailed(let message):
+            VStack(spacing: Theme.Spacing.xs) {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                    .multilineTextAlignment(.center)
+                Button("Retry verification") {
+                    Task { await services.billing.retryEntitlementVerification() }
+                }
+                .font(.footnote.weight(.semibold))
+            }
+        case .notSubscribed, .verified:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
     private var subscriptionDisclosure: some View {
         VStack(spacing: Theme.Spacing.xs) {
             Text("Supporter Monthly")
@@ -145,9 +170,9 @@ struct SubscriptionPaywallView: View {
 
     private var subscriptionDetailText: String {
         guard let product = services.billing.subscriptionProduct else {
-            return "Monthly auto-renewable subscription. Payment is charged to your Apple ID after purchase confirmation."
+            return "Monthly auto-renewable subscription. Payment is charged to your Apple ID after purchase confirmation. Paid trip creation begins after Moss securely verifies the transaction with Apple."
         }
-        return "Monthly auto-renewable subscription: \(product.displayPrice) per month. Payment is charged to your Apple ID after purchase confirmation."
+        return "Monthly auto-renewable subscription: \(product.displayPrice) per month. Payment is charged to your Apple ID after purchase confirmation. Paid trip creation begins after Moss securely verifies the transaction with Apple."
     }
 
     private static let privacyPolicyURL = URL(string: "https://getmoss.app/privacy")!
@@ -170,6 +195,13 @@ struct SubscriptionPaywallView: View {
     }
 
     private func loadCount() async {
-        tripCount = await services.trips.activeTripCount()
+        tripCount = try? await services.trips.lifetimeTripCount()
+    }
+
+    private func tripUsageText(_ count: Int) -> String {
+        if count <= AppServices.freeTripLimit {
+            return "\(count) of \(AppServices.freeTripLimit) lifetime free trip creations used"
+        }
+        return "\(count) lifetime trip creations used"
     }
 }

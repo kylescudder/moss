@@ -32,6 +32,9 @@ schemes:
       config: Debug
       executable: Moss
       storeKitConfiguration: Moss/Resources/StoreKit/Moss.storekit
+    test:
+      targets:
+        - MossTests
 
 targets:
   Moss:
@@ -96,3 +99,14 @@ targets:
         product: Supabase
       - package: Sentry
         product: Sentry
+
+  MossTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: MossTests
+    dependencies:
+      - target: Moss
+      - package: Supabase
+        product: Supabase

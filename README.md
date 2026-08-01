@@ -83,6 +83,24 @@ app.moss.supporter.monthly
 
 Create the matching auto-renewable subscription in App Store Connect before TestFlight/App Store builds. The local StoreKit config lets simulator builds exercise the purchase flow.
 
+Free accounts receive two trip creations over the lifetime of the account. Every
+committed creation increments that usage, including trips created while a
+subscription is active; deleting a trip does not restore a free creation.
+
+The Edge Functions verify StoreKit 2 transaction and notification JWS payloads
+with Apple's App Store Server Library before updating the database entitlement.
+Configure these additional Edge Function secrets:
+
+```text
+APPLE_APP_ID=<numeric App Store Connect app ID>
+APPLE_BUNDLE_ID=app.getmoss.moss
+APPLE_IAP_ENVIRONMENTS=Production,Sandbox
+```
+
+`APPLE_BUNDLE_ID` and `APPLE_IAP_ENVIRONMENTS` have the displayed defaults.
+Production verification requires `APPLE_APP_ID`. Xcode-local StoreKit
+transactions are intentionally not accepted by the production mirror.
+
 ## App Icon
 
 The editable Liquid Glass source is `Moss/AppIcon.icon`. Open it with Xcode's **Open Developer Tool → Icon Composer** to preview the default, dark, clear, and tinted appearances and tune the live material effects. The mark is a deliberately simple moss-ball silhouette with one broad highlight, so it remains legible from a 16-point favicon to large-format artwork. The same canonical SVG construction is used by the app icon, in-app logo, and website mark; Icon Composer adds depth, refraction, shadow, and motion-responsive specular highlights without changing the identity itself.
@@ -100,7 +118,20 @@ supabase/
     iap-sync-transaction/
 ```
 
-The IAP functions mirror decoded App Store transaction state into Supabase. Configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as Edge Function secrets before deploying them.
+The IAP functions mirror verified App Store transaction state into Supabase.
+Configure `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the Apple values above
+as Edge Function secrets before deploying them.
+
+Run backend checks with:
+
+```sh
+deno test --config supabase/functions/deno.json --allow-env \
+  supabase/functions/_shared/apple-iap.test.ts
+supabase test db
+```
+
+The database suite includes a two-connection concurrency test and requires the
+local Supabase stack's `pgtap` and `dblink` extensions.
 
 ## App Layout
 

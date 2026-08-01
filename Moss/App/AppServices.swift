@@ -59,9 +59,19 @@ final class AppServices: ObservableObject {
         await notifications.registerIfAuthorized()
     }
 
-    func canCreateTrip() async -> Bool {
-        guard !billing.isSubscribed else { return true }
-        return await trips.activeTripCount() < Self.freeTripLimit
+    func canCreateTrip() async -> TripCreationAvailability {
+        do {
+            let status = try await trips.creationStatus()
+            return status.canCreateTrip ? .available : .limitReached
+        } catch {
+            Log.error(error, category: "trips.creationStatus")
+            return .unavailable("Moss couldn't check your trip allowance. Check your connection and try again.")
+        }
     }
 }
 
+enum TripCreationAvailability: Equatable {
+    case available
+    case limitReached
+    case unavailable(String)
+}

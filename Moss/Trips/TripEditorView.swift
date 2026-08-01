@@ -5,6 +5,8 @@ struct TripEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft = TripDraft()
     @State private var isSaving = false
+    @State private var saveError: String?
+    @State private var showPaywall = false
 
     var body: some View {
         NavigationStack {
@@ -21,7 +23,7 @@ struct TripEditorView: View {
                         .frame(minHeight: 120)
                 }
 
-                if let message = services.trips.lastError {
+                if let message = saveError {
                     Section {
                         Text(message)
                             .foregroundStyle(.red)
@@ -42,14 +44,24 @@ struct TripEditorView: View {
                 }
             }
         }
+        .sheet(isPresented: $showPaywall) {
+            SubscriptionPaywallView()
+        }
     }
 
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        if await services.trips.create(draft) != nil {
+        saveError = nil
+
+        switch await services.trips.create(draft) {
+        case .success:
             dismiss()
+        case .failure(.quotaReached):
+            saveError = TripCreationError.quotaReached.errorDescription
+            showPaywall = true
+        case .failure(let error):
+            saveError = error.errorDescription
         }
     }
 }
-

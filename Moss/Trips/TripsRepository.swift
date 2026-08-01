@@ -37,15 +37,25 @@ final class TripsRepository: ObservableObject {
         }
     }
 
-    func activeTripCount() async -> Int {
-        if trips.isEmpty {
-            await refresh()
+    func creationStatus() async throws -> TripCreationStatus {
+        let statuses: [TripCreationStatus] = try await auth.supabase
+            .rpc("get_trip_creation_status")
+            .execute()
+            .value
+        guard let status = statuses.first else {
+            throw TripCreationError.unknown("Moss returned an empty trip allowance status.")
         }
-        return trips.count
+        return status
     }
 
-    func create(_ draft: TripDraft) async -> Trip? {
-        guard let userID = auth.currentUserID else { return nil }
+    func lifetimeTripCount() async throws -> Int {
+        try await creationStatus().lifetimeTripCount
+    }
+
+    func create(_ draft: TripDraft) async -> Result<Trip, TripCreationError> {
+        guard let userID = auth.currentUserID else {
+            return .failure(.unknown("Sign in again before creating a trip."))
+        }
         do {
             let payload = TripInsert(
                 ownerID: userID,
@@ -64,12 +74,31 @@ final class TripsRepository: ObservableObject {
                 .value
             trips.append(trip)
             trips.sort { ($0.startsAt ?? .distantFuture) < ($1.startsAt ?? .distantFuture) }
-            return trip
+            return .success(trip)
         } catch {
-            lastError = error.localizedDescription
+            let creationError = Self.classifyCreationError(error)
+            lastError = creationError.errorDescription
             Log.error(error, category: "trips.create")
-            return nil
+            return .failure(creationError)
         }
+    }
+
+    static func classifyCreationError(_ error: Error) -> TripCreationError {
+        if let postgrestError = error as? PostgrestError,
+           postgrestError.detail == "MOSS_TRIP_LIMIT_REACHED" {
+            return .quotaReached
+        }
+
+        if let urlError = error as? URLError {
+            return .connectivity(urlError.localizedDescription)
+        }
+
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain {
+            return .connectivity(nsError.localizedDescription)
+        }
+
+        return .unknown(error.localizedDescription)
     }
 
     func update(_ trip: Trip) async {
@@ -113,6 +142,37 @@ final class TripsRepository: ObservableObject {
     }
 }
 
+struct TripCreationStatus: Decodable, Equatable {
+    let lifetimeTripCount: Int
+    let freeTripAllowance: Int
+    let hasActiveEntitlement: Bool
+    let canCreateTrip: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case lifetimeTripCount = "lifetime_trip_count"
+        case freeTripAllowance = "free_trip_allowance"
+        case hasActiveEntitlement = "has_active_entitlement"
+        case canCreateTrip = "can_create_trip"
+    }
+}
+
+enum TripCreationError: LocalizedError, Equatable {
+    case quotaReached
+    case connectivity(String)
+    case unknown(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .quotaReached:
+            return "You've used both free lifetime trip creations. Deleting a trip doesn't restore one."
+        case .connectivity:
+            return "Moss couldn't connect to save this trip. Your draft is still here; check your connection and try again."
+        case .unknown(let message):
+            return "Moss couldn't save this trip. Your draft is still here. \(message)"
+        }
+    }
+}
+
 private struct TripInsert: Encodable {
     let ownerID: UUID
     let title: String
@@ -146,4 +206,3 @@ private struct TripUpdate: Encodable {
         case notes
     }
 }
-

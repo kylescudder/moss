@@ -4,6 +4,7 @@ struct TripsListView: View {
     @EnvironmentObject private var services: AppServices
     @State private var showCreateTrip = false
     @State private var showPaywall = false
+    @State private var creationCheckError: String?
 
     var body: some View {
         List {
@@ -39,10 +40,13 @@ struct TripsListView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     Task {
-                        if await services.canCreateTrip() {
+                        switch await services.canCreateTrip() {
+                        case .available:
                             showCreateTrip = true
-                        } else {
+                        case .limitReached:
                             showPaywall = true
+                        case .unavailable(let message):
+                            creationCheckError = message
                         }
                     }
                 } label: {
@@ -62,6 +66,14 @@ struct TripsListView: View {
         }
         .sheet(isPresented: $showPaywall) {
             SubscriptionPaywallView()
+        }
+        .alert("Couldn't check trip allowance", isPresented: Binding(
+            get: { creationCheckError != nil },
+            set: { if !$0 { creationCheckError = nil } }
+        ), presenting: creationCheckError) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { message in
+            Text(message)
         }
     }
 }
@@ -84,4 +96,3 @@ private struct TripRowView: View {
         .padding(.vertical, Theme.Spacing.xs)
     }
 }
-
