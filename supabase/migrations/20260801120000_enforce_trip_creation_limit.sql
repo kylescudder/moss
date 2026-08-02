@@ -20,6 +20,12 @@ alter table public.trip_creation_quotas enable row level security;
 -- has this shape; keep this migration safe if it is applied to an older schema.
 create index if not exists trips_owner_id_idx on public.trips(owner_id);
 
+-- The initial schema predates explicit PostgREST table grants. RLS remains the
+-- authorization boundary, but authenticated clients also need the underlying
+-- table privileges for the existing trip policies (and this trigger) to run on
+-- a clean database restored entirely from migrations.
+grant select, insert, update, delete on table public.trips to authenticated;
+
 -- Clients may read only the safe status RPC below and must never be able to
 -- lower or otherwise manipulate the authoritative counter.
 revoke all on table public.trip_creation_quotas from public, anon, authenticated;
