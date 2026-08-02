@@ -7,12 +7,13 @@ import Supabase
     @Published private(set) var isLoading = false
     @Published var lastError: String?
     private let auth: AuthClient
+    private let billing: BillingRepository
     private let database: PowerSyncDatabaseProtocol
     private var tripsTask: Task<Void, Never>?
     private var quotaTask: Task<Void, Never>?
     private var userID: String?
     init(auth: AuthClient, billing: BillingRepository, database: PowerSyncDatabaseProtocol) {
-        self.auth = auth; _ = billing; self.database = database
+        self.auth = auth; self.billing = billing; self.database = database
     }
     deinit { tripsTask?.cancel(); quotaTask?.cancel() }
     func startWatching(userID: String) {
@@ -55,9 +56,13 @@ import Supabase
         let id = UUID().uuidString.lowercased(), now = Date().iso8601
         do {
             let cached = try await localCreationStatus()
-            // Only the replicated server-verified snapshot can authorize an
-            // unlimited write. Local StoreKit state is display/retry context.
-            let unlimited = cached.hasActiveEntitlement
+            // BillingRepository marks `.verified` only after Moss's server
+            // accepts the transaction. StoreKit-only/verifying/failed states
+            // therefore cannot authorize this optimistic local write.
+            let unlimited = TripCreationAuthorization.allowsUnlimitedCreation(
+                billingIsSubscribed: billing.isSubscribed,
+                snapshotIsVerified: cached.hasActiveEntitlement
+            )
             try await database.writeTransaction { transaction in
                 let value = try transaction.getOptional(sql: "select lifetime_trip_count from trip_creation_quotas where id = ?", parameters: [userID], mapper: { try $0.getInt(name: "lifetime_trip_count") })
                 let serverCount = try TripQuotaSnapshot.requireInitializedCount(value)
@@ -86,5 +91,13 @@ import Supabase
 }
 
 enum TripQuotaSnapshot { static func requireInitializedCount(_ count:Int?) throws -> Int { guard let count else { throw TripCreationError.quotaSnapshotUnavailable }; return count } }
+enum TripCreationAuthorization {
+    static func allowsUnlimitedCreation(
+        billingIsSubscribed: Bool,
+        snapshotIsVerified: Bool
+    ) -> Bool {
+        billingIsSubscribed || snapshotIsVerified
+    }
+}
 struct TripCreationStatus: Decodable, Equatable { let lifetimeTripCount:Int; let freeTripAllowance:Int; let hasActiveEntitlement:Bool; let subscriptionVerificationPending:Bool; var canCreateTrip:Bool { hasActiveEntitlement || lifetimeTripCount < freeTripAllowance }; enum CodingKeys:String,CodingKey { case lifetimeTripCount="lifetime_trip_count",freeTripAllowance="free_trip_allowance",hasActiveEntitlement="has_active_entitlement",subscriptionVerificationPending="subscription_verification_pending" }; init(lifetimeTripCount:Int,freeTripAllowance:Int,hasActiveEntitlement:Bool,subscriptionVerificationPending:Bool){self.lifetimeTripCount=lifetimeTripCount;self.freeTripAllowance=freeTripAllowance;self.hasActiveEntitlement=hasActiveEntitlement;self.subscriptionVerificationPending=subscriptionVerificationPending}; init(from decoder:Decoder)throws{let c=try decoder.container(keyedBy:CodingKeys.self);lifetimeTripCount=try c.decode(Int.self,forKey:.lifetimeTripCount);freeTripAllowance=try c.decode(Int.self,forKey:.freeTripAllowance);hasActiveEntitlement=try c.decode(Bool.self,forKey:.hasActiveEntitlement);subscriptionVerificationPending=try c.decodeIfPresent(Bool.self,forKey:.subscriptionVerificationPending) ?? false} }
 enum TripCreationError: LocalizedError,Equatable { case quotaReached,quotaSnapshotUnavailable,subscriptionVerificationPending,authenticationRequired,connectivity(String),serverValidation(String),unknown(String); var errorDescription:String? { switch self { case .quotaReached:return "You've used both free lifetime trip creations. Deleting a trip doesn't restore one."; case .quotaSnapshotUnavailable:return "Finish the initial sync before saving a trip offline."; case .subscriptionVerificationPending:return "Your subscription still needs server confirmation."; case .authenticationRequired:return "Moss couldn't verify your signed-in session."; case .connectivity:return "Moss couldn't connect. Your draft is still here."; case .serverValidation(let m),.unknown(let m):return "Moss couldn't save this trip. Your draft is still here. \(m)" } } }

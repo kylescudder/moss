@@ -40,7 +40,16 @@ final class SupabaseConnector: PowerSyncBackendConnectorProtocol, @unchecked Sen
             var payload = entry.opData ?? [:]; sanitize(&payload, table: entry.table, isInsert: true); payload["id"] = entry.id
             if entry.table == "trips" {
                 do { try await table.insert(payload).execute() }
-                catch { if Self.isUnique(error), try await serverTripExists(entry.id) { return }; throw error }
+                catch {
+                    let serverRowExists = Self.isUnique(error)
+                        ? try await serverTripExists(entry.id)
+                        : false
+                    if Self.isIdempotentTripReplay(
+                        error,
+                        serverRowExists: serverRowExists
+                    ) { return }
+                    throw error
+                }
             } else { try await table.upsert(payload).execute() }
         case .patch:
             guard var payload = entry.opData else { return }; sanitize(&payload, table: entry.table, isInsert: false)
@@ -65,6 +74,12 @@ final class SupabaseConnector: PowerSyncBackendConnectorProtocol, @unchecked Sen
     static func isPermanentRejection(_ error: Error) -> Bool {
         guard let error = error as? PostgrestError else { return false }
         return ["MS001", "MS002"].contains(error.code) || ["23502", "23503", "23505", "23514"].contains(error.code)
+    }
+    static func isIdempotentTripReplay(
+        _ error: Error,
+        serverRowExists: Bool
+    ) -> Bool {
+        isUnique(error) && serverRowExists
     }
     private static func isUnique(_ error: Error) -> Bool { (error as? PostgrestError)?.code == "23505" }
 }

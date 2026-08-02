@@ -127,9 +127,6 @@ struct SettingsView: View {
         ), presenting: deleteError) { _ in
             Button("OK", role: .cancel) {}
         } message: { Text($0) }
-        .alert(item: Binding(get: { services.syncIssues.current }, set: { services.syncIssues.current = $0 })) { issue in
-            Alert(title: Text(issue.title), message: Text(issue.message), dismissButton: .default(Text("OK")))
-        }
     }
 
     private var appVersion: String {

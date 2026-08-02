@@ -33,8 +33,10 @@ select p.id,count(e.trip_id),statement_timestamp() from public.profiles p
 left join public.trip_creation_events e on e.user_id=p.id group by p.id
 on conflict(user_id) do update set lifetime_trip_count=greatest(trip_creation_quotas.lifetime_trip_count,excluded.lifetime_trip_count);
 
--- Record the UUID before incrementing. A replay of the same UUID is therefore
--- idempotent and cannot consume quota twice, even though this is a BEFORE trigger.
+-- Record the UUID before incrementing. A duplicate UUID must surface 23505:
+-- the upload connector acknowledges it only when the live trip still exists.
+-- A UUID retained solely by this durable ledger therefore cannot be reused
+-- after a hard deletion to create an uncounted trip.
 create or replace function public.enforce_trip_creation_limit()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare
@@ -55,9 +57,8 @@ begin
       message='A trip cannot be created for another user.',
       detail='MOSS_TRIP_OWNER_MISMATCH';
   end if;
-  insert into public.trip_creation_events(trip_id,user_id) values(new.id,actor_id)
-  on conflict(trip_id) do nothing;
-  if not found then return new; end if;
+  insert into public.trip_creation_events(trip_id,user_id)
+  values(new.id,actor_id);
   insert into public.trip_creation_quotas as q(user_id,lifetime_trip_count,updated_at)
   values(actor_id,1,statement_timestamp()) on conflict(user_id) do update
   set lifetime_trip_count=q.lifetime_trip_count+1,updated_at=statement_timestamp()

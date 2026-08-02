@@ -55,10 +55,11 @@ jobs:
           supabase start
           supabase db reset --local
 
-      - name: Run quota and entitlement pgTAP suite
-        run: >-
-          supabase test db
-          supabase/tests/database/trip_creation_limit_test.sql
+      - name: Run PowerSync quota and offline-contract pgTAP suites
+        run: |
+          supabase test db \
+            supabase/tests/database/trip_creation_limit_test.sql \
+            supabase/tests/database/powersync_offline_contract_test.sql
 
       - name: Run two-connection quota concurrency suite
         run: |

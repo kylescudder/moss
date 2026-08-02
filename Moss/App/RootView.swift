@@ -29,6 +29,16 @@ struct RootView: View {
             ResetPasswordSheet()
                 .presentationDetents([.medium, .large])
         }
+        .alert(item: Binding(
+            get: { services.syncIssues.current },
+            set: { services.syncIssues.current = $0 }
+        )) { issue in
+            Alert(
+                title: Text(issue.title),
+                message: Text(issue.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
     }
 }
 
