@@ -93,11 +93,15 @@ Configure these additional Edge Function secrets:
 
 ```text
 APPLE_APP_ID=<numeric App Store Connect app ID>
-APPLE_BUNDLE_ID=app.getmoss.moss
 APPLE_IAP_ENVIRONMENTS=Production,Sandbox
 ```
 
-`APPLE_BUNDLE_ID` and `APPLE_IAP_ENVIRONMENTS` have the displayed defaults.
+The verified bundle ID is fixed to `app.getmoss.moss` in both the Edge
+Functions and database entitlement writer. `APPLE_IAP_ENVIRONMENTS` has the
+displayed default. Both verification paths call the service-role-only
+`record_verified_iap_entitlement` function; legacy entitlement rows remain
+unverified until a fresh Apple JWS supplies the required bundle, transaction,
+signing-time, verification-time, source, product, and environment metadata.
 Production verification requires `APPLE_APP_ID`. Xcode-local StoreKit
 transactions are intentionally not accepted by the production mirror.
 

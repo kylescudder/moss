@@ -8,6 +8,7 @@ import {
   BUNDLE_ID,
   IAPVerificationError,
   PRODUCT_ID,
+  verifiedEntitlementRPCArguments,
 } from "./apple-iap.ts";
 
 function transaction(
@@ -18,6 +19,10 @@ function transaction(
     environment: Environment.SANDBOX,
     productId: PRODUCT_ID,
     appAccountToken: "11111111-1111-1111-1111-111111111111",
+    originalTransactionId: "original-1",
+    transactionId: "transaction-1",
+    signedDate: 1_722_470_400_000,
+    expiresDate: 1_725_148_800_000,
     ...overrides,
   } as JWSTransactionDecodedPayload;
 }
@@ -50,6 +55,45 @@ Deno.test("verified transaction claims require the configured app and product", 
     IAPVerificationError,
     "environment mismatch",
   );
+});
+
+Deno.test("verified transactions require identifiers and a signing timestamp", () => {
+  assertThrows(
+    () =>
+      assertTransactionClaims(
+        transaction({ originalTransactionId: undefined }),
+        Environment.SANDBOX,
+      ),
+    IAPVerificationError,
+    "identifiers are required",
+  );
+  assertThrows(
+    () =>
+      assertTransactionClaims(
+        transaction({ signedDate: undefined }),
+        Environment.SANDBOX,
+      ),
+    IAPVerificationError,
+    "signing date is required",
+  );
+});
+
+Deno.test("verified entitlement RPC arguments carry the server contract", () => {
+  const args = verifiedEntitlementRPCArguments(
+    transaction(),
+    Environment.SANDBOX,
+    "active",
+    "signed-transaction",
+    "app_store_transaction_jws",
+    "11111111-1111-1111-1111-111111111111",
+  );
+
+  assertEquals(args.target_bundle_id, BUNDLE_ID);
+  assertEquals(args.target_product_id, PRODUCT_ID);
+  assertEquals(args.target_original_transaction_id, "original-1");
+  assertEquals(args.target_transaction_id, "transaction-1");
+  assertEquals(args.target_signed_at, "2024-08-01T00:00:00.000Z");
+  assertEquals(args.target_verification_source, "app_store_transaction_jws");
 });
 
 Deno.test("authenticated sync requires a matching app account token", () => {

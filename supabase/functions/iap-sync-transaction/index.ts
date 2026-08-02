@@ -6,7 +6,6 @@
 //   SUPABASE_URL
 //   APPLE_APP_ID
 // Optional configuration:
-//   APPLE_BUNDLE_ID (defaults to app.getmoss.moss)
 //   APPLE_IAP_ENVIRONMENTS (defaults to Production,Sandbox)
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
@@ -15,6 +14,7 @@ import {
   assertTransactionClaims,
   dateFromMillis,
   IAPVerificationError,
+  verifiedEntitlementRPCArguments,
   verifyTransaction,
 } from "../_shared/apple-iap.ts";
 
@@ -70,20 +70,16 @@ serve(async (req) => {
     const revokedAt = dateFromMillis(transaction.revocationDate);
     const status = statusFor(expiresAt, revokedAt);
 
-    const { error } = await supabase.from("iap_entitlements").upsert(
-      {
-        user_id: userID,
-        product_id: transaction.productId,
-        original_transaction_id: transaction.originalTransactionId ?? null,
-        transaction_id: transaction.transactionId ?? null,
+    const { error } = await supabase.rpc(
+      "record_verified_iap_entitlement",
+      verifiedEntitlementRPCArguments(
+        transaction,
+        verified.environment,
         status,
-        expires_at: expiresAt,
-        revoked_at: revokedAt,
-        environment: verified.environment,
-        last_signed_transaction: body.signedTransactionInfo,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,product_id" },
+        body.signedTransactionInfo,
+        "app_store_transaction_jws",
+        userID,
+      ),
     );
     if (error) throw error;
 

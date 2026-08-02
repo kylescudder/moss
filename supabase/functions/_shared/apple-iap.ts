@@ -7,7 +7,7 @@ import {
 } from "npm:@apple/app-store-server-library@3.1.0";
 
 export const PRODUCT_ID = "app.moss.supporter.monthly";
-export const BUNDLE_ID = Deno.env.get("APPLE_BUNDLE_ID") ?? "app.getmoss.moss";
+export const BUNDLE_ID = "app.getmoss.moss";
 
 const APPLE_APP_ID = parseAppleAppID(Deno.env.get("APPLE_APP_ID"));
 const ROOT_CERTIFICATE_URLS = [
@@ -95,6 +95,14 @@ export function assertTransactionClaims(
   if (transaction.productId !== PRODUCT_ID) {
     throw new IAPVerificationError("Transaction product ID mismatch.");
   }
+  if (!transaction.originalTransactionId || !transaction.transactionId) {
+    throw new IAPVerificationError(
+      "Transaction identifiers are required.",
+    );
+  }
+  if (dateFromMillis(transaction.signedDate) == null) {
+    throw new IAPVerificationError("Transaction signing date is required.");
+  }
 
   if (authenticatedUserID !== undefined) {
     if (!transaction.appAccountToken) {
@@ -110,6 +118,63 @@ export function assertTransactionClaims(
       throw new IAPVerificationError("Transaction account mismatch.", 403);
     }
   }
+}
+
+export interface VerifiedEntitlementRPCArguments {
+  target_user_id: string | null;
+  target_bundle_id: string;
+  target_product_id: string;
+  target_original_transaction_id: string;
+  target_transaction_id: string;
+  target_status: "active" | "expired" | "revoked" | "unknown";
+  target_environment: Environment;
+  target_expires_at: string | null;
+  target_revoked_at: string | null;
+  target_signed_at: string;
+  target_verification_source:
+    | "app_store_transaction_jws"
+    | "app_store_server_notification_v2";
+  target_last_signed_transaction: string;
+}
+
+export function verifiedEntitlementRPCArguments(
+  transaction: JWSTransactionDecodedPayload,
+  environment: Environment,
+  status: VerifiedEntitlementRPCArguments["target_status"],
+  signedTransactionInfo: string,
+  verificationSource:
+    VerifiedEntitlementRPCArguments["target_verification_source"],
+  userID: string | null,
+): VerifiedEntitlementRPCArguments {
+  assertTransactionClaims(transaction, environment);
+
+  const signedAt = dateFromMillis(transaction.signedDate);
+  if (
+    !transaction.bundleId ||
+    !transaction.productId ||
+    !transaction.originalTransactionId ||
+    !transaction.transactionId ||
+    !signedAt
+  ) {
+    throw new IAPVerificationError(
+      "Verified transaction metadata is incomplete.",
+    );
+  }
+
+  return {
+    target_user_id: userID,
+    target_bundle_id: transaction.bundleId,
+    target_product_id: transaction.productId,
+    target_original_transaction_id: transaction.originalTransactionId,
+    target_transaction_id: transaction.transactionId,
+    target_status: status,
+    target_environment: environment,
+    target_expires_at: dateFromMillis(transaction.expiresDate),
+    target_revoked_at: dateFromMillis(transaction.revocationDate),
+    target_signed_at: signedAt,
+    target_verification_source: verificationSource,
+    target_last_signed_transaction: signedTransactionInfo,
+  };
 }
 
 export function dateFromMillis(value?: number | string): string | null {

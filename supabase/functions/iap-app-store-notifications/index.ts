@@ -10,6 +10,7 @@ import {
   assertTransactionClaims,
   dateFromMillis,
   IAPVerificationError,
+  verifiedEntitlementRPCArguments,
   verifyNotification,
 } from "../_shared/apple-iap.ts";
 
@@ -71,38 +72,18 @@ serve(async (req) => {
       revokedAt,
     );
 
-    const values = {
-      product_id: transaction.productId,
-      transaction_id: transaction.transactionId ?? null,
-      status,
-      expires_at: expiresAt,
-      revoked_at: revokedAt,
-      environment: verifiedNotification.environment,
-      last_signed_transaction: signedTransactionInfo,
-      updated_at: new Date().toISOString(),
-    };
-
-    if (transaction.appAccountToken) {
-      const { error } = await supabase.from("iap_entitlements").upsert(
-        {
-          user_id: transaction.appAccountToken.toLowerCase(),
-          original_transaction_id: transaction.originalTransactionId ?? null,
-          ...values,
-        },
-        { onConflict: "user_id,product_id" },
-      );
-      if (error) throw error;
-    } else if (transaction.originalTransactionId) {
-      const { error } = await supabase
-        .from("iap_entitlements")
-        .update(values)
-        .eq("original_transaction_id", transaction.originalTransactionId);
-      if (error) throw error;
-    } else {
-      throw new IAPVerificationError(
-        "Verified transaction has no account or original transaction identifier.",
-      );
-    }
+    const { error } = await supabase.rpc(
+      "record_verified_iap_entitlement",
+      verifiedEntitlementRPCArguments(
+        transaction,
+        verifiedNotification.environment,
+        status,
+        signedTransactionInfo,
+        "app_store_server_notification_v2",
+        transaction.appAccountToken?.toLowerCase() ?? null,
+      ),
+    );
+    if (error) throw error;
 
     return Response.json({ confirmed: true, status });
   } catch (error) {

@@ -5,6 +5,8 @@ struct TripsListView: View {
     @State private var showCreateTrip = false
     @State private var showPaywall = false
     @State private var creationCheckError: String?
+    @State private var showVerificationPending = false
+    @State private var showAuthenticationRequired = false
 
     var body: some View {
         List {
@@ -45,6 +47,10 @@ struct TripsListView: View {
                             showCreateTrip = true
                         case .limitReached:
                             showPaywall = true
+                        case .subscriptionVerificationPending:
+                            showVerificationPending = true
+                        case .authenticationRequired:
+                            showAuthenticationRequired = true
                         case .unavailable(let message):
                             creationCheckError = message
                         }
@@ -66,6 +72,22 @@ struct TripsListView: View {
         }
         .sheet(isPresented: $showPaywall) {
             SubscriptionPaywallView()
+        }
+        .alert("Subscription verification needed", isPresented: $showVerificationPending) {
+            Button("Retry verification") {
+                Task { await services.billing.retryEntitlementVerification() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Moss must confirm your Apple subscription before paid trip creation is available.")
+        }
+        .alert("Sign in again", isPresented: $showAuthenticationRequired) {
+            Button("Refresh session") {
+                Task { _ = await services.auth.refreshSession() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Moss couldn't verify your signed-in session.")
         }
         .alert("Couldn't check trip allowance", isPresented: Binding(
             get: { creationCheckError != nil },

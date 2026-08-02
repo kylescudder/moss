@@ -90,6 +90,19 @@ final class AuthClient: ObservableObject {
         }
     }
 
+    func refreshSession() async -> Bool {
+        lastError = nil
+        do {
+            let session = try await supabase.auth.refreshSession()
+            apply(session: session)
+            return true
+        } catch {
+            lastError = error.localizedDescription
+            Log.error(error, category: "auth.refreshSession")
+            return false
+        }
+    }
+
     func bootstrap() async {
         guard ensureSupabaseConfigured(category: "auth.configuration") else {
             apply(session: nil)

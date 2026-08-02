@@ -54,7 +54,7 @@ final class TripsRepository: ObservableObject {
 
     func create(_ draft: TripDraft) async -> Result<Trip, TripCreationError> {
         guard let userID = auth.currentUserID else {
-            return .failure(.unknown("Sign in again before creating a trip."))
+            return .failure(.authenticationRequired)
         }
         do {
             let payload = TripInsert(
@@ -84,9 +84,27 @@ final class TripsRepository: ObservableObject {
     }
 
     static func classifyCreationError(_ error: Error) -> TripCreationError {
-        if let postgrestError = error as? PostgrestError,
-           postgrestError.detail == "MOSS_TRIP_LIMIT_REACHED" {
-            return .quotaReached
+        if let postgrestError = error as? PostgrestError {
+            switch (postgrestError.code, postgrestError.detail) {
+            case ("MS001", "MOSS_TRIP_LIMIT_REACHED"):
+                return .quotaReached
+            case ("MS002", "MOSS_SUBSCRIPTION_VERIFICATION_PENDING"):
+                return .subscriptionVerificationPending
+            case ("28000", "MOSS_AUTHENTICATION_REQUIRED"),
+                 ("PGRST301", _),
+                 ("PGRST302", _),
+                 ("PGRST303", _):
+                return .authenticationRequired
+            default:
+                if let code = postgrestError.code,
+                   code == "42501"
+                    || code.hasPrefix("22")
+                    || code.hasPrefix("23")
+                    || code.hasPrefix("PGRST") {
+                    return .serverValidation(postgrestError.message)
+                }
+                return .unknown(postgrestError.message)
+            }
         }
 
         if let urlError = error as? URLError {
@@ -146,27 +164,50 @@ struct TripCreationStatus: Decodable, Equatable {
     let lifetimeTripCount: Int
     let freeTripAllowance: Int
     let hasActiveEntitlement: Bool
+    let subscriptionVerificationPending: Bool
     let canCreateTrip: Bool
 
     enum CodingKeys: String, CodingKey {
         case lifetimeTripCount = "lifetime_trip_count"
         case freeTripAllowance = "free_trip_allowance"
         case hasActiveEntitlement = "has_active_entitlement"
+        case subscriptionVerificationPending = "subscription_verification_pending"
         case canCreateTrip = "can_create_trip"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        lifetimeTripCount = try container.decode(Int.self, forKey: .lifetimeTripCount)
+        freeTripAllowance = try container.decode(Int.self, forKey: .freeTripAllowance)
+        hasActiveEntitlement = try container.decode(Bool.self, forKey: .hasActiveEntitlement)
+        subscriptionVerificationPending = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .subscriptionVerificationPending
+        ) ?? false
+        canCreateTrip = try container.decode(Bool.self, forKey: .canCreateTrip)
     }
 }
 
 enum TripCreationError: LocalizedError, Equatable {
     case quotaReached
+    case subscriptionVerificationPending
+    case authenticationRequired
     case connectivity(String)
+    case serverValidation(String)
     case unknown(String)
 
     var errorDescription: String? {
         switch self {
         case .quotaReached:
             return "You've used both free lifetime trip creations. Deleting a trip doesn't restore one."
+        case .subscriptionVerificationPending:
+            return "Your subscription still needs to be confirmed by Moss. Your draft is still here; retry verification before saving again."
+        case .authenticationRequired:
+            return "Moss couldn't verify your signed-in session. Your draft is still here; refresh your session or sign in again."
         case .connectivity:
             return "Moss couldn't connect to save this trip. Your draft is still here; check your connection and try again."
+        case .serverValidation(let message):
+            return "Moss couldn't validate this trip with the server. Your draft is still here. \(message)"
         case .unknown(let message):
             return "Moss couldn't save this trip. Your draft is still here. \(message)"
         }

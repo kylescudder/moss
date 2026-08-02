@@ -84,7 +84,7 @@ begin
 
   if not has_active_entitlement and pre_increment_count >= 2 then
     raise exception using
-      errcode = 'P0001',
+      errcode = 'MS001',
       message = 'The lifetime free-trip allowance has been used.',
       detail = 'MOSS_TRIP_LIMIT_REACHED',
       hint = 'An active server-confirmed subscription is required to create another trip.';
