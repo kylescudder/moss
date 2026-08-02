@@ -22,6 +22,8 @@ insert into public.trips (owner_id, title, destination)
 values ('55555555-5555-5555-5555-555555555555', 'Existing', 'A');
 reset role;
 
+-- The backend workflow executes this local-only suite as supabase_admin;
+-- PostgreSQL intentionally forbids passwordless dblink from lesser roles.
 select dblink_connect('quota_a', 'dbname=' || current_database());
 select dblink_connect('quota_b', 'dbname=' || current_database());
 
