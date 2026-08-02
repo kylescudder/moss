@@ -13,8 +13,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   assertTransactionClaims,
   dateFromMillis,
+  entitlementWriteResponse,
   IAPVerificationError,
   verifiedEntitlementRPCArguments,
+  verifiedEntitlementWriteResult,
   verifyTransaction,
 } from "../_shared/apple-iap.ts";
 
@@ -70,7 +72,7 @@ serve(async (req) => {
     const revokedAt = dateFromMillis(transaction.revocationDate);
     const status = statusFor(expiresAt, revokedAt);
 
-    const { error } = await supabase.rpc(
+    const { data, error } = await supabase.rpc(
       "record_verified_iap_entitlement",
       verifiedEntitlementRPCArguments(
         transaction,
@@ -83,7 +85,15 @@ serve(async (req) => {
     );
     if (error) throw error;
 
-    return Response.json({ confirmed: true, status });
+    const writeResult = verifiedEntitlementWriteResult(data);
+    const response = entitlementWriteResponse(writeResult);
+    if (!writeResult.stored && writeResult.authoritative_status !== "active") {
+      return Response.json(
+        { ...response, confirmed: false },
+        { status: 409 },
+      );
+    }
+    return Response.json(response);
   } catch (error) {
     console.error(error);
     const status = error instanceof IAPVerificationError ? error.status : 500;

@@ -102,6 +102,8 @@ displayed default. Both verification paths call the service-role-only
 `record_verified_iap_entitlement` function; legacy entitlement rows remain
 unverified until a fresh Apple JWS supplies the required bundle, transaction,
 signing-time, verification-time, source, product, and environment metadata.
+Entitlement updates are ordered by Apple's signed timestamp, so delayed older
+transactions are reported as ignored without replacing newer server state.
 Production verification requires `APPLE_APP_ID`. Xcode-local StoreKit
 transactions are intentionally not accepted by the production mirror.
 

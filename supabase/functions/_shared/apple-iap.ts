@@ -137,6 +137,56 @@ export interface VerifiedEntitlementRPCArguments {
   target_last_signed_transaction: string;
 }
 
+export interface VerifiedEntitlementWriteResult {
+  stored: boolean;
+  authoritative_status: "active" | "expired" | "revoked" | "unknown";
+  authoritative_signed_at: string;
+  authoritative_expires_at: string | null;
+  authoritative_revoked_at: string | null;
+  authoritative_transaction_id: string;
+}
+
+export function verifiedEntitlementWriteResult(
+  data: unknown,
+): VerifiedEntitlementWriteResult {
+  if (!Array.isArray(data) || data.length !== 1) {
+    throw new IAPVerificationError(
+      "The entitlement writer returned no authoritative state.",
+      500,
+    );
+  }
+
+  const result = data[0] as Partial<VerifiedEntitlementWriteResult>;
+  if (
+    typeof result.stored !== "boolean" ||
+    !["active", "expired", "revoked", "unknown"].includes(
+      result.authoritative_status ?? "",
+    ) ||
+    typeof result.authoritative_signed_at !== "string" ||
+    typeof result.authoritative_transaction_id !== "string"
+  ) {
+    throw new IAPVerificationError(
+      "The entitlement writer returned invalid authoritative state.",
+      500,
+    );
+  }
+
+  return result as VerifiedEntitlementWriteResult;
+}
+
+export function entitlementWriteResponse(
+  result: VerifiedEntitlementWriteResult,
+) {
+  return {
+    confirmed: true,
+    stored: result.stored,
+    result: result.stored ? "stored" : "ignored_stale_event",
+    status: result.authoritative_status,
+    signedAt: result.authoritative_signed_at,
+    transactionId: result.authoritative_transaction_id,
+  } as const;
+}
+
 export function verifiedEntitlementRPCArguments(
   transaction: JWSTransactionDecodedPayload,
   environment: Environment,

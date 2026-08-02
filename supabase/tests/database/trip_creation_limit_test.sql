@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(45);
+select plan(56);
 
 select has_table('public', 'trip_creation_quotas', 'quota table exists');
 select has_index('public', 'trips', 'trips_owner_id_idx', 'trip owner queries are indexed');
@@ -33,7 +33,8 @@ values
   ('11111111-1111-1111-1111-111111111111', 'free@example.com'),
   ('22222222-2222-2222-2222-222222222222', 'other@example.com'),
   ('33333333-3333-3333-3333-333333333333', 'paid@example.com'),
-  ('44444444-4444-4444-4444-444444444444', 'legacy@example.com');
+  ('44444444-4444-4444-4444-444444444444', 'legacy@example.com'),
+  ('66666666-6666-6666-6666-666666666666', 'ordering@example.com');
 
 select set_config('request.jwt.claim.sub', '', true);
 select throws_ok(
@@ -398,6 +399,138 @@ select is(
    where user_id = '33333333-3333-3333-3333-333333333333'),
   3::bigint,
   'post-expiry rejection rolls the increment back'
+);
+
+set local role service_role;
+select is(
+  (select stored from public.record_verified_iap_entitlement(
+    '66666666-6666-6666-6666-666666666666',
+    'app.getmoss.moss',
+    'app.moss.supporter.monthly',
+    'original-ordering',
+    'newer-revoked',
+    'revoked',
+    'Sandbox',
+    now() + interval '1 month',
+    now() - interval '3 minutes',
+    now() - interval '3 minutes',
+    'app_store_server_notification_v2',
+    'newer-revoked-jws'
+  )),
+  true,
+  'a newer revoked event is stored'
+);
+select is(
+  (select stored from public.record_verified_iap_entitlement(
+    '66666666-6666-6666-6666-666666666666',
+    'app.getmoss.moss',
+    'app.moss.supporter.monthly',
+    'original-ordering',
+    'older-active-after-revoked',
+    'active',
+    'Sandbox',
+    now() + interval '1 month',
+    null,
+    now() - interval '4 minutes',
+    'app_store_transaction_jws',
+    'older-active-after-revoked-jws'
+  )),
+  false,
+  'an older active event is ignored after a newer revocation'
+);
+reset role;
+select is(
+  (select status from public.iap_entitlements
+   where user_id = '66666666-6666-6666-6666-666666666666'),
+  'revoked',
+  'the ignored older active event cannot overwrite revoked state'
+);
+select is(
+  public.has_active_trip_entitlement('66666666-6666-6666-6666-666666666666'),
+  false,
+  'the active helper reflects the authoritative revocation'
+);
+
+set local role service_role;
+select is(
+  (select stored from public.record_verified_iap_entitlement(
+    '66666666-6666-6666-6666-666666666666',
+    'app.getmoss.moss',
+    'app.moss.supporter.monthly',
+    'original-ordering',
+    'newer-expired',
+    'expired',
+    'Sandbox',
+    now() - interval '1 second',
+    null,
+    now() - interval '2 minutes',
+    'app_store_server_notification_v2',
+    'newer-expired-jws'
+  )),
+  true,
+  'a newer expired event is stored'
+);
+select is(
+  (select stored from public.record_verified_iap_entitlement(
+    '66666666-6666-6666-6666-666666666666',
+    'app.getmoss.moss',
+    'app.moss.supporter.monthly',
+    'original-ordering',
+    'older-active-after-expiry',
+    'active',
+    'Sandbox',
+    now() + interval '1 month',
+    null,
+    now() - interval '3 minutes',
+    'app_store_transaction_jws',
+    'older-active-after-expiry-jws'
+  )),
+  false,
+  'an older active event is ignored after a newer expiration'
+);
+reset role;
+select is(
+  (select status from public.iap_entitlements
+   where user_id = '66666666-6666-6666-6666-666666666666'),
+  'expired',
+  'the ignored older active event cannot overwrite expired state'
+);
+select is(
+  public.has_active_trip_entitlement('66666666-6666-6666-6666-666666666666'),
+  false,
+  'the active helper reflects the authoritative expiration'
+);
+
+set local role service_role;
+select is(
+  (select stored from public.record_verified_iap_entitlement(
+    '66666666-6666-6666-6666-666666666666',
+    'app.getmoss.moss',
+    'app.moss.supporter.monthly',
+    'original-ordering',
+    'equal-signed-active',
+    'active',
+    'Sandbox',
+    now() + interval '1 month',
+    null,
+    now() - interval '2 minutes',
+    'app_store_transaction_jws',
+    'equal-signed-active-jws'
+  )),
+  true,
+  'an equal signed event may update the entitlement'
+);
+reset role;
+select is(
+  (select status from public.iap_entitlements
+   where user_id = '66666666-6666-6666-6666-666666666666'),
+  'active',
+  'the equal signed event updates authoritative state'
+);
+select is(
+  public.has_active_trip_entitlement('66666666-6666-6666-6666-666666666666'),
+  true,
+  'the active helper reflects the authoritative equal signed update'
 );
 
 alter table public.trips disable trigger trips_enforce_creation_limit;

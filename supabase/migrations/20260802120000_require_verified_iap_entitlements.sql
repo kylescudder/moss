@@ -11,7 +11,12 @@ create unique index if not exists iap_entitlements_verified_original_transaction
 on public.iap_entitlements(original_transaction_id)
 where verified_at is not null;
 
-create or replace function public.record_verified_iap_entitlement(
+drop function if exists public.record_verified_iap_entitlement(
+  uuid, text, text, text, text, text, text, timestamptz, timestamptz,
+  timestamptz, text, text
+);
+
+create function public.record_verified_iap_entitlement(
   target_user_id uuid,
   target_bundle_id text,
   target_product_id text,
@@ -25,13 +30,21 @@ create or replace function public.record_verified_iap_entitlement(
   target_verification_source text,
   target_last_signed_transaction text
 )
-returns void
+returns table (
+  stored boolean,
+  authoritative_status text,
+  authoritative_signed_at timestamptz,
+  authoritative_expires_at timestamptz,
+  authoritative_revoked_at timestamptz,
+  authoritative_transaction_id text
+)
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
   entitlement_user_id uuid := target_user_id;
+  affected_rows bigint;
 begin
   if auth.role() is distinct from 'service_role' then
     raise exception using
@@ -158,7 +171,7 @@ begin
     end if;
   end if;
 
-  insert into public.iap_entitlements as entitlement (
+  insert into public.iap_entitlements as current_entitlement (
     user_id,
     bundle_id,
     product_id,
@@ -198,7 +211,23 @@ begin
     signed_at = excluded.signed_at,
     verified_at = excluded.verified_at,
     verification_source = excluded.verification_source,
-    last_signed_transaction = excluded.last_signed_transaction;
+    last_signed_transaction = excluded.last_signed_transaction
+  where current_entitlement.signed_at is null
+     or excluded.signed_at >= current_entitlement.signed_at;
+
+  get diagnostics affected_rows = row_count;
+
+  return query
+  select
+    affected_rows = 1,
+    entitlement.status,
+    entitlement.signed_at,
+    entitlement.expires_at,
+    entitlement.revoked_at,
+    entitlement.transaction_id
+  from public.iap_entitlements as entitlement
+  where entitlement.user_id = entitlement_user_id
+    and entitlement.product_id = target_product_id;
 end;
 $$;
 

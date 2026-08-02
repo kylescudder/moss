@@ -6,9 +6,11 @@ import {
 import {
   assertTransactionClaims,
   BUNDLE_ID,
+  entitlementWriteResponse,
   IAPVerificationError,
   PRODUCT_ID,
   verifiedEntitlementRPCArguments,
+  verifiedEntitlementWriteResult,
 } from "./apple-iap.ts";
 
 function transaction(
@@ -94,6 +96,35 @@ Deno.test("verified entitlement RPC arguments carry the server contract", () => 
   assertEquals(args.target_transaction_id, "transaction-1");
   assertEquals(args.target_signed_at, "2024-08-01T00:00:00.000Z");
   assertEquals(args.target_verification_source, "app_store_transaction_jws");
+});
+
+Deno.test("stale writer results expose authoritative state", () => {
+  const result = verifiedEntitlementWriteResult([{
+    stored: false,
+    authoritative_status: "revoked",
+    authoritative_signed_at: "2026-08-02T12:00:00.000Z",
+    authoritative_expires_at: "2026-09-02T12:00:00.000Z",
+    authoritative_revoked_at: "2026-08-02T12:00:00.000Z",
+    authoritative_transaction_id: "newer-revoked-transaction",
+  }]);
+
+  assertEquals(entitlementWriteResponse(result), {
+    confirmed: true,
+    stored: false,
+    result: "ignored_stale_event",
+    status: "revoked",
+    signedAt: "2026-08-02T12:00:00.000Z",
+    transactionId: "newer-revoked-transaction",
+  });
+});
+
+Deno.test("missing authoritative writer state is rejected", () => {
+  const error = assertThrows(
+    () => verifiedEntitlementWriteResult([]),
+    IAPVerificationError,
+    "no authoritative state",
+  );
+  assertEquals(error.status, 500);
 });
 
 Deno.test("authenticated sync requires a matching app account token", () => {

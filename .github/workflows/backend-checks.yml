@@ -1,0 +1,70 @@
+name: Backend · Checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - ".github/workflows/backend-checks.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Clean stack migrations and backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5.6
+
+      - name: Check Edge Function formatting
+        run: deno fmt --check supabase/functions
+
+      - name: Type-check entitlement verification
+        run: |
+          deno check --config supabase/functions/deno.json \
+            supabase/functions/_shared/apple-iap.ts \
+            supabase/functions/iap-sync-transaction/index.ts \
+            supabase/functions/iap-app-store-notifications/index.ts
+
+      - name: Test Apple verifier and entitlement responses
+        run: >-
+          deno test --config supabase/functions/deno.json --allow-env
+          supabase/functions/_shared/apple-iap.test.ts
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v2.1.1
+        with:
+          version: 2.111.0
+
+      - name: Start clean Supabase stack and apply all migrations
+        run: |
+          supabase start
+          supabase db reset --local
+
+      - name: Run quota and entitlement pgTAP suite
+        run: >-
+          supabase test db
+          supabase/tests/database/trip_creation_limit_test.sql
+
+      - name: Run two-connection quota concurrency suite
+        run: >-
+          supabase test db
+          supabase/tests/database/trip_creation_limit_concurrency_test.sql
+
+      - name: Stop Supabase stack
+        if: always()
+        run: supabase stop --no-backup
