@@ -22,9 +22,6 @@ packages:
   PowerSync:
     url: https://github.com/powersync-ja/powersync-swift
     from: 1.15.1
-  SwiftCollections:
-    url: https://github.com/apple/swift-collections
-    exactVersion: 1.4.1
   Sentry:
     url: https://github.com/getsentry/sentry-cocoa
     from: 8.40.0
@@ -119,5 +116,3 @@ targets:
       - target: Moss
       - package: Supabase
         product: Supabase
-      - package: PowerSync
-        product: PowerSync
