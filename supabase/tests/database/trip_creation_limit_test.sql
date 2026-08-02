@@ -84,12 +84,14 @@ select throws_ok(
   'duplicate key value violates unique constraint "trip_creation_events_pkey"',
   'a live trip upload replay surfaces the ledger conflict for connector confirmation'
 );
+reset role;
 select is(
   (select lifetime_trip_count from public.trip_creation_quotas
    where user_id = '11111111-1111-1111-1111-111111111111'),
   2::bigint,
   'a live replay does not increment lifetime usage twice'
 );
+set local role authenticated;
 select throws_ok(
   $$insert into public.trips (owner_id, title, destination)
     values ('11111111-1111-1111-1111-111111111111', 'Free three', 'Oslo')$$,
