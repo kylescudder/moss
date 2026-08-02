@@ -1,7 +1,9 @@
--- Install the counter and trigger while blocking writes to trips. Supabase
--- applies each migration in a transaction, so this lock is held through the
--- backfill and trigger installation. Inserts that arrive during deployment
--- resume after commit and pass through the installed trigger.
+-- Install the counter and trigger while blocking writes to trips. Keep the
+-- transaction explicit because all Supabase migration paths do not add one.
+-- The lock is held through backfill and trigger installation; inserts that
+-- arrive during deployment resume after commit and use the installed trigger.
+begin;
+
 lock table public.trips in share row exclusive mode;
 
 -- lifetime_trip_count means every successfully committed trip creation over
@@ -153,3 +155,5 @@ $$;
 
 revoke all on function public.get_trip_creation_status() from public;
 grant execute on function public.get_trip_creation_status() to authenticated;
+
+commit;
