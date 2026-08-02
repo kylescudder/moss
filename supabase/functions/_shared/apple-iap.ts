@@ -1,0 +1,304 @@
+import { Buffer } from "node:buffer";
+import {
+  Environment,
+  type JWSTransactionDecodedPayload,
+  type ResponseBodyV2DecodedPayload,
+  SignedDataVerifier,
+} from "npm:@apple/app-store-server-library@3.1.0";
+
+export const PRODUCT_ID = "app.moss.supporter.monthly";
+export const BUNDLE_ID = "app.getmoss.moss";
+
+const APPLE_APP_ID = parseAppleAppID(Deno.env.get("APPLE_APP_ID"));
+const ROOT_CERTIFICATE_URLS = [
+  "https://www.apple.com/appleca/AppleIncRootCertificate.cer",
+  "https://www.apple.com/certificateauthority/AppleRootCA-G2.cer",
+  "https://www.apple.com/certificateauthority/AppleRootCA-G3.cer",
+];
+
+let rootCertificatesPromise: Promise<Buffer[]> | undefined;
+const verifierPromises = new Map<Environment, Promise<SignedDataVerifier>>();
+
+export class IAPVerificationError extends Error {
+  constructor(message: string, readonly status = 400) {
+    super(message);
+    this.name = "IAPVerificationError";
+  }
+}
+
+export interface VerifiedPayload<T> {
+  payload: T;
+  environment: Environment;
+  verifier: SignedDataVerifier;
+}
+
+export async function verifyTransaction(
+  signedTransactionInfo: string,
+): Promise<VerifiedPayload<JWSTransactionDecodedPayload>> {
+  let finalError: unknown;
+  for (const environment of configuredEnvironments()) {
+    try {
+      const verifier = await verifierFor(environment);
+      const payload = await verifier.verifyAndDecodeTransaction(
+        signedTransactionInfo,
+      );
+      assertTransactionClaims(payload, environment);
+      return { payload, environment, verifier };
+    } catch (error) {
+      finalError = error;
+    }
+  }
+
+  console.error("Apple transaction verification failed", finalError);
+  throw new IAPVerificationError(
+    "Invalid Apple transaction signature or claims.",
+  );
+}
+
+export async function verifyNotification(
+  signedPayload: string,
+): Promise<VerifiedPayload<ResponseBodyV2DecodedPayload>> {
+  let finalError: unknown;
+  for (const environment of configuredEnvironments()) {
+    try {
+      const verifier = await verifierFor(environment);
+      const payload = await verifier.verifyAndDecodeNotification(signedPayload);
+      if (payload.data?.bundleId !== BUNDLE_ID) {
+        throw new IAPVerificationError("Notification bundle ID mismatch.");
+      }
+      if (payload.data?.environment !== environment) {
+        throw new IAPVerificationError("Notification environment mismatch.");
+      }
+      return { payload, environment, verifier };
+    } catch (error) {
+      finalError = error;
+    }
+  }
+
+  console.error("Apple notification verification failed", finalError);
+  throw new IAPVerificationError(
+    "Invalid Apple notification signature or claims.",
+  );
+}
+
+export function assertTransactionClaims(
+  transaction: JWSTransactionDecodedPayload,
+  expectedEnvironment: Environment,
+  authenticatedUserID?: string,
+) {
+  if (transaction.bundleId !== BUNDLE_ID) {
+    throw new IAPVerificationError("Transaction bundle ID mismatch.");
+  }
+  if (transaction.environment !== expectedEnvironment) {
+    throw new IAPVerificationError("Transaction environment mismatch.");
+  }
+  if (transaction.productId !== PRODUCT_ID) {
+    throw new IAPVerificationError("Transaction product ID mismatch.");
+  }
+  if (!transaction.originalTransactionId || !transaction.transactionId) {
+    throw new IAPVerificationError(
+      "Transaction identifiers are required.",
+    );
+  }
+  if (dateFromMillis(transaction.signedDate) == null) {
+    throw new IAPVerificationError("Transaction signing date is required.");
+  }
+
+  if (authenticatedUserID !== undefined) {
+    if (!transaction.appAccountToken) {
+      throw new IAPVerificationError(
+        "The transaction is missing its app account token.",
+        403,
+      );
+    }
+    if (
+      transaction.appAccountToken.toLowerCase() !==
+        authenticatedUserID.toLowerCase()
+    ) {
+      throw new IAPVerificationError("Transaction account mismatch.", 403);
+    }
+  }
+}
+
+export interface VerifiedEntitlementRPCArguments {
+  target_user_id: string | null;
+  target_bundle_id: string;
+  target_product_id: string;
+  target_original_transaction_id: string;
+  target_transaction_id: string;
+  target_status: "active" | "expired" | "revoked" | "unknown";
+  target_environment: Environment;
+  target_expires_at: string | null;
+  target_revoked_at: string | null;
+  target_signed_at: string;
+  target_verification_source:
+    | "app_store_transaction_jws"
+    | "app_store_server_notification_v2";
+  target_last_signed_transaction: string;
+}
+
+export interface VerifiedEntitlementWriteResult {
+  stored: boolean;
+  authoritative_status: "active" | "expired" | "revoked" | "unknown";
+  authoritative_signed_at: string;
+  authoritative_expires_at: string | null;
+  authoritative_revoked_at: string | null;
+  authoritative_transaction_id: string;
+}
+
+export function verifiedEntitlementWriteResult(
+  data: unknown,
+): VerifiedEntitlementWriteResult {
+  if (!Array.isArray(data) || data.length !== 1) {
+    throw new IAPVerificationError(
+      "The entitlement writer returned no authoritative state.",
+      500,
+    );
+  }
+
+  const result = data[0] as Partial<VerifiedEntitlementWriteResult>;
+  if (
+    typeof result.stored !== "boolean" ||
+    !["active", "expired", "revoked", "unknown"].includes(
+      result.authoritative_status ?? "",
+    ) ||
+    typeof result.authoritative_signed_at !== "string" ||
+    typeof result.authoritative_transaction_id !== "string"
+  ) {
+    throw new IAPVerificationError(
+      "The entitlement writer returned invalid authoritative state.",
+      500,
+    );
+  }
+
+  return result as VerifiedEntitlementWriteResult;
+}
+
+export function entitlementWriteResponse(
+  result: VerifiedEntitlementWriteResult,
+) {
+  return {
+    confirmed: true,
+    stored: result.stored,
+    result: result.stored ? "stored" : "ignored_stale_event",
+    status: result.authoritative_status,
+    signedAt: result.authoritative_signed_at,
+    transactionId: result.authoritative_transaction_id,
+  } as const;
+}
+
+export function verifiedEntitlementRPCArguments(
+  transaction: JWSTransactionDecodedPayload,
+  environment: Environment,
+  status: VerifiedEntitlementRPCArguments["target_status"],
+  signedTransactionInfo: string,
+  verificationSource:
+    VerifiedEntitlementRPCArguments["target_verification_source"],
+  userID: string | null,
+): VerifiedEntitlementRPCArguments {
+  assertTransactionClaims(transaction, environment);
+
+  const signedAt = dateFromMillis(transaction.signedDate);
+  if (
+    !transaction.bundleId ||
+    !transaction.productId ||
+    !transaction.originalTransactionId ||
+    !transaction.transactionId ||
+    !signedAt
+  ) {
+    throw new IAPVerificationError(
+      "Verified transaction metadata is incomplete.",
+    );
+  }
+
+  return {
+    target_user_id: userID,
+    target_bundle_id: transaction.bundleId,
+    target_product_id: transaction.productId,
+    target_original_transaction_id: transaction.originalTransactionId,
+    target_transaction_id: transaction.transactionId,
+    target_status: status,
+    target_environment: environment,
+    target_expires_at: dateFromMillis(transaction.expiresDate),
+    target_revoked_at: dateFromMillis(transaction.revocationDate),
+    target_signed_at: signedAt,
+    target_verification_source: verificationSource,
+    target_last_signed_transaction: signedTransactionInfo,
+  };
+}
+
+export function dateFromMillis(value?: number | string): string | null {
+  if (value == null) return null;
+  const numeric = typeof value === "string" ? Number(value) : value;
+  if (!Number.isFinite(numeric)) return null;
+  return new Date(numeric).toISOString();
+}
+
+function configuredEnvironments(): Environment[] {
+  const configured = Deno.env.get("APPLE_IAP_ENVIRONMENTS") ??
+    "Production,Sandbox";
+  return configured.split(",").map((value) => {
+    switch (value.trim().toLowerCase()) {
+      case "production":
+        if (APPLE_APP_ID === undefined) {
+          throw new IAPVerificationError(
+            "APPLE_APP_ID is required when Production verification is enabled.",
+            500,
+          );
+        }
+        return Environment.PRODUCTION;
+      case "sandbox":
+        return Environment.SANDBOX;
+      default:
+        throw new IAPVerificationError(
+          `Unsupported APPLE_IAP_ENVIRONMENTS value: ${value}`,
+          500,
+        );
+    }
+  });
+}
+
+function verifierFor(environment: Environment): Promise<SignedDataVerifier> {
+  let promise = verifierPromises.get(environment);
+  if (!promise) {
+    promise = appleRootCertificates().then((roots) =>
+      new SignedDataVerifier(
+        roots,
+        true,
+        environment,
+        BUNDLE_ID,
+        environment === Environment.PRODUCTION ? APPLE_APP_ID : undefined,
+      )
+    );
+    verifierPromises.set(environment, promise);
+  }
+  return promise;
+}
+
+function appleRootCertificates(): Promise<Buffer[]> {
+  rootCertificatesPromise ??= Promise.all(
+    ROOT_CERTIFICATE_URLS.map(async (url) => {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new IAPVerificationError(
+          `Could not load an Apple root certificate (${response.status}).`,
+          503,
+        );
+      }
+      return Buffer.from(await response.arrayBuffer());
+    }),
+  );
+  return rootCertificatesPromise;
+}
+
+function parseAppleAppID(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    throw new IAPVerificationError(
+      "APPLE_APP_ID must be a positive integer.",
+      500,
+    );
+  }
+  return parsed;
+}

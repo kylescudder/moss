@@ -37,26 +37,25 @@ final class TripsRepository: ObservableObject {
         }
     }
 
-    func createdTripCount() async -> Int? {
-        guard let userID = auth.currentUserID else { return nil }
-        do {
-            // Deleted trips still consume the account's lifetime free allowance.
-            let createdTrips: [TripIdentifier] = try await auth.supabase
-                .from("trips")
-                .select("id")
-                .eq("owner_id", value: userID.uuidString)
-                .execute()
-                .value
-            return createdTrips.count
-        } catch {
-            lastError = error.localizedDescription
-            Log.error(error, category: "trips.createdCount")
-            return nil
+    func creationStatus() async throws -> TripCreationStatus {
+        let statuses: [TripCreationStatus] = try await auth.supabase
+            .rpc("get_trip_creation_status")
+            .execute()
+            .value
+        guard let status = statuses.first else {
+            throw TripCreationError.unknown("Moss returned an empty trip allowance status.")
         }
+        return status
     }
 
-    func create(_ draft: TripDraft) async -> Trip? {
-        guard let userID = auth.currentUserID else { return nil }
+    func lifetimeTripCount() async throws -> Int {
+        try await creationStatus().lifetimeTripCount
+    }
+
+    func create(_ draft: TripDraft) async -> Result<Trip, TripCreationError> {
+        guard let userID = auth.currentUserID else {
+            return .failure(.authenticationRequired)
+        }
         do {
             let payload = TripInsert(
                 ownerID: userID,
@@ -75,12 +74,49 @@ final class TripsRepository: ObservableObject {
                 .value
             trips.append(trip)
             trips.sort { ($0.startsAt ?? .distantFuture) < ($1.startsAt ?? .distantFuture) }
-            return trip
+            return .success(trip)
         } catch {
-            lastError = error.localizedDescription
+            let creationError = Self.classifyCreationError(error)
+            lastError = creationError.errorDescription
             Log.error(error, category: "trips.create")
-            return nil
+            return .failure(creationError)
         }
+    }
+
+    static func classifyCreationError(_ error: Error) -> TripCreationError {
+        if let postgrestError = error as? PostgrestError {
+            switch (postgrestError.code, postgrestError.detail) {
+            case ("MS001", "MOSS_TRIP_LIMIT_REACHED"):
+                return .quotaReached
+            case ("MS002", "MOSS_SUBSCRIPTION_VERIFICATION_PENDING"):
+                return .subscriptionVerificationPending
+            case ("28000", "MOSS_AUTHENTICATION_REQUIRED"),
+                 ("PGRST301", _),
+                 ("PGRST302", _),
+                 ("PGRST303", _):
+                return .authenticationRequired
+            default:
+                if let code = postgrestError.code,
+                   code == "42501"
+                    || code.hasPrefix("22")
+                    || code.hasPrefix("23")
+                    || code.hasPrefix("PGRST") {
+                    return .serverValidation(postgrestError.message)
+                }
+                return .unknown(postgrestError.message)
+            }
+        }
+
+        if let urlError = error as? URLError {
+            return .connectivity(urlError.localizedDescription)
+        }
+
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain {
+            return .connectivity(nsError.localizedDescription)
+        }
+
+        return .unknown(error.localizedDescription)
     }
 
     func update(_ trip: Trip) async {
@@ -124,8 +160,58 @@ final class TripsRepository: ObservableObject {
     }
 }
 
-private struct TripIdentifier: Decodable {
-    let id: UUID
+struct TripCreationStatus: Decodable, Equatable {
+    let lifetimeTripCount: Int
+    let freeTripAllowance: Int
+    let hasActiveEntitlement: Bool
+    let subscriptionVerificationPending: Bool
+    let canCreateTrip: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case lifetimeTripCount = "lifetime_trip_count"
+        case freeTripAllowance = "free_trip_allowance"
+        case hasActiveEntitlement = "has_active_entitlement"
+        case subscriptionVerificationPending = "subscription_verification_pending"
+        case canCreateTrip = "can_create_trip"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        lifetimeTripCount = try container.decode(Int.self, forKey: .lifetimeTripCount)
+        freeTripAllowance = try container.decode(Int.self, forKey: .freeTripAllowance)
+        hasActiveEntitlement = try container.decode(Bool.self, forKey: .hasActiveEntitlement)
+        subscriptionVerificationPending = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .subscriptionVerificationPending
+        ) ?? false
+        canCreateTrip = try container.decode(Bool.self, forKey: .canCreateTrip)
+    }
+}
+
+enum TripCreationError: LocalizedError, Equatable {
+    case quotaReached
+    case subscriptionVerificationPending
+    case authenticationRequired
+    case connectivity(String)
+    case serverValidation(String)
+    case unknown(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .quotaReached:
+            return "You've used both free lifetime trip creations. Deleting a trip doesn't restore one."
+        case .subscriptionVerificationPending:
+            return "Your subscription still needs to be confirmed by Moss. Your draft is still here; retry verification before saving again."
+        case .authenticationRequired:
+            return "Moss couldn't verify your signed-in session. Your draft is still here; refresh your session or sign in again."
+        case .connectivity:
+            return "Moss couldn't connect to save this trip. Your draft is still here; check your connection and try again."
+        case .serverValidation(let message):
+            return "Moss couldn't validate this trip with the server. Your draft is still here. \(message)"
+        case .unknown(let message):
+            return "Moss couldn't save this trip. Your draft is still here. \(message)"
+        }
+    }
 }
 
 private struct TripInsert: Encodable {

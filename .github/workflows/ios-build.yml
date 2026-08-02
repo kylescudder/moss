@@ -5,11 +5,12 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'Moss/**'
-      - 'project.yml'
-      - 'Config/Secrets.xcconfig.example'
-      - 'Scripts/ci/**'
-      - '.github/workflows/ios-build.yml'
+      - "Moss/**"
+      - "MossTests/**"
+      - "project.yml"
+      - "Config/Secrets.xcconfig.example"
+      - "Scripts/ci/**"
+      - ".github/workflows/ios-build.yml"
 
 permissions:
   contents: read
@@ -56,4 +57,19 @@ jobs:
             -scheme "$SCHEME" \
             -configuration Debug \
             -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Test
+        run: |
+          set -o pipefail
+          simulator_id="$(
+            xcrun simctl list devices available -j |
+              jq -r '[.devices[][] | select(.isAvailable and (.name | startswith("iPhone")))] | first | .udid'
+          )"
+          test -n "$simulator_id" && test "$simulator_id" != "null"
+          xcodebuild test \
+            -project Moss.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$simulator_id" \
             CODE_SIGNING_ALLOWED=NO

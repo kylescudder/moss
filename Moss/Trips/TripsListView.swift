@@ -4,6 +4,9 @@ struct TripsListView: View {
     @EnvironmentObject private var services: AppServices
     @State private var showCreateTrip = false
     @State private var showPaywall = false
+    @State private var creationCheckError: String?
+    @State private var showVerificationPending = false
+    @State private var showAuthenticationRequired = false
 
     var body: some View {
         List {
@@ -39,10 +42,17 @@ struct TripsListView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     Task {
-                        if await services.canCreateTrip() {
+                        switch await services.canCreateTrip() {
+                        case .available:
                             showCreateTrip = true
-                        } else {
+                        case .limitReached:
                             showPaywall = true
+                        case .subscriptionVerificationPending:
+                            showVerificationPending = true
+                        case .authenticationRequired:
+                            showAuthenticationRequired = true
+                        case .unavailable(let message):
+                            creationCheckError = message
                         }
                     }
                 } label: {
@@ -62,6 +72,30 @@ struct TripsListView: View {
         }
         .sheet(isPresented: $showPaywall) {
             SubscriptionPaywallView()
+        }
+        .alert("Subscription verification needed", isPresented: $showVerificationPending) {
+            Button("Retry verification") {
+                Task { await services.billing.retryEntitlementVerification() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Moss must confirm your Apple subscription before paid trip creation is available.")
+        }
+        .alert("Sign in again", isPresented: $showAuthenticationRequired) {
+            Button("Refresh session") {
+                Task { _ = await services.auth.refreshSession() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Moss couldn't verify your signed-in session.")
+        }
+        .alert("Couldn't check trip allowance", isPresented: Binding(
+            get: { creationCheckError != nil },
+            set: { if !$0 { creationCheckError = nil } }
+        ), presenting: creationCheckError) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { message in
+            Text(message)
         }
     }
 }
@@ -84,4 +118,3 @@ private struct TripRowView: View {
         .padding(.vertical, Theme.Spacing.xs)
     }
 }
-

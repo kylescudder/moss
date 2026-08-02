@@ -37,8 +37,8 @@ struct SettingsView: View {
             }
 
             Section {
-                LabeledContent("Plan", value: services.billing.isSubscribed ? "Supporter Monthly" : "Free")
-                if services.billing.isSubscribed {
+                LabeledContent("Plan", value: subscriptionPlanLabel)
+                if services.billing.hasStoreKitEntitlement {
                     Button("Manage subscription") {
                         Task { await services.billing.manageSubscriptions() }
                     }
@@ -50,6 +50,14 @@ struct SettingsView: View {
                 Button("Restore purchases") {
                     Task { _ = await services.billing.restorePurchases() }
                 }
+                if case .verificationFailed(let message) = services.billing.entitlementVerificationState {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                    Button("Retry subscription verification") {
+                        Task { await services.billing.retryEntitlementVerification() }
+                    }
+                }
                 if let message = services.billing.lastError {
                     Text(message)
                         .font(.footnote)
@@ -58,7 +66,7 @@ struct SettingsView: View {
             } header: {
                 Text("Subscription")
             } footer: {
-                Text("Free accounts can create \(AppServices.freeTripCreationLimit) trips in total. Deleted trips still count toward this limit.")
+                Text("Free accounts can create \(AppServices.freeTripCreationLimit) trips over the lifetime of the account. Trips created while subscribed also count toward lifetime usage, and deleting a trip does not restore a free creation.")
             }
 
             Section("Account") {
@@ -120,6 +128,19 @@ struct SettingsView: View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
         return "\(version) (\(build))"
+    }
+
+    private var subscriptionPlanLabel: String {
+        switch services.billing.entitlementVerificationState {
+        case .verified:
+            return "Supporter Monthly"
+        case .verifying:
+            return "Verifying subscription"
+        case .verificationFailed:
+            return "Verification needed"
+        case .notSubscribed:
+            return "Free"
+        }
     }
 
     private func deleteAccount() async {

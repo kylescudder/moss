@@ -59,9 +59,29 @@ final class AppServices: ObservableObject {
         await notifications.registerIfAuthorized()
     }
 
-    func canCreateTrip() async -> Bool {
-        guard !billing.isSubscribed else { return true }
-        guard let createdTripCount = await trips.createdTripCount() else { return false }
-        return createdTripCount < Self.freeTripCreationLimit
+    func canCreateTrip() async -> TripCreationAvailability {
+        do {
+            let status = try await trips.creationStatus()
+            if status.canCreateTrip { return .available }
+            if status.subscriptionVerificationPending
+                || (billing.hasStoreKitEntitlement && !billing.isSubscribed) {
+                return .subscriptionVerificationPending
+            }
+            return .limitReached
+        } catch {
+            if case .authenticationRequired = TripsRepository.classifyCreationError(error) {
+                return .authenticationRequired
+            }
+            Log.error(error, category: "trips.creationStatus")
+            return .unavailable("Moss couldn't check your trip allowance. Check your connection and try again.")
+        }
     }
+}
+
+enum TripCreationAvailability: Equatable {
+    case available
+    case limitReached
+    case subscriptionVerificationPending
+    case authenticationRequired
+    case unavailable(String)
 }
