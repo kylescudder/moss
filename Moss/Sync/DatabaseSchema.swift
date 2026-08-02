@@ -8,14 +8,14 @@ enum DatabaseSchema {
         .text("owner_id"), .text("title"), .text("destination"), .text("starts_at"),
         .text("ends_at"), .text("notes"), .text("created_at"), .text("updated_at"), .text("deleted_at"),
     ], indexes: [Index(name: "trips_owner_starts", columns: [
-        .ascending("owner_id"), .ascending("starts_at"),
+        IndexedColumn.ascending("owner_id"), IndexedColumn.ascending("starts_at"),
     ])])
     static let itineraryItems = Table(name: "itinerary_items", columns: [
         .text("trip_id"), .text("owner_id"), .text("kind"), .text("title"), .text("location_name"),
         .text("starts_at"), .text("ends_at"), .text("notes"), .integer("sort_order"),
         .text("created_at"), .text("updated_at"), .text("deleted_at"),
     ], indexes: [Index(name: "itinerary_trip_starts", columns: [
-        .ascending("trip_id"), .ascending("starts_at"),
+        IndexedColumn.ascending("trip_id"), IndexedColumn.ascending("starts_at"),
     ])])
     /// Membership, quota, and entitlement rows are replicated server state and never locally mutated.
     static let tripMembers = Table(name: "trip_members", columns: [

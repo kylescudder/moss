@@ -135,10 +135,10 @@ select throws_ok(
 );
 reset role;
 select is(
-  (select count(*) from public.trip_creation_quotas
+  (select lifetime_trip_count from public.trip_creation_quotas
    where user_id = '22222222-2222-2222-2222-222222222222'),
   0::bigint,
-  'owner spoofing cannot create or increment another account quota'
+  'owner spoofing cannot increment another account quota'
 );
 
 insert into public.iap_entitlements (

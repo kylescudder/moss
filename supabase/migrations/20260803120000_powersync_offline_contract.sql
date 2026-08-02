@@ -37,10 +37,24 @@ on conflict(user_id) do update set lifetime_trip_count=greatest(trip_creation_qu
 -- idempotent and cannot consume quota twice, even though this is a BEFORE trigger.
 create or replace function public.enforce_trip_creation_limit()
 returns trigger language plpgsql security definer set search_path = '' as $$
-declare actor_id uuid := auth.uid(); next_count bigint; entitled boolean;
+declare
+  actor_id uuid := auth.uid();
+  next_count bigint;
+  entitled boolean;
+  pending_verification boolean;
 begin
-  if actor_id is null then raise exception using errcode='28000',detail='MOSS_AUTHENTICATION_REQUIRED'; end if;
-  if new.owner_id is distinct from actor_id then raise exception using errcode='42501',detail='MOSS_TRIP_OWNER_MISMATCH'; end if;
+  if actor_id is null then
+    raise exception using
+      errcode='28000',
+      message='Authentication is required to create a trip.',
+      detail='MOSS_AUTHENTICATION_REQUIRED';
+  end if;
+  if new.owner_id is distinct from actor_id then
+    raise exception using
+      errcode='42501',
+      message='A trip cannot be created for another user.',
+      detail='MOSS_TRIP_OWNER_MISMATCH';
+  end if;
   insert into public.trip_creation_events(trip_id,user_id) values(new.id,actor_id)
   on conflict(trip_id) do nothing;
   if not found then return new; end if;
@@ -49,7 +63,22 @@ begin
   set lifetime_trip_count=q.lifetime_trip_count+1,updated_at=statement_timestamp()
   returning lifetime_trip_count into next_count;
   entitled := public.has_active_trip_entitlement(actor_id);
-  if not entitled and next_count > 2 then raise exception using errcode='MS001',detail='MOSS_TRIP_LIMIT_REACHED'; end if;
+  pending_verification :=
+    public.has_pending_trip_entitlement_verification(actor_id);
+  if not entitled and next_count > 2 then
+    if pending_verification then
+      raise exception using
+        errcode='MS002',
+        message='The subscription must be verified before creating another trip.',
+        detail='MOSS_SUBSCRIPTION_VERIFICATION_PENDING',
+        hint='Retry server verification before creating another trip.';
+    end if;
+    raise exception using
+      errcode='MS001',
+      message='The lifetime free-trip allowance has been used.',
+      detail='MOSS_TRIP_LIMIT_REACHED',
+      hint='An active server-confirmed subscription is required to create another trip.';
+  end if;
   return new;
 end $$;
 

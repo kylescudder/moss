@@ -4,6 +4,7 @@ import PowerSync
 
 @MainActor final class PowerSyncManager: ObservableObject {
     private static let requiresWipeKey = "sync.requiresWipeBeforeConnect"
+    private static let databaseOwnerKey = "sync.databaseOwnerID"
     enum Status: Equatable { case idle, connecting, connected, offline, error(String) }
     @Published private(set) var status: Status = .idle
     @Published private(set) var pendingUploadCount = 0
@@ -51,20 +52,34 @@ import PowerSync
         switch state {
         case .unknown: break
         case .signedOut: await disconnect()
-        case .signedIn: await connect()
+        case .signedIn(let userID, _): await connect(userID: userID)
         }
     }
-    private func connect() async {
-        guard connector == nil else { return }
+    private func connect(userID: UUID) async {
+        let ownerID = userID.uuidString.lowercased()
+        if let existingOwner = UserDefaults.standard.string(forKey: Self.databaseOwnerKey),
+           existingOwner != ownerID {
+            UserDefaults.standard.set(true, forKey: Self.requiresWipeKey)
+        }
         if UserDefaults.standard.bool(forKey: Self.requiresWipeKey) {
-            do { try await database.disconnectAndClear(); UserDefaults.standard.removeObject(forKey: Self.requiresWipeKey) }
+            do {
+                try await database.disconnectAndClear()
+                UserDefaults.standard.removeObject(forKey: Self.requiresWipeKey)
+                UserDefaults.standard.removeObject(forKey: Self.databaseOwnerKey)
+                pendingUploadCount = 0
+                connector = nil
+            }
             catch { status = .error("Offline data must be cleared before syncing another account."); issues.localClearFailed(); return }
         }
+        guard connector == nil else { return }
         if let error = AppSecrets.powerSyncConfigurationError { status = .error(error); return }
         status = .connecting
         let next = SupabaseConnector(auth: auth, issues: issues)
         connector = next
-        do { try await database.connect(connector: next) }
+        do {
+            try await database.connect(connector: next)
+            UserDefaults.standard.set(ownerID, forKey: Self.databaseOwnerKey)
+        }
         catch { connector = nil; status = .error(error.localizedDescription); Log.error(error, category: "sync.connect") }
     }
     private func disconnect() async {
@@ -77,6 +92,7 @@ import PowerSync
         do {
             try await database.disconnectAndClear()
             UserDefaults.standard.removeObject(forKey: Self.requiresWipeKey)
+            UserDefaults.standard.removeObject(forKey: Self.databaseOwnerKey)
             connector = nil; pendingUploadCount = 0; status = .idle
         } catch { issues.localClearFailed(); Log.error(error, category: "sync.wipe") }
     }
