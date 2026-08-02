@@ -49,7 +49,12 @@ struct ResetPasswordSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Sign out") {
-                        Task { await services.auth.signOut() }
+                        Task {
+                            _ = await PasswordRecoveryCleanup.signOut(
+                                signOut: { await services.auth.signOut() },
+                                wipe: { await services.sync.wipe() }
+                            )
+                        }
                     }
                 }
             }
@@ -73,6 +78,9 @@ struct ResetPasswordSheet: View {
             return
         }
 
-        _ = await services.auth.updatePassword(newPassword: password)
+        _ = await PasswordRecoveryCleanup.updatePassword(
+            update: { await services.auth.updatePassword(newPassword: password) },
+            wipe: { await services.sync.wipe() }
+        )
     }
 }

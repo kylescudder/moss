@@ -1,4 +1,5 @@
 import Foundation
+import PowerSync
 
 struct Trip: Codable, Identifiable, Equatable {
     let id: UUID
@@ -26,6 +27,23 @@ struct Trip: Codable, Identifiable, Equatable {
     }
 }
 
+extension Trip {
+    static func from(cursor: SqlCursor) -> Trip? {
+        do {
+            guard let id = UUID(uuidString: try cursor.getString(name: "id")),
+                  let ownerID = UUID(uuidString: try cursor.getString(name: "owner_id")) else { return nil }
+            return Trip(id: id, ownerID: ownerID, title: try cursor.getString(name: "title"),
+                destination: try cursor.getString(name: "destination"),
+                startsAt: parseISO8601Date(try cursor.getStringOptional(name: "starts_at")),
+                endsAt: parseISO8601Date(try cursor.getStringOptional(name: "ends_at")),
+                notes: try cursor.getStringOptional(name: "notes"),
+                createdAt: parseISO8601Date(try cursor.getStringOptional(name: "created_at")),
+                updatedAt: parseISO8601Date(try cursor.getStringOptional(name: "updated_at")),
+                deletedAt: parseISO8601Date(try cursor.getStringOptional(name: "deleted_at")))
+        } catch { return nil }
+    }
+}
+
 struct TripDraft {
     var title = ""
     var destination = ""
@@ -38,4 +56,3 @@ struct TripDraft {
             && !destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
-

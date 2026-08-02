@@ -89,7 +89,7 @@ struct TripEditorView: View {
             Button("Retry save") {
                 Task { await save() }
             }
-        case .quotaReached, .serverValidation, .unknown:
+        case .quotaReached, .quotaSnapshotUnavailable, .serverValidation, .unknown:
             EmptyView()
         }
     }

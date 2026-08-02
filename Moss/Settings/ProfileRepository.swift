@@ -1,57 +1,30 @@
 import Foundation
-import Supabase
+import PowerSync
 
-@MainActor
-final class ProfileRepository: ObservableObject {
+@MainActor final class ProfileRepository: ObservableObject {
     @Published private(set) var profile: Profile?
     @Published private(set) var isLoading = false
     @Published var lastError: String?
-
-    private let auth: AuthClient
-
-    init(auth: AuthClient) {
-        self.auth = auth
+    private let database: PowerSyncDatabaseProtocol
+    private var task: Task<Void, Never>?
+    private var userID: String?
+    init(database: PowerSyncDatabaseProtocol) { self.database = database }
+    deinit { task?.cancel() }
+    func startWatching(userID: String) {
+        guard self.userID != userID || task == nil else { return }; self.userID = userID; task?.cancel(); isLoading = true
+        let database = database
+        task = Task { [weak self] in do {
+            for try await rows in try database.watch(sql: "select * from profiles where id = ? and deleted_at is null limit 1", parameters: [userID], mapper: Profile.from(cursor:)) {
+                self?.profile = rows.compactMap { $0 }.first; self?.isLoading = false
+            }
+        } catch { self?.lastError = error.localizedDescription; self?.isLoading = false } }
     }
-
-    func reset() {
-        profile = nil
-        lastError = nil
-    }
-
-    func refresh() async {
-        guard let userID = auth.currentUserID else { return }
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            profile = try await auth.supabase
-                .from("profiles")
-                .select()
-                .eq("id", value: userID.uuidString)
-                .single()
-                .execute()
-                .value
-        } catch {
-            lastError = error.localizedDescription
-            Log.error(error, category: "profile.refresh")
-        }
-    }
-
-    func updateDisplayName(_ displayName: String) async {
-        guard let userID = auth.currentUserID else { return }
-        do {
-            let payload = ["display_name": displayName.trimmingCharacters(in: .whitespacesAndNewlines)]
-            profile = try await auth.supabase
-                .from("profiles")
-                .update(payload)
-                .eq("id", value: userID.uuidString)
-                .select()
-                .single()
-                .execute()
-                .value
-        } catch {
-            lastError = error.localizedDescription
-            Log.error(error, category: "profile.update")
-        }
+    func stopWatching() { task?.cancel(); task = nil; userID = nil; profile = nil; isLoading = false }
+    func reset() { stopWatching(); lastError = nil }
+    func refresh() async {}
+    func updateDisplayName(_ name: String) async {
+        guard let userID else { return }
+        do { try await database.execute(sql: "update profiles set display_name = ?, updated_at = ? where id = ?", parameters: [name.trimmingCharacters(in: .whitespacesAndNewlines), Date().iso8601, userID]) }
+        catch { lastError = error.localizedDescription }
     }
 }
-

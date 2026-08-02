@@ -5,6 +5,100 @@ import XCTest
 
 @MainActor
 final class SubscriptionQuotaTests: XCTestCase {
+    func testLiveTripUniqueViolationIsIdempotentOnlyWhenServerRowExists() {
+        let duplicate = PostgrestError(
+            detail: "",
+            hint: "",
+            code: "23505",
+            message: "duplicate"
+        )
+
+        XCTAssertTrue(SupabaseConnector.isIdempotentTripReplay(
+            duplicate,
+            serverRowExists: true
+        ))
+        XCTAssertFalse(SupabaseConnector.isIdempotentTripReplay(
+            duplicate,
+            serverRowExists: false
+        ))
+    }
+
+    func testServerConfirmedBillingAllowsCreationWithStaleSnapshot() {
+        XCTAssertTrue(TripCreationAuthorization.allowsUnlimitedCreation(
+            billingIsSubscribed: true,
+            snapshotIsVerified: false
+        ))
+    }
+
+    func testUnconfirmedBillingCannotReplaceVerifiedSnapshot() {
+        XCTAssertFalse(TripCreationAuthorization.allowsUnlimitedCreation(
+            billingIsSubscribed: false,
+            snapshotIsVerified: false
+        ))
+        XCTAssertTrue(TripCreationAuthorization.allowsUnlimitedCreation(
+            billingIsSubscribed: false,
+            snapshotIsVerified: true
+        ))
+    }
+
+    func testPasswordRecoverySignOutWipesOnlyAfterSuccess() async {
+        var wipes = 0
+        let failed = await PasswordRecoveryCleanup.signOut(
+            signOut: { false },
+            wipe: { wipes += 1 }
+        )
+        XCTAssertFalse(failed)
+        XCTAssertEqual(wipes, 0)
+
+        let succeeded = await PasswordRecoveryCleanup.signOut(
+            signOut: { true },
+            wipe: { wipes += 1 }
+        )
+        XCTAssertTrue(succeeded)
+        XCTAssertEqual(wipes, 1)
+    }
+
+    func testPasswordRecoveryUpdateWipesOnlyAfterSuccess() async {
+        var wipes = 0
+        let failed = await PasswordRecoveryCleanup.updatePassword(
+            update: { false },
+            wipe: { wipes += 1 }
+        )
+        XCTAssertFalse(failed)
+        XCTAssertEqual(wipes, 0)
+
+        let succeeded = await PasswordRecoveryCleanup.updatePassword(
+            update: { true },
+            wipe: { wipes += 1 }
+        )
+        XCTAssertTrue(succeeded)
+        XCTAssertEqual(wipes, 1)
+    }
+
+    func testSyncIssuesPublishForRootPresentation() {
+        let store = SyncIssueStore()
+        store.rejectedChange(table: "itinerary_items")
+        XCTAssertEqual(store.current?.title, "Offline change not synced")
+    }
+
+    func testMissingQuotaSnapshotIsBlocked() {
+        XCTAssertThrowsError(try TripQuotaSnapshot.requireInitializedCount(nil)) { error in
+            XCTAssertEqual(error as? TripCreationError, .quotaSnapshotUnavailable)
+        }
+    }
+
+    func testConfirmedZeroQuotaIsDistinctFromMissingSnapshot() throws {
+        XCTAssertEqual(try TripQuotaSnapshot.requireInitializedCount(0), 0)
+    }
+
+    func testUploadPermanentErrorClassificationDoesNotAcknowledgeRLS() {
+        let quota = PostgrestError(detail: "MOSS_TRIP_LIMIT_REACHED", hint: "", code: "MS001", message: "limit")
+        let constraint = PostgrestError(detail: "", hint: "", code: "23514", message: "check")
+        let rls = PostgrestError(detail: "", hint: "", code: "42501", message: "denied")
+        XCTAssertTrue(SupabaseConnector.isPermanentRejection(quota))
+        XCTAssertTrue(SupabaseConnector.isPermanentRejection(constraint))
+        XCTAssertFalse(SupabaseConnector.isPermanentRejection(rls))
+    }
     func testCreationStatusDecodesAuthoritativeLifetimeUsage() throws {
         let status = try JSONDecoder().decode(
             TripCreationStatus.self,

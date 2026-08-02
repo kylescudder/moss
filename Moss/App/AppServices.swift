@@ -6,6 +6,8 @@ final class AppServices: ObservableObject {
     static let freeTripCreationLimit = 2
 
     let auth: AuthClient
+    let sync: PowerSyncManager
+    let syncIssues: SyncIssueStore
     let billing: BillingRepository
     let trips: TripsRepository
     let itinerary: ItineraryRepository
@@ -16,14 +18,19 @@ final class AppServices: ObservableObject {
 
     init() {
         let auth = AuthClient()
+        let syncIssues = SyncIssueStore()
+        let sync = PowerSyncManager(auth: auth, issues: syncIssues)
         self.auth = auth
-        self.billing = BillingRepository(auth: auth)
-        self.trips = TripsRepository(auth: auth)
-        self.itinerary = ItineraryRepository(auth: auth)
+        self.sync = sync
+        self.syncIssues = syncIssues
+        let billing = BillingRepository(auth: auth)
+        self.billing = billing
+        self.trips = TripsRepository(auth: auth, billing: billing, database: sync.database)
+        self.itinerary = ItineraryRepository(database: sync.database)
         self.notifications = NotificationManager.shared
-        self.profile = ProfileRepository(auth: auth)
+        self.profile = ProfileRepository(database: sync.database)
 
-        for child: any ObservableObject in [auth, billing, trips, itinerary, notifications, profile] {
+        for child: any ObservableObject in [auth, sync, syncIssues, billing, trips, itinerary, notifications, profile] {
             (child.objectWillChange as? ObservableObjectPublisher)?
                 .sink { [weak self] in self?.objectWillChange.send() }
                 .store(in: &cancellables)
@@ -31,6 +38,7 @@ final class AppServices: ObservableObject {
 
         notifications.bind(auth: auth)
         billing.start()
+        Task { await sync.startObservingAuth() }
 
         auth.$state
             .removeDuplicates()
@@ -42,13 +50,17 @@ final class AppServices: ObservableObject {
     }
 
     private func applyAuth(state: AuthClient.State) async {
-        guard case .signedIn = state else {
+        guard case let .signedIn(userID, _) = state else {
             billing.resetForSignOut()
             trips.reset()
             itinerary.reset()
             profile.reset()
             return
         }
+        let id = userID.uuidString.lowercased()
+        profile.startWatching(userID: id)
+        trips.startWatching(userID: id)
+        itinerary.start(userID: id)
         await billing.syncEntitlements()
         await refreshAll()
     }
@@ -60,6 +72,7 @@ final class AppServices: ObservableObject {
     }
 
     func canCreateTrip() async -> TripCreationAvailability {
+        if sync.status == .offline { return await localTripAvailability() }
         do {
             let status = try await trips.creationStatus()
             if status.canCreateTrip { return .available }
@@ -73,8 +86,14 @@ final class AppServices: ObservableObject {
                 return .authenticationRequired
             }
             Log.error(error, category: "trips.creationStatus")
-            return .unavailable("Moss couldn't check your trip allowance. Check your connection and try again.")
+            return await localTripAvailability()
         }
+    }
+
+    private func localTripAvailability() async -> TripCreationAvailability {
+        do { return try await trips.localCreationStatus().canCreateTrip ? .available : .limitReached }
+        catch TripCreationError.quotaSnapshotUnavailable { return .unavailable("Finish the initial sync before saving a trip offline.") }
+        catch { return .unavailable("Moss couldn't check your trip allowance. Check your connection and try again.") }
     }
 }
 

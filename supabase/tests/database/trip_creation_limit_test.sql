@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(56);
+select plan(61);
 
 select has_table('public', 'trip_creation_quotas', 'quota table exists');
 select has_index('public', 'trips', 'trips_owner_id_idx', 'trip owner queries are indexed');
@@ -53,15 +53,45 @@ select set_config(
 );
 
 select lives_ok(
-  $$insert into public.trips (owner_id, title, destination)
-    values ('11111111-1111-1111-1111-111111111111', 'Free one', 'Berlin')$$,
+  $$insert into public.trips (id, owner_id, title, destination)
+    values (
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
+      '11111111-1111-1111-1111-111111111111',
+      'Free one',
+      'Berlin'
+    )$$,
   'first free creation succeeds'
 );
 select lives_ok(
-  $$insert into public.trips (owner_id, title, destination)
-    values ('11111111-1111-1111-1111-111111111111', 'Free two', 'Lisbon')$$,
+  $$insert into public.trips (id, owner_id, title, destination)
+    values (
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
+      '11111111-1111-1111-1111-111111111111',
+      'Free two',
+      'Lisbon'
+    )$$,
   'second free creation succeeds'
 );
+select throws_ok(
+  $$insert into public.trips (id, owner_id, title, destination)
+    values (
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
+      '11111111-1111-1111-1111-111111111111',
+      'Live replay',
+      'Lisbon'
+    )$$,
+  '23505',
+  'duplicate key value violates unique constraint "trip_creation_events_pkey"',
+  'a live trip upload replay surfaces the ledger conflict for connector confirmation'
+);
+reset role;
+select is(
+  (select lifetime_trip_count from public.trip_creation_quotas
+   where user_id = '11111111-1111-1111-1111-111111111111'),
+  2::bigint,
+  'a live replay does not increment lifetime usage twice'
+);
+set local role authenticated;
 select throws_ok(
   $$insert into public.trips (owner_id, title, destination)
     values ('11111111-1111-1111-1111-111111111111', 'Free three', 'Oslo')$$,
@@ -111,6 +141,33 @@ where owner_id = '11111111-1111-1111-1111-111111111111'
 
 set local role authenticated;
 select throws_ok(
+  $$insert into public.trips (id, owner_id, title, destination)
+    values (
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
+      '11111111-1111-1111-1111-111111111111',
+      'Reused hard-deleted ID',
+      'Tokyo'
+    )$$,
+  '23505',
+  'duplicate key value violates unique constraint "trip_creation_events_pkey"',
+  'a historical hard-deleted trip ID cannot be reused'
+);
+reset role;
+select is(
+  (select count(*) from public.trips
+   where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'),
+  0::bigint,
+  'the hard-deleted trip is not recreated without consuming quota'
+);
+select is(
+  (select lifetime_trip_count from public.trip_creation_quotas
+   where user_id = '11111111-1111-1111-1111-111111111111'),
+  2::bigint,
+  'hard-deleted ID reuse leaves lifetime usage monotonic'
+);
+
+set local role authenticated;
+select throws_ok(
   $$insert into public.trips (owner_id, title, destination)
     values ('11111111-1111-1111-1111-111111111111', 'After hard delete', 'Tokyo')$$,
   'MS001',
@@ -135,10 +192,10 @@ select throws_ok(
 );
 reset role;
 select is(
-  (select count(*) from public.trip_creation_quotas
+  (select lifetime_trip_count from public.trip_creation_quotas
    where user_id = '22222222-2222-2222-2222-222222222222'),
   0::bigint,
-  'owner spoofing cannot create or increment another account quota'
+  'owner spoofing cannot increment another account quota'
 );
 
 insert into public.iap_entitlements (
