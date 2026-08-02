@@ -1,172 +1,20 @@
 import Foundation
-import Supabase
+import PowerSync
 
-@MainActor
-final class ItineraryRepository: ObservableObject {
-    @Published private(set) var itemsByTrip: [UUID: [ItineraryItem]] = [:]
-    @Published private(set) var isLoading = false
-    @Published var lastError: String?
-
-    private let auth: AuthClient
-
-    init(auth: AuthClient) {
-        self.auth = auth
-    }
-
-    func reset() {
-        itemsByTrip = [:]
-        lastError = nil
-    }
-
-    func items(for trip: Trip) -> [ItineraryItem] {
-        itemsByTrip[trip.id, default: []]
-    }
-
-    func refresh(tripID: UUID) async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            let response: [ItineraryItem] = try await auth.supabase
-                .from("itinerary_items")
-                .select()
-                .eq("trip_id", value: tripID.uuidString)
-                .is("deleted_at", value: nil)
-                .order("starts_at", ascending: true)
-                .order("sort_order", ascending: true)
-                .execute()
-                .value
-            itemsByTrip[tripID] = response
-        } catch {
-            lastError = error.localizedDescription
-            Log.error(error, category: "itinerary.refresh")
-        }
-    }
-
-    func create(_ draft: ItineraryItemDraft, tripID: UUID) async -> ItineraryItem? {
-        guard let userID = auth.currentUserID else { return nil }
-        do {
-            let payload = ItineraryItemInsert(
-                tripID: tripID,
-                ownerID: userID,
-                kind: draft.kind,
-                title: draft.title.trimmingCharacters(in: .whitespacesAndNewlines),
-                locationName: draft.locationName.nilIfBlank,
-                startsAt: draft.startsAt,
-                endsAt: draft.endsAt,
-                notes: draft.notes.nilIfBlank,
-                sortOrder: itemsByTrip[tripID, default: []].count
-            )
-            let item: ItineraryItem = try await auth.supabase
-                .from("itinerary_items")
-                .insert(payload)
-                .select()
-                .single()
-                .execute()
-                .value
-            itemsByTrip[tripID, default: []].append(item)
-            itemsByTrip[tripID]?.sort(by: Self.sortItems)
-            return item
-        } catch {
-            lastError = error.localizedDescription
-            Log.error(error, category: "itinerary.create")
-            return nil
-        }
-    }
-
-    func update(_ item: ItineraryItem) async {
-        do {
-            let payload = ItineraryItemUpdate(
-                kind: item.kind,
-                title: item.title,
-                locationName: item.locationName,
-                startsAt: item.startsAt,
-                endsAt: item.endsAt,
-                notes: item.notes,
-                sortOrder: item.sortOrder
-            )
-            let updated: ItineraryItem = try await auth.supabase
-                .from("itinerary_items")
-                .update(payload)
-                .eq("id", value: item.id.uuidString)
-                .select()
-                .single()
-                .execute()
-                .value
-            var items = itemsByTrip[updated.tripID, default: []]
-            if let index = items.firstIndex(where: { $0.id == updated.id }) {
-                items[index] = updated
-            }
-            items.sort(by: Self.sortItems)
-            itemsByTrip[updated.tripID] = items
-        } catch {
-            lastError = error.localizedDescription
-            Log.error(error, category: "itinerary.update")
-        }
-    }
-
-    func softDelete(_ item: ItineraryItem) async {
-        do {
-            try await auth.supabase
-                .from("itinerary_items")
-                .update(["deleted_at": ISO8601DateFormatter().string(from: Date())])
-                .eq("id", value: item.id.uuidString)
-                .execute()
-            itemsByTrip[item.tripID]?.removeAll { $0.id == item.id }
-        } catch {
-            lastError = error.localizedDescription
-            Log.error(error, category: "itinerary.delete")
-        }
-    }
-
-    private static func sortItems(_ lhs: ItineraryItem, _ rhs: ItineraryItem) -> Bool {
-        if lhs.startsAt != rhs.startsAt {
-            return (lhs.startsAt ?? .distantFuture) < (rhs.startsAt ?? .distantFuture)
-        }
-        return lhs.sortOrder < rhs.sortOrder
-    }
+@MainActor final class ItineraryRepository: ObservableObject {
+    @Published private(set) var itemsByTrip:[UUID:[ItineraryItem]] = [:]
+    @Published private(set) var isLoading=false
+    @Published var lastError:String?
+    private let database:PowerSyncDatabaseProtocol
+    private var tasks:[UUID:Task<Void,Never>] = [:]
+    private var userID:String?
+    init(database:PowerSyncDatabaseProtocol){self.database=database}
+    deinit { tasks.values.forEach{$0.cancel()} }
+    func start(userID:String){self.userID=userID}
+    func reset(){tasks.values.forEach{$0.cancel()};tasks.removeAll();itemsByTrip=[:];userID=nil;lastError=nil}
+    func items(for trip:Trip)->[ItineraryItem]{itemsByTrip[trip.id,default:[]]}
+    func refresh(tripID:UUID) async { guard tasks[tripID] == nil else{return}; isLoading=true; let database=database; let id=tripID.uuidString.lowercased(); tasks[tripID]=Task { [weak self] in do { for try await rows in try database.watch(sql:"select * from itinerary_items where trip_id=? and deleted_at is null order by starts_at asc,sort_order asc",parameters:[id],mapper:ItineraryItem.from(cursor:)){self?.itemsByTrip[tripID]=rows.compactMap{$0};self?.isLoading=false} } catch {self?.lastError=error.localizedDescription;self?.isLoading=false} } }
+    func create(_ draft:ItineraryItemDraft,tripID:UUID) async -> ItineraryItem? { guard let userID,let ownerID=UUID(uuidString:userID) else{return nil};let uuid=UUID(),id=uuid.uuidString.lowercased(),now=Date().iso8601,sort=itemsByTrip[tripID,default:[]].count;do{try await database.execute(sql:"insert into itinerary_items (id,trip_id,owner_id,kind,title,location_name,starts_at,ends_at,notes,sort_order,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?)",parameters:[id,tripID.uuidString.lowercased(),userID,draft.kind.rawValue,draft.title.trimmingCharacters(in:.whitespacesAndNewlines),draft.locationName.nilIfBlank,draft.startsAt.iso8601,draft.endsAt.iso8601,draft.notes.nilIfBlank,sort,now,now]);return ItineraryItem(id:uuid,tripID:tripID,ownerID:ownerID,kind:draft.kind,title:draft.title,locationName:draft.locationName.nilIfBlank,startsAt:draft.startsAt,endsAt:draft.endsAt,notes:draft.notes.nilIfBlank,sortOrder:sort,createdAt:Date(),updatedAt:Date(),deletedAt:nil)}catch{lastError=error.localizedDescription;return nil} }
+    func update(_ item:ItineraryItem) async {do{try await database.execute(sql:"update itinerary_items set kind=?,title=?,location_name=?,starts_at=?,ends_at=?,notes=?,sort_order=?,updated_at=? where id=?",parameters:[item.kind.rawValue,item.title,item.locationName,item.startsAt?.iso8601,item.endsAt?.iso8601,item.notes,item.sortOrder,Date().iso8601,item.id.uuidString.lowercased()])}catch{lastError=error.localizedDescription}}
+    func softDelete(_ item:ItineraryItem) async {do{let now=Date().iso8601;try await database.execute(sql:"update itinerary_items set deleted_at=?,updated_at=? where id=?",parameters:[now,now,item.id.uuidString.lowercased()])}catch{lastError=error.localizedDescription}}
 }
-
-private struct ItineraryItemInsert: Encodable {
-    let tripID: UUID
-    let ownerID: UUID
-    let kind: ItineraryItemKind
-    let title: String
-    let locationName: String?
-    let startsAt: Date
-    let endsAt: Date
-    let notes: String?
-    let sortOrder: Int
-
-    enum CodingKeys: String, CodingKey {
-        case tripID = "trip_id"
-        case ownerID = "owner_id"
-        case kind
-        case title
-        case locationName = "location_name"
-        case startsAt = "starts_at"
-        case endsAt = "ends_at"
-        case notes
-        case sortOrder = "sort_order"
-    }
-}
-
-private struct ItineraryItemUpdate: Encodable {
-    let kind: ItineraryItemKind
-    let title: String
-    let locationName: String?
-    let startsAt: Date?
-    let endsAt: Date?
-    let notes: String?
-    let sortOrder: Int
-
-    enum CodingKeys: String, CodingKey {
-        case kind
-        case title
-        case locationName = "location_name"
-        case startsAt = "starts_at"
-        case endsAt = "ends_at"
-        case notes
-        case sortOrder = "sort_order"
-    }
-}
-

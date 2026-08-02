@@ -1,4 +1,5 @@
 import Foundation
+import PowerSync
 
 enum ItineraryItemKind: String, Codable, CaseIterable, Identifiable {
     case flight
@@ -30,6 +31,23 @@ enum ItineraryItemKind: String, Codable, CaseIterable, Identifiable {
         case .transport: "tram.fill"
         case .note: "note.text"
         }
+    }
+}
+
+extension ItineraryItem {
+    static func from(cursor: SqlCursor) -> ItineraryItem? {
+        do {
+            guard let id = UUID(uuidString: try cursor.getString(name: "id")),
+                  let tripID = UUID(uuidString: try cursor.getString(name: "trip_id")),
+                  let ownerID = UUID(uuidString: try cursor.getString(name: "owner_id")),
+                  let kind = ItineraryItemKind(rawValue: try cursor.getString(name: "kind")) else { return nil }
+            return ItineraryItem(id: id, tripID: tripID, ownerID: ownerID, kind: kind,
+                title: try cursor.getString(name: "title"), locationName: try cursor.getStringOptional(name: "location_name"),
+                startsAt: parseISO8601Date(try cursor.getStringOptional(name: "starts_at")),
+                endsAt: parseISO8601Date(try cursor.getStringOptional(name: "ends_at")), notes: try cursor.getStringOptional(name: "notes"),
+                sortOrder: try cursor.getInt(name: "sort_order"), createdAt: parseISO8601Date(try cursor.getStringOptional(name: "created_at")),
+                updatedAt: parseISO8601Date(try cursor.getStringOptional(name: "updated_at")), deletedAt: parseISO8601Date(try cursor.getStringOptional(name: "deleted_at")))
+        } catch { return nil }
     }
 }
 
@@ -77,4 +95,3 @@ struct ItineraryItemDraft {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
-

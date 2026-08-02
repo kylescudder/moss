@@ -527,7 +527,7 @@ final class AuthClient: ObservableObject {
 
     // MARK: - Session management
 
-    func signOut() async {
+    func signOut() async -> Bool {
         Self.clearPendingRecoveryFlag()
         isPasswordRecovery = false
         Log.breadcrumb("signout started", category: "auth")
@@ -536,8 +536,11 @@ final class AuthClient: ObservableObject {
             try await supabase.auth.signOut()
             apply(session: nil)
             Log.breadcrumb("signout completed", category: "auth")
+            return true
         } catch {
+            lastError = error.localizedDescription
             Log.error(error, category: "auth.signOut")
+            return false
         }
     }
 

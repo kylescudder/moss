@@ -5,6 +5,24 @@ import XCTest
 
 @MainActor
 final class SubscriptionQuotaTests: XCTestCase {
+    func testMissingQuotaSnapshotIsBlocked() {
+        XCTAssertThrowsError(try TripQuotaSnapshot.requireInitializedCount(nil)) { error in
+            XCTAssertEqual(error as? TripCreationError, .quotaSnapshotUnavailable)
+        }
+    }
+
+    func testConfirmedZeroQuotaIsDistinctFromMissingSnapshot() throws {
+        XCTAssertEqual(try TripQuotaSnapshot.requireInitializedCount(0), 0)
+    }
+
+    func testUploadPermanentErrorClassificationDoesNotAcknowledgeRLS() {
+        let quota = PostgrestError(detail: "MOSS_TRIP_LIMIT_REACHED", hint: "", code: "MS001", message: "limit")
+        let constraint = PostgrestError(detail: "", hint: "", code: "23514", message: "check")
+        let rls = PostgrestError(detail: "", hint: "", code: "42501", message: "denied")
+        XCTAssertTrue(SupabaseConnector.isPermanentRejection(quota))
+        XCTAssertTrue(SupabaseConnector.isPermanentRejection(constraint))
+        XCTAssertFalse(SupabaseConnector.isPermanentRejection(rls))
+    }
     func testCreationStatusDecodesAuthoritativeLifetimeUsage() throws {
         let status = try JSONDecoder().decode(
             TripCreationStatus.self,

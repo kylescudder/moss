@@ -13,6 +13,12 @@ enum AppSecrets {
         URL(string: "moss://auth-callback")!
     }
 
+    static var powerSyncURL: URL? { URL(string: raw("POWERSYNC_URL")) }
+
+    static var powerSyncConfigurationError: String? {
+        powerSyncURL == nil ? "Missing or invalid POWERSYNC_URL in Config/Secrets.xcconfig." : nil
+    }
+
     static var supabaseConfigurationError: String? {
         let url = raw("SUPABASE_URL")
         let key = raw("SUPABASE_ANON_KEY")
@@ -26,4 +32,3 @@ enum AppSecrets {
         Bundle.main.object(forInfoDictionaryKey: key) as? String ?? ""
     }
 }
-

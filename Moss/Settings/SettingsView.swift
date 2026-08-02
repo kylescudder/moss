@@ -82,6 +82,11 @@ struct SettingsView: View {
                 .disabled(isDeleting)
             }
 
+            Section("Sync") {
+                LabeledContent("Status", value: syncStatus)
+                LabeledContent("Pending uploads", value: "\(services.sync.pendingUploadCount)")
+            }
+
             Section("About") {
                 LabeledContent("Version", value: appVersion)
                 Link("Support", destination: URL(string: "https://getmoss.app/support")!)
@@ -98,7 +103,7 @@ struct SettingsView: View {
         }
         .alert("Sign out of Moss?", isPresented: $showSignOutConfirm) {
             Button("Sign out", role: .destructive) {
-                Task { await services.auth.signOut() }
+                Task { if await services.auth.signOut() { await services.sync.wipe() } }
             }
             Button("Cancel", role: .cancel) {}
         }
@@ -122,6 +127,9 @@ struct SettingsView: View {
         ), presenting: deleteError) { _ in
             Button("OK", role: .cancel) {}
         } message: { Text($0) }
+        .alert(item: Binding(get: { services.syncIssues.current }, set: { services.syncIssues.current = $0 })) { issue in
+            Alert(title: Text(issue.title), message: Text(issue.message), dismissButton: .default(Text("OK")))
+        }
     }
 
     private var appVersion: String {
@@ -143,11 +151,21 @@ struct SettingsView: View {
         }
     }
 
+    private var syncStatus: String {
+        switch services.sync.status {
+        case .idle, .offline: "Offline"
+        case .connecting: "Connecting"
+        case .connected: "Connected / up to date"
+        case .error: "Error"
+        }
+    }
+
     private func deleteAccount() async {
         isDeleting = true
         defer { isDeleting = false }
         do {
             try await services.auth.deleteAccount()
+            await services.sync.wipe()
         } catch {
             deleteError = error.localizedDescription
         }

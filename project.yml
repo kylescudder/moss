@@ -19,6 +19,9 @@ packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
     from: 2.20.0
+  PowerSync:
+    url: https://github.com/powersync-ja/powersync-swift
+    from: 1.15.1
   Sentry:
     url: https://github.com/getsentry/sentry-cocoa
     from: 8.40.0
@@ -76,6 +79,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         SUPABASE_URL: $(SUPABASE_URL)
         SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
+        POWERSYNC_URL: $(POWERSYNC_URL)
         SENTRY_DSN: $(SENTRY_DSN)
     settings:
       base:
@@ -97,6 +101,8 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
+      - package: PowerSync
+        product: PowerSync
       - package: Sentry
         product: Sentry
 
@@ -110,3 +116,5 @@ targets:
       - target: Moss
       - package: Supabase
         product: Supabase
+      - package: PowerSync
+        product: PowerSync
