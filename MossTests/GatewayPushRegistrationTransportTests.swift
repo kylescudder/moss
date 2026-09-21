@@ -153,7 +153,7 @@ private final class PushURLProtocolStub: URLProtocol, @unchecked Sendable {
     }
 
     override func startLoading() {
-        Self.state.lastRequest = request
+        Self.state.lastRequest = request.materializingHTTPBody()
         let response: URLResponse
         switch Self.state.response {
         case .http(let statusCode):
@@ -204,5 +204,25 @@ private final class PushURLProtocolStub: URLProtocol, @unchecked Sendable {
             defer { lock.unlock() }
             return operation()
         }
+    }
+}
+
+private extension URLRequest {
+    func materializingHTTPBody() -> URLRequest {
+        guard httpBody == nil, let stream = httpBodyStream else { return self }
+        stream.open()
+        defer { stream.close() }
+
+        var body = Data()
+        var buffer = [UInt8](repeating: 0, count: 4_096)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            guard count > 0 else { break }
+            body.append(contentsOf: buffer.prefix(count))
+        }
+
+        var copy = self
+        copy.httpBody = body
+        return copy
     }
 }
