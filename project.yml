@@ -24,7 +24,7 @@ packages:
     from: 1.15.1
   Sentry:
     url: https://github.com/getsentry/sentry-cocoa
-    from: 8.40.0
+    from: 8.58.4
 
 schemes:
   Moss:
