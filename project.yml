@@ -21,7 +21,7 @@ packages:
     from: 2.20.0
   PowerSync:
     url: https://github.com/powersync-ja/powersync-swift
-    from: 1.15.1
+    from: 1.16.4
   Sentry:
     url: https://github.com/getsentry/sentry-cocoa
     from: 8.40.0
