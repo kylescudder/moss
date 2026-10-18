@@ -37,6 +37,10 @@
 	<string>Moss uses your location to help you understand places near your trip.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Moss saves the trip memories and exports you choose to create.</string>
+	<key>PUSH_GATEWAY_APPLICATION_ID</key>
+	<string>$(PUSH_GATEWAY_APPLICATION_ID)</string>
+	<key>PUSH_GATEWAY_URL</key>
+	<string>$(PUSH_GATEWAY_URL)</string>
 	<key>SENTRY_DSN</key>
 	<string>$(SENTRY_DSN)</string>
 	<key>SUPABASE_ANON_KEY</key>
