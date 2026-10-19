@@ -66,10 +66,12 @@ existing default Cloudflare settings. Preserve all unrelated routes.
 
 ## Former Netlify hosting and domain
 
-The old Netlify project is `mossapp`; it had only `mossapp.netlify.app`, with no
-custom domain. Retire it only after a successful main-push release, public HTTPS
-and browser acceptance. It is not an image rollback mechanism. Evidence of
-cutover and retirement is maintained under `/Users/kyle/platform/verification/moss-*`.
+Netlify project `mossapp` (ID `7d96de17-7768-46bf-b11a-4dbc8f6c3cc6`) was
+deleted on 19 October 2026 after a successful main-push release and public
+HTTPS/browser acceptance. It had no custom domains. It is absent from the
+authenticated project list and `mossapp.netlify.app` returns 404. Netlify is no
+longer a rollback target; use a retained attested image. Cutover and retirement
+evidence is under `/Users/kyle/platform/verification/moss-*`.
 
 `getmoss.app` was referenced in the source but had no public website A record
 and is not in the accessible Cloudflare account. Its nameservers belong to a
