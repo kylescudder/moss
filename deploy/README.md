@@ -71,8 +71,9 @@ custom domain. Retire it only after a successful main-push release, public HTTPS
 and browser acceptance. It is not an image rollback mechanism. Evidence of
 cutover and retirement is maintained under `/Users/kyle/platform/verification/moss-*`.
 
-`getmoss.app` was referenced in the source but had no public DNS and is not in the
-managed Cloudflare account. The website canonical URLs and new iOS builds now
+`getmoss.app` was referenced in the source but had no public website A record
+and is not in the accessible Cloudflare account. Its nameservers belong to a
+separate Cloudflare zone; no MX records were present either. The website canonical URLs and new iOS builds now
 use `moss.kylescudder.co.uk`, including privacy, terms, support and associated
 domain. Existing installed app builds retain their old links until updated.
 The existing `support@getmoss.app` email address is preserved; mail provisioning
