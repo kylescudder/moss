@@ -175,8 +175,8 @@ struct SubscriptionPaywallView: View {
         return "Monthly auto-renewable subscription: \(product.displayPrice) per month. Payment is charged to your Apple ID after purchase confirmation. Paid trip creation begins after Moss securely verifies the transaction with Apple."
     }
 
-    private static let privacyPolicyURL = URL(string: "https://getmoss.app/privacy")!
-    private static let termsOfUseURL = URL(string: "https://getmoss.app/terms")!
+    private static let privacyPolicyURL = URL(string: "https://moss.kylescudder.co.uk/privacy")!
+    private static let termsOfUseURL = URL(string: "https://moss.kylescudder.co.uk/terms")!
 
     private func subscribe() async {
         isPurchasing = true

@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview --host 0.0.0.0",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "check:site": "node ../deploy/check-site.mjs"
   },
   "dependencies": {
     "astro": "^7.1.1"

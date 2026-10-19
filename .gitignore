@@ -9,3 +9,12 @@ Config/Secrets.xcconfig
 node_modules/
 Site/.astro/
 Site/dist/
+
+# Private Herman deployment configuration and state
+.env.*
+!.env.example
+state/
+secrets/
+backups/
+deploy-spool/
+__pycache__/

@@ -154,3 +154,10 @@ Moss/
   Trips/            trip list/detail/create flows
   Utilities/        logging and formatting helpers
 ```
+
+## Marketing deployment
+
+The Astro marketing, privacy, terms and support site runs at
+https://moss.kylescudder.co.uk. Main pushes build checked, attested images and
+automatically deploy to Herman. See [deploy/README.md](deploy/README.md) for
+CI/CD, hosting and rollback.

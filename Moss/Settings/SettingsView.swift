@@ -89,8 +89,8 @@ struct SettingsView: View {
 
             Section("About") {
                 LabeledContent("Version", value: appVersion)
-                Link("Support", destination: URL(string: "https://getmoss.app/support")!)
-                Link("Privacy Policy", destination: URL(string: "https://getmoss.app/privacy")!)
+                Link("Support", destination: URL(string: "https://moss.kylescudder.co.uk/support")!)
+                Link("Privacy Policy", destination: URL(string: "https://moss.kylescudder.co.uk/privacy")!)
             }
         }
         .navigationTitle("Settings")

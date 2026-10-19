@@ -1,0 +1,29 @@
+name: moss
+services:
+  moss:
+    image: ${MOSS_IMAGE:?set an immutable Moss image reference}
+    restart: unless-stopped
+    networks:
+      web:
+        aliases: [moss]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 64m
+    cpus: 0.5
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+networks:
+  web:
+    external: true
+    name: ${PLATFORM_WEB_NETWORK:-platform-web}

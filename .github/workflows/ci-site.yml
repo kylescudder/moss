@@ -1,0 +1,38 @@
+name: Site · CI
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build and validate the static site
+        run: |
+          docker run --rm -v "$PWD:/app" -w /app -e HUSKY=0 -e CI=true -e BUN_CONFIG_MAX_HTTP_REQUESTS=16 oven/bun:1.4.3@sha256:ec06c3b6cea04192ae6770c434f668ca41d343ad19fa6472216c7b48be39c598 sh -c 'cd Site && bun install --frozen-lockfile --network-concurrency=16 && bun run build && bun run check:site && bun run format:check'
+      - name: Deployment provenance, queue and rollback tests
+        run: python3 -B -m unittest discover -s deploy -p 'test_*.py' -v
+      - name: Webhook authentication and acceptance tests
+        run: node --test deploy/receiver/server.test.mjs
+      - name: Verify the production container without privileges
+        run: |
+          docker build -t moss:ci --build-arg MOSS_REVISION="$GITHUB_SHA" .
+          docker network create platform-web
+          trap 'MOSS_IMAGE=moss:ci docker compose down; docker network rm platform-web' EXIT
+          MOSS_IMAGE=moss:ci docker compose up -d --wait --wait-timeout 60
+          docker exec moss-moss-1 wget -qO- http://127.0.0.1:8080/ | grep -q 'Travel, together'
+          headers=$(docker exec moss-moss-1 wget -S -O /dev/null http://127.0.0.1:8080/ 2>&1)
+          echo "$headers" | grep -qi "X-Moss-Revision: $GITHUB_SHA"
+          status=$(docker exec moss-moss-1 wget -S -O /dev/null http://127.0.0.1:8080/missing-page 2>&1 || true)
+          echo "$status" | grep -q '404 Not Found'
+          for path in /privacy/ /terms/ /support/; do
+            docker exec moss-moss-1 wget -qO /dev/null "http://127.0.0.1:8080$path"
+          done
+          association=$(docker exec moss-moss-1 wget -S -O /dev/null http://127.0.0.1:8080/.well-known/apple-app-site-association 2>&1)
+          echo "$association" | grep -qi 'Content-Type: application/json'

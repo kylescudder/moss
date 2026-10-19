@@ -14,7 +14,7 @@
 	</array>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:getmoss.app</string>
+		<string>applinks:moss.kylescudder.co.uk</string>
 	</array>
 </dict>
 </plist>
