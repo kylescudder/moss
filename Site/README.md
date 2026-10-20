@@ -8,5 +8,5 @@ bun run dev
 ```
 
 Build and validate with `bun run build && bun run check:site`.
-GitHub Actions deploys main pushes to Herman; see [`../deploy/README.md`](../deploy/README.md)
+GitHub Actions deploys main pushes to the host; see [`../deploy/README.md`](../deploy/README.md)
 for release, verification, private configuration and rollback.

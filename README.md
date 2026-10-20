@@ -159,5 +159,5 @@ Moss/
 
 The Astro marketing, privacy, terms and support site runs at
 https://moss.kylescudder.co.uk. Main pushes build checked, attested images and
-automatically deploy to Herman. See [deploy/README.md](deploy/README.md) for
+automatically deploy to the host. See [deploy/README.md](deploy/README.md) for
 CI/CD, hosting and rollback.

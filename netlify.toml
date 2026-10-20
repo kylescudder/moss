@@ -2,7 +2,7 @@
   base = "Site"
   command = "bun run build"
   publish = "dist"
-  # Releases are handled by GitHub Actions and Herman.
+  # Releases are handled by GitHub Actions and the host.
   ignore = "exit 0"
 
 # Universal Links: Apple fetches this extensionless path and requires

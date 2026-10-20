@@ -114,8 +114,8 @@ jobs:
           DIGEST: ${{ steps.manifest.outputs.digest }}
         run: docker buildx imagetools create -t "$IMAGE:main" "$IMAGE@$DIGEST"
 
-  # Asks Herman to deploy the attested digest, then waits for the public site to
-  # report this commit. Herman verifies the attestation itself, so the webhook
+  # Asks the host to deploy the attested digest, then waits for the public site to
+  # report this commit. The host verifies the attestation itself, so the webhook
   # secret can only ever trigger a release that this workflow built from main.
   deploy:
     needs: publish
@@ -177,7 +177,7 @@ jobs:
             -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
             -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
             --data "$body"
-      - name: Wait for Herman acceptance and the public revision
+      - name: Wait for host acceptance and the public revision
         env:
           DIGEST: ${{ needs.publish.outputs.digest }}
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
@@ -192,10 +192,10 @@ jobs:
             revision=$(curl --fail --silent --max-time 10 --dump-header - --output /dev/null "$HEALTH_URL" \
               | tr -d '\r' | awk -F': ' 'tolower($1) == "x-moss-revision" {print $2}' || true)
             if [ "$accepted" = deployed ] && [ "$revision" = "$GITHUB_SHA" ]; then
-              echo "Herman completed site and asset checks; production is running $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+              echo "The host completed site and asset checks; production is running $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
             sleep 10
           done
-          echo "::error::Production did not report $GITHUB_SHA within 10 minutes (last: ${revision:-none}). Check state/deploy.log on Herman."
+          echo "::error::Production did not report $GITHUB_SHA within 10 minutes (last: ${revision:-none}). Check state/deploy.log on the host."
           exit 1
