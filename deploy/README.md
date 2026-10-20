@@ -1,8 +1,15 @@
-# Moss marketing on Herman
+# Moss marketing on the host
 
 Production: https://moss.kylescudder.co.uk.
 Repository: `kylescudder/moss`, branch `main`.
 Host checkout: `/Users/kyle/platform/apps/moss`.
+
+## Deployer
+
+`deploy/host-deploy.py` holds this app's settings and hooks; the
+shared flow is `deploy/deploy_core.py`, vendored unchanged from
+`kylescudder/deploy-core` (see `deploy/deploy_core.lock`). Change the core
+there and sync it; CI fails if the vendored copy is edited here.
 
 ## Automatic releases
 
@@ -28,7 +35,7 @@ routed to `moss-deploy-hook:9000`. The receiver has no Docker socket, database
 network or host port. It verifies HMAC, revision/digest shape and request age,
 then writes only its request queue; status reads only public acceptance metadata.
 
-LaunchAgent `com.herman.moss-deploy` consumes requests as Colima's owner and
+LaunchAgent `com.kylescudder.moss-deploy` consumes requests as Colima's owner and
 independently verifies provenance for this repo's `release-site.yml`, `main` and
 GitHub-hosted runners. Each release checks all four pages, CSS/mark assets and
 Apple association before acknowledging the exact image and revision. Failed
@@ -49,16 +56,16 @@ and state files automatically. Rebuild application source/images from GitHub.
 ```sh
 # Run from /Users/kyle/platform/apps/moss.
 docker compose -f deploy/compose.deploy-hook.yaml --env-file .env.deploy-hook up -d --wait
-python3 -B deploy/install-launchd.py
-launchctl print gui/501/com.herman.moss-deploy
+python3 -B deploy/host-deploy.py --install <host LocalHostName>
+launchctl print gui/501/com.kylescudder.moss-deploy
 tail -n 100 state/deploy.log
 # Manual recovery to a previously attested main image:
-./deploy/herman-deploy.sh sha256:<verified-digest>
+./deploy/host-deploy.sh sha256:<verified-digest>
 ```
 
 Routine image releases require no host checkout update. Changes to host deploy
 tooling or Compose need an explicit checkout update. Set the repository variable
-`DEPLOY_ENABLED=false` to pause releases. Herman's login session and Colima must
+`DEPLOY_ENABLED=false` to pause releases. The host's login session and Colima must
 be running, as for the other sites.
 
 Manage both hostnames with `/Users/kyle/platform/scripts/hostname.py` and the

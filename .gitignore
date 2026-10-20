@@ -10,7 +10,7 @@ node_modules/
 Site/.astro/
 Site/dist/
 
-# Private Herman deployment configuration and state
+# Private host deployment configuration and state
 .env.*
 !.env.example
 state/
