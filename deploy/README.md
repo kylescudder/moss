@@ -1,15 +1,27 @@
 # Moss marketing on the host
 
+## Shared deployment service
+
+This app is registered as `moss` in the central deployment registry
+`/Users/kyle/platform/deploy-core/apps.json`. LaunchAgent
+`com.kylescudder.deploy-core` runs the single installed engine. Application hooks
+are `deploy/hooks.py`; the receiver, credentials, queues,
+state and database contracts below remain app-specific. Manual deployment uses
+`./deploy/host-deploy.sh sha256:<digest>`.
+
+Engine updates, application registration, failure inspection and service rollback
+are documented in [deploy-core](https://github.com/kylescudder/deploy-core).
+There are no vendored engine files, lock files or sync PRs. Do not install an
+app-specific LaunchAgent. Apply future engine changes once through the central service.
+
+
 Production: https://moss.kylescudder.co.uk.
 Repository: `kylescudder/moss`, branch `main`.
 Host checkout: `/Users/kyle/platform/apps/moss`.
 
 ## Deployer
 
-`deploy/host-deploy.py` holds this app's settings and hooks; the
-shared flow is `deploy/deploy_core.py`, vendored unchanged from
-`kylescudder/deploy-core` (see `deploy/deploy_core.lock`). Change the core
-there and sync it; CI fails if the vendored copy is edited here.
+Application-specific behavior is in `hooks.py`; deployment definitions are central.
 
 ## Automatic releases
 
@@ -35,7 +47,7 @@ routed to `moss-deploy-hook:9000`. The receiver has no Docker socket, database
 network or host port. It verifies HMAC, revision/digest shape and request age,
 then writes only its request queue; status reads only public acceptance metadata.
 
-LaunchAgent `com.kylescudder.moss-deploy` consumes requests as Colima's owner and
+LaunchAgent `com.kylescudder.deploy-core` consumes requests as Colima's owner and
 independently verifies provenance for this repo's `release-site.yml`, `main` and
 GitHub-hosted runners. Each release checks all four pages, CSS/mark assets and
 Apple association before acknowledging the exact image and revision. Failed
@@ -56,8 +68,7 @@ and state files automatically. Rebuild application source/images from GitHub.
 ```sh
 # Run from /Users/kyle/platform/apps/moss.
 docker compose -f deploy/compose.deploy-hook.yaml --env-file .env.deploy-hook up -d --wait
-python3 -B deploy/host-deploy.py --install <host LocalHostName>
-launchctl print gui/501/com.kylescudder.moss-deploy
+launchctl print gui/501/com.kylescudder.deploy-core
 tail -n 100 state/deploy.log
 # Manual recovery to a previously attested main image:
 ./deploy/host-deploy.sh sha256:<verified-digest>

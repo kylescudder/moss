@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Moss settings and hooks for the shared host deployer (deploy_core.py)."""
+"""Moss application-owned hooks for the installed deployment service."""
 import json
 from pathlib import Path
 import re
@@ -24,15 +24,3 @@ def accept(image):
                              'http://127.0.0.1:8080/.well-known/apple-app-site-association', image=image))
     if association.get('applinks', {}).get('details', [{}])[0].get('appIDs') != ['6AAGJ9Y234.app.getmoss.moss']:
         raise core.Error('Apple app-site association verification failed.')
-
-
-APP = core.App(
-    name='moss', title='Moss',
-    image='ghcr.io/kylescudder/moss-site', repo='kylescudder/moss',
-    image_var='MOSS_IMAGE', service='moss', app_dir=Path(__file__).resolve().parents[1],
-    workflow='release-site.yml',
-    accept=accept,
-    public_status=True)
-
-if __name__ == '__main__':
-    core.cli(APP, __file__)
