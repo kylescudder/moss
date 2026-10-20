@@ -21,7 +21,7 @@ Host checkout: `/Users/kyle/platform/apps/moss`.
 
 ## Deployer
 
-`application hooks` holds this app's settings and hooks; the
+Application-specific behavior is in `hooks.py`; deployment definitions are central.
 
 ## Automatic releases
 
