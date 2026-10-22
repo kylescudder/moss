@@ -46,7 +46,7 @@ jobs:
           supabase/functions/_shared/apple-iap.test.ts
 
       - name: Set up Supabase CLI
-        uses: supabase/setup-cli@v2.1.1
+        uses: supabase/setup-cli@v2.1.2
         with:
           version: 2.111.0
 
