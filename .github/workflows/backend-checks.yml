@@ -48,7 +48,7 @@ jobs:
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v2.1.1
         with:
-          version: 2.111.0
+          version: 2.122.0
 
       - name: Start clean Supabase stack and apply all migrations
         run: |
