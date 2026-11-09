@@ -1,10 +1,10 @@
-FROM oven/bun:1.4.3@sha256:ec06c3b6cea04192ae6770c434f668ca41d343ad19fa6472216c7b48be39c598 AS build
+FROM oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d AS build
 WORKDIR /app/Site
-ENV CI=true BUN_CONFIG_MAX_HTTP_REQUESTS=16
+# Never run the Husky hook in image builds.
+ENV CI=true HUSKY=0 ASTRO_TELEMETRY_DISABLED=1 BUN_CONFIG_MAX_HTTP_REQUESTS=16
 COPY Site/package.json Site/bun.lock ./
 RUN bun install --frozen-lockfile --network-concurrency=16
 COPY Site/ ./
-COPY deploy/check-site.mjs /app/deploy/check-site.mjs
 RUN bun run build && bun run check:site
 
 FROM caddy:2.11.7@sha256:8dc9fa87b36b25303d1c67d2a09f5824b7f3bfd72cb052f246e5da2133fe29a8
