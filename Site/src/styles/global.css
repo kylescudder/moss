@@ -25,7 +25,7 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--paper);
-  font-family: "Work Sans", sans-serif;
+  font-family: 'Work Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -78,7 +78,7 @@ svg {
 }
 
 .wordmark {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 750;
   font-size: 20px;
 }
@@ -100,7 +100,7 @@ svg {
   border: 1px solid var(--line);
   border-radius: 8px;
   color: rgba(36, 58, 41, 0.72);
-  font-family: "IBM Plex Mono", monospace;
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   font-weight: 700;
 }
@@ -135,7 +135,7 @@ svg {
 .kicker {
   margin: 0 0 18px;
   color: var(--moss);
-  font-family: "IBM Plex Mono", monospace;
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -158,7 +158,7 @@ h3 {
 
 h1 {
   margin-bottom: 22px;
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-size: clamp(74px, 14vw, 160px);
   font-weight: 750;
   line-height: 0.86;
@@ -166,7 +166,7 @@ h1 {
 
 h2 {
   margin-bottom: 24px;
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-size: clamp(46px, 7.4vw, 96px);
   font-weight: 750;
   line-height: 0.92;
@@ -236,7 +236,7 @@ h3 {
 }
 
 .journey-panel::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 46px 20px 34px;
   border: 1px solid rgba(53, 95, 66, 0.18);
@@ -268,7 +268,7 @@ h3 {
 .memory-card span,
 .feature-grid span {
   color: var(--moss);
-  font-family: "IBM Plex Mono", monospace;
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -276,7 +276,7 @@ h3 {
 }
 
 .memory-card strong {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-size: 26px;
   line-height: 1.04;
 }
@@ -371,7 +371,7 @@ footer {
   gap: 18px;
   color: rgba(251, 251, 243, 0.72);
   background: var(--forest);
-  font-family: "IBM Plex Mono", monospace;
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   font-weight: 700;
 }
@@ -410,7 +410,7 @@ footer {
 }
 
 .updated {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;

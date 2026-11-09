@@ -1,7 +1,7 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig } from 'astro/config'
 
 export default defineConfig({
-  site: "https://moss.kylescudder.co.uk",
-  output: "static",
-});
+  site: 'https://moss.kylescudder.co.uk',
+  output: 'static'
+})
