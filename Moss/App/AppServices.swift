@@ -37,6 +37,12 @@ final class AppServices: ObservableObject {
         }
 
         notifications.bind(auth: auth)
+        auth.beforeSessionInvalidation = { [weak notifications] in
+            await notifications?.deactivate()
+        }
+        auth.afterSessionInvalidationFailure = { [weak notifications] in
+            await notifications?.activate()
+        }
         billing.start()
         Task { await sync.startObservingAuth() }
 
@@ -51,6 +57,7 @@ final class AppServices: ObservableObject {
 
     private func applyAuth(state: AuthClient.State) async {
         guard case let .signedIn(userID, _) = state else {
+            notifications.sessionEnded()
             billing.resetForSignOut()
             trips.reset()
             itinerary.reset()
@@ -61,6 +68,7 @@ final class AppServices: ObservableObject {
         profile.startWatching(userID: id)
         trips.startWatching(userID: id)
         itinerary.start(userID: id)
+        await notifications.activate()
         await billing.syncEntitlements()
         await refreshAll()
     }
@@ -68,7 +76,6 @@ final class AppServices: ObservableObject {
     func refreshAll() async {
         await profile.refresh()
         await trips.refresh()
-        await notifications.registerIfAuthorized()
     }
 
     func canCreateTrip() async -> TripCreationAvailability {

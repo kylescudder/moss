@@ -57,6 +57,8 @@ final class AuthClient: ObservableObject {
     @Published var isPasswordRecovery = false
 
     let supabase: SupabaseClient
+    var beforeSessionInvalidation: (() async -> Void)?
+    var afterSessionInvalidationFailure: (() async -> Void)?
 
     private var stateTask: Task<Void, Never>?
     private var pendingAppleNonce: String?
@@ -87,6 +89,18 @@ final class AuthClient: ObservableObject {
             return try await supabase.auth.session.accessToken
         } catch {
             return nil
+        }
+    }
+
+    func performSessionInvalidation<T>(
+        _ operation: () async throws -> T
+    ) async rethrows -> T {
+        await beforeSessionInvalidation?()
+        do {
+            return try await operation()
+        } catch {
+            await afterSessionInvalidationFailure?()
+            throw error
         }
     }
 
@@ -310,7 +324,9 @@ final class AuthClient: ObservableObject {
             }
             isPasswordRecovery = false
             Self.clearPendingRecoveryFlag()
-            try await client.auth.signOut()
+            try await performSessionInvalidation {
+                try await client.auth.signOut()
+            }
             apply(session: nil)
             Log.breadcrumb("password updated; recovery session signed out", category: "auth.updatePassword")
             return true
@@ -533,7 +549,9 @@ final class AuthClient: ObservableObject {
         Log.breadcrumb("signout started", category: "auth")
 
         do {
-            try await supabase.auth.signOut()
+            try await performSessionInvalidation {
+                try await supabase.auth.signOut()
+            }
             apply(session: nil)
             Log.breadcrumb("signout completed", category: "auth")
             return true
@@ -546,8 +564,10 @@ final class AuthClient: ObservableObject {
 
     func deleteAccount() async throws {
         Self.clearPendingRecoveryFlag()
-        try await supabase.rpc("delete_my_account").execute()
-        try await supabase.auth.signOut()
+        try await performSessionInvalidation {
+            try await supabase.rpc("delete_my_account").execute()
+            try await supabase.auth.signOut()
+        }
         isPasswordRecovery = false
         apply(session: nil)
     }
