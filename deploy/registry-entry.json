@@ -1,0 +1,17 @@
+{
+  "name": "moss",
+  "title": "Moss",
+  "repo": "kylescudder/moss",
+  "image": "ghcr.io/kylescudder/moss-site",
+  "image_var": "MOSS_IMAGE",
+  "service": "moss",
+  "workflow": "release-site.yml",
+  "branch": "main",
+  "compose_file": "compose.yaml",
+  "app_dir": "moss",
+  "public_status": true,
+  "bind_source_digest": true,
+  "require_host": true,
+  "installed_hooks": true,
+  "enabled": true
+}
