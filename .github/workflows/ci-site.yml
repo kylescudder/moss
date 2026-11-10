@@ -2,6 +2,10 @@ name: Site · CI
 on:
   pull_request:
     branches: [main]
+    paths:
+      - "Site/**"
+      - ".github/workflows/ci-site.yml"
+      - ".github/workflows/release-site.yml"
   workflow_call:
 permissions:
   contents: read
@@ -13,23 +17,32 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # Install (HUSKY=0), typecheck, format check, build, then validate the output.
-      - name: Check, build and validate the static site
+      - name: Install, typecheck, lint, check formatting, build and validate
         run: |
-          docker run --rm -v "$PWD:/app" -w /app/Site -e HUSKY=0 -e CI=true -e ASTRO_TELEMETRY_DISABLED=1 -e BUN_CONFIG_MAX_HTTP_REQUESTS=16 oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d sh -c 'bun install --frozen-lockfile --network-concurrency=16 && bun run typecheck && bun run format:check && bun run build && bun run check:site'
+          docker run --rm -v "$PWD/Site:/app" -w /app -e HUSKY=0 -e CI=true -e BUN_CONFIG_MAX_HTTP_REQUESTS=16 \
+            oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d sh -ec '
+              bun install --frozen-lockfile --network-concurrency=16
+              bun run typecheck
+              bun run lint
+              bun run format:check
+              bun run build
+              bun run check:site'
       - name: Verify the production container without privileges
         run: |
-          docker build -t moss:ci --build-arg MOSS_REVISION="$GITHUB_SHA" .
-          docker network create platform-web
-          trap 'MOSS_IMAGE=moss:ci docker compose down; docker network rm platform-web' EXIT
-          MOSS_IMAGE=moss:ci docker compose up -d --wait --wait-timeout 60
-          docker exec moss-moss-1 wget -qO- http://127.0.0.1:8080/ | grep -q 'Travel, together'
-          headers=$(docker exec moss-moss-1 wget -S -O /dev/null http://127.0.0.1:8080/ 2>&1)
+          docker build -t moss-site:ci --build-arg MOSS_REVISION="$GITHUB_SHA" Site
+          docker run -d --name moss-site-ci --read-only --cap-drop ALL --security-opt no-new-privileges:true moss-site:ci
+          trap 'docker rm -f moss-site-ci' EXIT
+          for _attempt in $(seq 20); do
+            docker exec moss-site-ci wget -qO /dev/null http://127.0.0.1:8080/ && break
+            sleep 1
+          done
+          docker exec moss-site-ci wget -qO- http://127.0.0.1:8080/ | grep -q 'Travel, together'
+          headers=$(docker exec moss-site-ci wget -S -O /dev/null http://127.0.0.1:8080/ 2>&1)
           echo "$headers" | grep -qi "X-Moss-Revision: $GITHUB_SHA"
-          status=$(docker exec moss-moss-1 wget -S -O /dev/null http://127.0.0.1:8080/missing-page 2>&1 || true)
+          status=$(docker exec moss-site-ci wget -S -O /dev/null http://127.0.0.1:8080/missing-page 2>&1 || true)
           echo "$status" | grep -q '404 Not Found'
           for path in /privacy/ /terms/ /support/; do
-            docker exec moss-moss-1 wget -qO /dev/null "http://127.0.0.1:8080$path"
+            docker exec moss-site-ci wget -qO /dev/null "http://127.0.0.1:8080$path"
           done
-          association=$(docker exec moss-moss-1 wget -S -O /dev/null http://127.0.0.1:8080/.well-known/apple-app-site-association 2>&1)
+          association=$(docker exec moss-site-ci wget -S -O /dev/null http://127.0.0.1:8080/.well-known/apple-app-site-association 2>&1)
           echo "$association" | grep -qi 'Content-Type: application/json'

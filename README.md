@@ -182,5 +182,4 @@ Moss/
 
 The Astro marketing, privacy, terms and support site runs at
 https://moss.kylescudder.co.uk. Merging to `main` builds a checked, attested
-image and deploys it to Herman. See [deploy/README.md](deploy/README.md) for
-CI/CD, hosting and rollback.
+image and deploys it to Herman. See [Site/README.md](Site/README.md).

@@ -1,10 +1,15 @@
-# Publishes a checked, attested image for every commit on main. GitHub holds
+# Publishes a checked, attested image for every commit on main that changes the
+# site (workflow_dispatch redeploys on demand). GitHub holds
 # only webhook/Access credentials, never machine shell access.
 name: Site · Release
 
 on:
   push:
     branches: [main]
+    paths:
+      - "Site/**"
+      - ".github/workflows/ci-site.yml"
+      - ".github/workflows/release-site.yml"
   workflow_dispatch:
 
 permissions:
@@ -48,7 +53,7 @@ jobs:
       - id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
-          context: .
+          context: Site
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
           labels: |
