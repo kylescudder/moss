@@ -1,0 +1,2 @@
+cd Site
+bunx --bun --no-install lint-staged

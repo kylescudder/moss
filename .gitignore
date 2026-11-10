@@ -5,7 +5,6 @@ DerivedData/
 .DerivedData/
 Config/Secrets.xcconfig
 .env
-.netlify/
 node_modules/
 Site/.astro/
 Site/dist/

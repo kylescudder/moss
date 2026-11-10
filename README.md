@@ -50,16 +50,39 @@ xcodegen generate
 open Moss.xcodeproj
 ```
 
-Pull requests receive an unsigned simulator build, and iOS changes merged to
-`main` are archived and uploaded to TestFlight. See
-[`docs/ci-testflight.md`](docs/ci-testflight.md) for the one-time signing and
-GitHub secrets setup.
-
-Run the site:
+Run the site (see [`Site/README.md`](Site/README.md)):
 
 ```sh
 bun run dev
 ```
+
+## iOS builds
+
+Pull requests that touch the app get an unsigned simulator build
+(`ios-build.yml`). App changes merged to `main`, or a manual run of
+`iOS · TestFlight` (`ios-testflight.yml`), are archived and uploaded to
+TestFlight. CI stamps `CURRENT_PROJECT_VERSION` from the run number; bump
+`MARKETING_VERSION` in `project.yml` for version changes.
+
+Signing needs the App ID `app.getmoss.moss` (App Groups with `group.app.moss`,
+Associated Domains, Push Notifications, Sign in with Apple), an App Store
+provisioning profile named exactly `Moss App Store`, and an Apple Distribution
+certificate. If you rename the profile, also update `project.yml`,
+`Scripts/ci/ExportOptions.plist` and the workflow. The workflow checks the
+profile name and that the archive contains real Supabase configuration before
+uploading.
+
+| Repository secret                       | Value                                                 |
+| --------------------------------------- | ----------------------------------------------------- |
+| `APP_STORE_CONNECT_API_KEY_P8`          | Contents of the App Manager `AuthKey_XXXXXXXXXX.p8`   |
+| `APP_STORE_CONNECT_API_KEY_ID`          | Key ID                                                |
+| `APP_STORE_CONNECT_API_KEY_ISSUER_ID`   | Issuer ID                                             |
+| `APPLE_TEAM_ID`                         | Apple Developer Team ID                               |
+| `IOS_DISTRIBUTION_CERTIFICATE_BASE64`   | Base64 of the password-protected `.p12`               |
+| `IOS_DISTRIBUTION_CERTIFICATE_PASSWORD` | Password of that `.p12`                               |
+| `IOS_MOSS_PROFILE_BASE64`               | Base64 of the `Moss App Store` provisioning profile   |
+| `IOS_KEYCHAIN_PASSWORD`                 | Strong temporary CI keychain password                 |
+| `IOS_SECRETS_XCCONFIG`                  | Contents of `Config/Secrets.xcconfig`; keep in sync   |
 
 ## Supabase Auth
 
@@ -158,6 +181,5 @@ Moss/
 ## Marketing deployment
 
 The Astro marketing, privacy, terms and support site runs at
-https://moss.kylescudder.co.uk. Main pushes build checked, attested images and
-automatically deploy to the host. See [deploy/README.md](deploy/README.md) for
-CI/CD, hosting and rollback.
+https://moss.kylescudder.co.uk. Merging to `main` builds a checked, attested
+image and deploys it to Herman. See [Site/README.md](Site/README.md).
