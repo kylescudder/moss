@@ -29,6 +29,11 @@ jobs:
           docker exec moss-moss-1 wget -qO- http://127.0.0.1:8080/ | grep -q 'Travel, together'
           headers=$(docker exec moss-moss-1 wget -S -O /dev/null http://127.0.0.1:8080/ 2>&1)
           echo "$headers" | grep -qi "X-Moss-Revision: $GITHUB_SHA"
+          echo "$headers" | grep -qi 'Cache-Control: no-cache'
+          asset=$(docker exec moss-moss-1 wget -qO- http://127.0.0.1:8080/ | grep -oE '/_astro/[^"]+\.(css|js)' | head -n 1)
+          test -n "$asset"
+          asset_headers=$(docker exec moss-moss-1 wget -S -O /dev/null "http://127.0.0.1:8080$asset" 2>&1)
+          echo "$asset_headers" | grep -qi 'Cache-Control: public, max-age=31536000, immutable'
           status=$(docker exec moss-moss-1 wget -S -O /dev/null http://127.0.0.1:8080/missing-page 2>&1 || true)
           echo "$status" | grep -q '404 Not Found'
           for path in /privacy/ /terms/ /support/; do
