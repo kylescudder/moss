@@ -10,7 +10,7 @@ COPY public ./public
 COPY scripts ./scripts
 RUN bun run build && bun run check:site
 
-FROM caddy:2.11.7@sha256:8dc9fa87b36b25303d1c67d2a09f5824b7f3bfd72cb052f246e5da2133fe29a8
+FROM caddy:2.11.9@sha256:4851e54a46b206517c574821bb5cc67f170d2156041e9fbc4c9193b45e84a75b
 # Port 8080 needs no privileged bind capability; drop the upstream file capability
 # so the binary can execute with the runtime capability set empty.
 RUN setcap -r /usr/bin/caddy
