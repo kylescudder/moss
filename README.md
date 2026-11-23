@@ -2,7 +2,7 @@
 
 **Travel, together.** Native iOS 17+ SwiftUI travel companion for planning
 trips, keeping every booking and plan together, and seeing what's on today,
-with an Astro marketing and legal site at **moss.kylescudder.co.uk**. StoreKit
+with an Astro marketing and legal site at **growmoss.app**. StoreKit
 provides the Supporter subscription. Free accounts get two lifetime trips,
 including deleted trips.
 
@@ -168,7 +168,7 @@ See [Backend/deploy/README.md](Backend/deploy/README.md) and deploy-core's
 
 | Setting | Kind | Purpose |
 |---|---|---|
-| `DEPLOY_HOST` | repository variable | Herman deploy hostname (`deploy-moss.kylescudder.co.uk`), protected by Cloudflare Access |
+| `DEPLOY_HOST` | repository variable | Herman deploy hostname (`deploy.growmoss.app`), protected by Cloudflare Access |
 | `SITE_BASE_URL` | repository variable | Public origin checked for the new revision |
 | `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | `production` secrets | Access service token for the deploy hostname |
 | `DEPLOY_WEBHOOK_SECRET` | `production` secret | HMAC key for deploy requests |

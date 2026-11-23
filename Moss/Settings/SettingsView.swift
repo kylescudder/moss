@@ -94,7 +94,7 @@ struct SettingsView: View {
                 LabeledContent("Version", value: appVersion)
                 Link("Privacy Policy", destination: BillingAppConfiguration.privacyPolicyURL)
                 Link("Terms of Use", destination: BillingAppConfiguration.termsOfUseURL)
-                Link("Support", destination: URL(string: "https://moss.kylescudder.co.uk/support")!)
+                Link("Support", destination: URL(string: "https://growmoss.app/support")!)
             }
         }
         .navigationTitle("Settings")
