@@ -6,10 +6,14 @@
 :8080 {
     encode zstd gzip
     root * /srv
-    header X-Moss-Revision {$MOSS_REVISION}
-    header Cache-Control no-cache
+    header X-Moss-Revision {$SITE_REVISION}
+    # Content-hashed build assets are immutable; everything else revalidates.
+    # `?` sets the header only when a more specific rule has not.
+    header ?Cache-Control no-cache
     header /_astro/* Cache-Control "public, max-age=31536000, immutable"
     header /.well-known/apple-app-site-association Content-Type application/json
+    # App-only headers and rewrites; see Scripts/SHARED_SITE.md.
+    import app.caddy
     handle /healthz {
         header Cache-Control no-store
         respond "ok" 200

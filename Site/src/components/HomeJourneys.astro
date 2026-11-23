@@ -1,0 +1,33 @@
+---
+// Before, during and after a trip: a real sequence, so the stages are numbered.
+const stages = [
+  {
+    title: "Plan with room to breathe",
+    body: "Keep dates, destinations, travel times, activities, meals, and notes together without turning the trip into a spreadsheet.",
+  },
+  {
+    title: "Travel with context",
+    body: "Moss starts with itineraries and grows toward maps, stays, recommendations, companions, and the details you need nearby.",
+  },
+  {
+    title: "Return to the memory",
+    body: "Every journey should stay useful after it ends, with favourite places, photos, notes, and journals ready to revisit.",
+  },
+];
+---
+
+<section class="feature-band" id="journeys" aria-labelledby="journeys-title">
+  <p class="kicker">Before / During / After</p>
+  <h2 id="journeys-title">A place for the whole trip.</h2>
+  <ol class="feature-grid">
+    {
+      stages.map((stage, index) => (
+        <li>
+          <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+          <h3>{stage.title}</h3>
+          <p>{stage.body}</p>
+        </li>
+      ))
+    }
+  </ol>
+</section>

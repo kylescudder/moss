@@ -1,0 +1,27 @@
+# The production container's settings, used by site CI to smoke-test the image.
+# Herman keeps its own copy in the app's deployment directory, pinned to an
+# immutable image digest.
+name: moss
+services:
+  moss:
+    image: ${SITE_IMAGE:?set an immutable site image reference}
+    restart: unless-stopped
+    networks:
+      web:
+        aliases: [moss]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 64m
+    cpus: 0.5
+    pids_limit: 64
+    # Inherit the health check shipped with the application image.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+networks:
+  web:
+    external: true
+    name: ${PLATFORM_WEB_NETWORK:-platform-web}

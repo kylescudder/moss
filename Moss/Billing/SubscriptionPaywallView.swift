@@ -1,12 +1,15 @@
 import SwiftUI
 
+/// Shared Supporter paywall. Copy, links and the usage count come from
+/// `BillingAppConfiguration` and `AppServices.creationQuota`.
+
 struct SubscriptionPaywallView: View {
     @EnvironmentObject private var services: AppServices
     @Environment(\.dismiss) private var dismiss
 
     @State private var isPurchasing = false
     @State private var isRestoring = false
-    @State private var createdTripCount: Int?
+    @State private var creationCount: Int?
 
     var body: some View {
         NavigationStack {
@@ -22,10 +25,10 @@ struct SubscriptionPaywallView: View {
                             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
 
                         VStack(spacing: Theme.Spacing.sm) {
-                            Text("Keep planning your trips")
+                            Text(BillingAppConfiguration.paywallHeadline)
                                 .font(.title2.weight(.semibold))
                                 .multilineTextAlignment(.center)
-                            Text("Create \(AppServices.freeTripCreationLimit) trips free over the lifetime of your account. Deleting a trip doesn't restore a free creation. Subscribe for unlimited trip creation while your subscription is active.")
+                            Text(BillingAppConfiguration.paywallMessage)
                                 .font(.body)
                                 .foregroundStyle(Theme.Colors.textSecondary)
                                 .multilineTextAlignment(.center)
@@ -40,7 +43,7 @@ struct SubscriptionPaywallView: View {
                             )
                             .disabled(
                                 isRestoring
-                                    || services.billing.hasStoreKitEntitlement
+                                    || services.billing.isVerifyingSubscription
                                     || (services.billing.isLoadingProducts
                                         && services.billing.subscriptionProduct == nil)
                             )
@@ -57,9 +60,19 @@ struct SubscriptionPaywallView: View {
                             .disabled(isRestoring || isPurchasing)
                         }
 
-                        entitlementVerificationStatus
-
-                        if services.billing.isLoadingProducts {
+                        if services.billing.isVerifyingSubscription {
+                            VStack(spacing: Theme.Spacing.sm) {
+                                ProgressView()
+                                Text(services.billing.verificationStatusMessage)
+                                    .font(.footnote)
+                                    .foregroundStyle(Theme.Colors.textSecondary)
+                                    .multilineTextAlignment(.center)
+                                Button("Retry verification") {
+                                    Task { await services.billing.syncEntitlements() }
+                                }
+                                .font(.footnote.weight(.semibold))
+                            }
+                        } else if services.billing.isLoadingProducts {
                             ProgressView()
                         } else if services.billing.subscriptionProduct == nil {
                             Text("Subscription details are unavailable. Tap Subscribe to try again.")
@@ -73,8 +86,8 @@ struct SubscriptionPaywallView: View {
                                 .multilineTextAlignment(.center)
                         }
 
-                        if let createdTripCount {
-                            Text(tripUsageText(createdTripCount))
+                        if let creationCount {
+                            Text(BillingAppConfiguration.usageText(count: creationCount))
                                 .font(.footnote)
                                 .foregroundStyle(Theme.Colors.textTertiary)
                         }
@@ -118,28 +131,6 @@ struct SubscriptionPaywallView: View {
     }
 
     @ViewBuilder
-    private var entitlementVerificationStatus: some View {
-        switch services.billing.entitlementVerificationState {
-        case .verifying:
-            ProgressView("Confirming your subscription with Moss…")
-                .font(.footnote)
-        case .verificationFailed(let message):
-            VStack(spacing: Theme.Spacing.xs) {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(.orange)
-                    .multilineTextAlignment(.center)
-                Button("Retry verification") {
-                    Task { await services.billing.retryEntitlementVerification() }
-                }
-                .font(.footnote.weight(.semibold))
-            }
-        case .notSubscribed, .verified:
-            EmptyView()
-        }
-    }
-
-    @ViewBuilder
     private var subscriptionDisclosure: some View {
         VStack(spacing: Theme.Spacing.xs) {
             Text("Supporter Monthly")
@@ -151,16 +142,16 @@ struct SubscriptionPaywallView: View {
                 .multilineTextAlignment(.center)
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: Theme.Spacing.sm) {
-                    Link("Privacy Policy", destination: Self.privacyPolicyURL)
+                    Link("Privacy Policy", destination: BillingAppConfiguration.privacyPolicyURL)
                     Text("•")
                         .foregroundStyle(Theme.Colors.textTertiary)
-                    Link("Terms of Use", destination: Self.termsOfUseURL)
+                    Link("Terms of Use", destination: BillingAppConfiguration.termsOfUseURL)
                 }
                 .fixedSize(horizontal: true, vertical: false)
 
                 VStack(spacing: Theme.Spacing.xs) {
-                    Link("Privacy Policy", destination: Self.privacyPolicyURL)
-                    Link("Terms of Use", destination: Self.termsOfUseURL)
+                    Link("Privacy Policy", destination: BillingAppConfiguration.privacyPolicyURL)
+                    Link("Terms of Use", destination: BillingAppConfiguration.termsOfUseURL)
                 }
             }
             .font(.footnote.weight(.semibold))
@@ -170,13 +161,10 @@ struct SubscriptionPaywallView: View {
 
     private var subscriptionDetailText: String {
         guard let product = services.billing.subscriptionProduct else {
-            return "Monthly auto-renewable subscription. Payment is charged to your Apple ID after purchase confirmation. Paid trip creation begins after Moss securely verifies the transaction with Apple."
+            return "Monthly auto-renewable subscription. Payment is charged to your Apple ID after purchase confirmation."
         }
-        return "Monthly auto-renewable subscription: \(product.displayPrice) per month. Payment is charged to your Apple ID after purchase confirmation. Paid trip creation begins after Moss securely verifies the transaction with Apple."
+        return "Monthly auto-renewable subscription: \(product.displayPrice) per month. Payment is charged to your Apple ID after purchase confirmation."
     }
-
-    private static let privacyPolicyURL = URL(string: "https://moss.kylescudder.co.uk/privacy")!
-    private static let termsOfUseURL = URL(string: "https://moss.kylescudder.co.uk/terms")!
 
     private func subscribe() async {
         isPurchasing = true
@@ -195,13 +183,6 @@ struct SubscriptionPaywallView: View {
     }
 
     private func loadCount() async {
-        createdTripCount = try? await services.trips.lifetimeTripCount()
-    }
-
-    private func tripUsageText(_ count: Int) -> String {
-        if count <= AppServices.freeTripCreationLimit {
-            return "\(count) of \(AppServices.freeTripCreationLimit) lifetime free trip creations used"
-        }
-        return "\(count) lifetime trip creations used"
+        creationCount = try? await services.creationQuota.lifetimeCreationCount()
     }
 }

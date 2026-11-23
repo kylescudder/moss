@@ -1,19 +1,49 @@
-.DS_Store
-*.xcuserstate
-xcuserdata/
+# Xcode
+build/
 DerivedData/
-.DerivedData/
-Config/Secrets.xcconfig
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# XcodeGen generates this from project.yml
+Moss.xcodeproj/
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+.build/
+
+# CocoaPods (not used, but ignore just in case)
+Pods/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Secrets / local config
 .env
-node_modules/
+.env.local
+Config/Secrets.xcconfig
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Astro site
 Site/.astro/
 Site/dist/
+Site/node_modules/
 
-# Private host deployment configuration and state
-.env.*
-!.env.example
-state/
-secrets/
-backups/
-deploy-spool/
-__pycache__/
+# Backend
+Backend/node_modules/
+Backend/dist/
+Backend/.env*
+!Backend/.env.example
+Backend/artifacts/

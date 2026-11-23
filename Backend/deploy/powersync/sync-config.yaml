@@ -1,0 +1,37 @@
+# PowerSync sync rules for Moss.
+#
+# Uses edition 3 Sync Streams. Each stream is scoped to the authenticated
+# original account UUID. Tombstones remain in the stream long enough for every client
+# to observe the deletion state, while app queries hide them locally.
+
+config:
+  edition: 3
+
+streams:
+  user_profile:
+    auto_subscribe: true
+    query: select * from profiles where id = auth.user_id()
+
+  user_trips:
+    auto_subscribe: true
+    query: select * from trips where owner_id = auth.user_id()
+
+  user_itinerary_items:
+    auto_subscribe: true
+    query: select * from itinerary_items where owner_id = auth.user_id()
+
+  user_trip_quota:
+    auto_subscribe: true
+    query: |
+      select user_id as id, lifetime_count, updated_at
+      from trip_creation_quotas
+      where user_id = auth.user_id()
+
+  user_iap_entitlement:
+    auto_subscribe: true
+    query: |
+      select user_id as id, product_id, bundle_id, original_transaction_id,
+             transaction_id, status, expires_at, revoked_at, environment,
+             signed_at, verified_at, verification_source, updated_at
+      from iap_entitlements
+      where user_id = auth.user_id()

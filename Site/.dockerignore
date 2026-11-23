@@ -1,12 +1,15 @@
 *
 !package.json
 !bun.lock
+!app.json
+!app.caddy
 !astro.config.mjs
 !tsconfig.json
+!scripts/
+!scripts/**
 !src/
 !src/**
 !public/
 !public/**
-!scripts/
-!scripts/**
+public/js/config.js
 !Caddyfile

@@ -16,21 +16,22 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
 
 packages:
-  Supabase:
-    url: https://github.com/supabase/supabase-swift
-    from: 2.20.0
   PowerSync:
     url: https://github.com/powersync-ja/powersync-swift
-    from: 1.16.4
+    from: 1.15.1
+  Lottie:
+    url: https://github.com/airbnb/lottie-ios
+    from: 4.6.1
   Sentry:
     url: https://github.com/getsentry/sentry-cocoa
-    from: 9.30.2
+    from: 8.40.0
 
 schemes:
   Moss:
     build:
       targets:
         Moss: all
+        MossTests: [test]
     run:
       config: Debug
       executable: Moss
@@ -49,7 +50,6 @@ targets:
     resources:
       - path: Moss/Resources
         optional: true
-      - path: Moss/AppIcon.icon
     info:
       path: Moss/Info.plist
       properties:
@@ -60,15 +60,17 @@ targets:
           UIColorName: ""
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        NSLocationWhenInUseUsageDescription: Moss uses your location to help you understand places near your trip.
+        NSPhotoLibraryAddUsageDescription: Moss saves the trip memories and exports you choose to create.
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - moss
             CFBundleURLName: app.getmoss.moss.auth
         ITSAppUsesNonExemptEncryption: false
+        UIAppFonts:
+          - Roboto-Medium.ttf
         UIBackgroundModes:
           - remote-notification
-        NSLocationWhenInUseUsageDescription: Moss uses your location to help you understand places near your trip.
-        NSPhotoLibraryAddUsageDescription: Moss saves the trip memories and exports you choose to create.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
@@ -77,16 +79,17 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        SUPABASE_URL: $(SUPABASE_URL)
-        SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
+        API_URL: $(API_URL)
         POWERSYNC_URL: $(POWERSYNC_URL)
+        PUSH_GATEWAY_URL: $(PUSH_GATEWAY_URL)
+        PUSH_GATEWAY_APPLICATION_ID: $(PUSH_GATEWAY_APPLICATION_ID)
         SENTRY_DSN: $(SENTRY_DSN)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.getmoss.moss
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: Moss
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SWIFT_EMIT_LOC_STRINGS: YES
         CODE_SIGN_ENTITLEMENTS: Moss/Moss.entitlements
@@ -99,12 +102,43 @@ targets:
       Debug: Config/Secrets.xcconfig
       Release: Config/Secrets.xcconfig
     dependencies:
-      - package: Supabase
-        product: Supabase
       - package: PowerSync
         product: PowerSync
+      - package: Lottie
+        product: Lottie
       - package: Sentry
         product: Sentry
+      - target: MossWidgets
+        embed: true
+
+  MossWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: MossWidgets
+      - path: Moss/Widgets/WidgetSnapshotStore.swift
+      - path: Moss/Widgets/AppGroupStore.swift
+    info:
+      path: MossWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Moss Widgets
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.getmoss.moss.widgets
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        CODE_SIGN_ENTITLEMENTS: MossWidgets/MossWidgets.entitlements
+        SKIP_INSTALL: YES
+      configs:
+        Release:
+          CODE_SIGN_IDENTITY: Apple Distribution
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: Moss Widgets App Store
 
   MossTests:
     type: bundle.unit-test
@@ -112,7 +146,9 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: MossTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.getmoss.moss.tests
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Moss
-      - package: Supabase
-        product: Supabase

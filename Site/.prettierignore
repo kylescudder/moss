@@ -16,5 +16,7 @@ drizzle/meta
 src/vendor
 test-results
 playwright-report
-# Moss Site extras
+
+# iOS app site extras
+# Astro generates these types on build and check
 .astro
