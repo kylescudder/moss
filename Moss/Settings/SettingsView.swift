@@ -9,15 +9,16 @@ struct SettingsView: View {
     @State private var showFinalDeleteConfirm = false
     @State private var deleteError: String?
     @State private var isDeleting = false
+    @State private var successCount = 0
+    @State private var errorCount = 0
     @State private var showPaywall = false
+    @State private var showReauthentication = false
 
     var body: some View {
         Form {
             Section("Appearance") {
                 Picker("Theme", selection: $appearance) {
-                    ForEach(Appearance.allCases) { appearance in
-                        Text(appearance.label).tag(appearance)
-                    }
+                    ForEach(Appearance.allCases) { Text($0.label).tag($0) }
                 }
             }
 
@@ -33,12 +34,19 @@ struct SettingsView: View {
             }
 
             Section("Notifications") {
-                NotificationSettingsRow()
+                PushAuthorizationRow()
             }
 
             Section {
                 LabeledContent("Plan", value: subscriptionPlanLabel)
-                if services.billing.hasStoreKitEntitlement {
+                if services.billing.isSubscribed {
+                    Button("Manage subscription") {
+                        Task { await services.billing.manageSubscriptions() }
+                    }
+                } else if services.billing.isVerifyingSubscription {
+                    Button("Retry subscription verification") {
+                        Task { await services.billing.syncEntitlements() }
+                    }
                     Button("Manage subscription") {
                         Task { await services.billing.manageSubscriptions() }
                     }
@@ -48,15 +56,7 @@ struct SettingsView: View {
                     }
                 }
                 Button("Restore purchases") {
-                    Task { _ = await services.billing.restorePurchases() }
-                }
-                if case .verificationFailed(let message) = services.billing.entitlementVerificationState {
-                    Text(message)
-                        .font(.footnote)
-                        .foregroundStyle(.orange)
-                    Button("Retry subscription verification") {
-                        Task { await services.billing.retryEntitlementVerification() }
-                    }
+                    Task { await services.billing.restorePurchases() }
                 }
                 if let message = services.billing.lastError {
                     Text(message)
@@ -66,10 +66,14 @@ struct SettingsView: View {
             } header: {
                 Text("Subscription")
             } footer: {
-                Text("Free accounts can create \(AppServices.freeTripCreationLimit) trips over the lifetime of the account. Trips created while subscribed also count toward lifetime usage, and deleting a trip does not restore a free creation.")
+                Text("Free accounts can create up to \(AppServices.freeTripLimit) lifetime trips; deleted trips still count. Manage subscription opens Apple's system sheet, where you can cancel or change the subscription.")
             }
 
             Section("Account") {
+                if services.auth.requiresReauthentication {
+                    Text("Sign in again with your original account to sync. Your offline changes are kept on this device.")
+                    Button("Sign in to sync") { showReauthentication = true }
+                }
                 if case let .signedIn(_, email) = services.auth.state, let email {
                     LabeledContent("Signed in as", value: email)
                 }
@@ -82,30 +86,32 @@ struct SettingsView: View {
                 .disabled(isDeleting)
             }
 
-            Section("Sync") {
-                LabeledContent("Status", value: syncStatus)
-                LabeledContent("Pending uploads", value: "\(services.sync.pendingUploadCount)")
+            Section("Offline sync") {
+                LabeledContent("Status", value: syncStatusLabel)
             }
 
             Section("About") {
                 LabeledContent("Version", value: appVersion)
-                Link("Support", destination: URL(string: "https://moss.kylescudder.co.uk/support")!)
-                Link("Privacy Policy", destination: URL(string: "https://moss.kylescudder.co.uk/privacy")!)
+                Link("Privacy Policy", destination: BillingAppConfiguration.privacyPolicyURL)
+                Link("Terms of Use", destination: BillingAppConfiguration.termsOfUseURL)
+                Link("Support", destination: URL(string: "https://growmoss.app/support")!)
             }
         }
         .navigationTitle("Settings")
-        .task {
-            await services.profile.refresh()
-            await services.notifications.refreshAuthorizationStatus()
-        }
-        .sheet(isPresented: $showPaywall) {
-            SubscriptionPaywallView()
+        .sheet(isPresented: $showReauthentication) { NavigationStack { SignInView() } }
+        .onChange(of: services.auth.requiresReauthentication) { _, required in
+            if !required { showReauthentication = false }
         }
         .alert("Sign out of Moss?", isPresented: $showSignOutConfirm) {
-            Button("Sign out", role: .destructive) {
-                Task { if await services.auth.signOut() { await services.sync.wipe() } }
+            Button("Sign out") {
+                Task { await services.auth.signOut() }
+            }
+            Button("Sign out and remove local data", role: .destructive) {
+                Task { await services.auth.signOut(removeLocalData: true) }
             }
             Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Signing out keeps your offline changes on this device. Removing local data also deletes changes that have not synced. Data already saved to your account is kept.")
         }
         .alert("Delete your Moss account?", isPresented: $showDeleteConfirm) {
             Button("Continue", role: .destructive) {
@@ -113,13 +119,15 @@ struct SettingsView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This permanently removes your trips, saved details, devices, subscription mirror, and profile. This cannot be undone.")
+            Text("This permanently removes your trips, itineraries, devices and account. This cannot be undone.")
         }
         .alert("Are you absolutely sure?", isPresented: $showFinalDeleteConfirm) {
             Button("Delete forever", role: .destructive) {
                 Task { await deleteAccount() }
             }
             Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("All your data will be deleted immediately.")
         }
         .alert("Couldn't delete account", isPresented: Binding(
             get: { deleteError != nil },
@@ -127,33 +135,38 @@ struct SettingsView: View {
         ), presenting: deleteError) { _ in
             Button("OK", role: .cancel) {}
         } message: { Text($0) }
-    }
-
-    private var appVersion: String {
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
-        return "\(version) (\(build))"
-    }
-
-    private var subscriptionPlanLabel: String {
-        switch services.billing.entitlementVerificationState {
-        case .verified:
-            return "Supporter Monthly"
-        case .verifying:
-            return "Verifying subscription"
-        case .verificationFailed:
-            return "Verification needed"
-        case .notSubscribed:
-            return "Free"
+        .sensoryFeedback(.success, trigger: successCount)
+        .sensoryFeedback(.error, trigger: errorCount)
+        .sheet(isPresented: $showPaywall) {
+            SubscriptionPaywallView()
         }
     }
 
-    private var syncStatus: String {
+    private var appVersion: String {
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return "\(v) (\(b))"
+    }
+
+    private var subscriptionPlanLabel: String {
+        switch services.billing.subscriptionState {
+        case .free: "Free"
+        case .verifying: "Verifying Supporter"
+        case .active: "Supporter Monthly"
+        }
+    }
+
+    private var syncStatusLabel: String {
+        if services.sync.pendingUploadCount > 0 {
+            let count = services.sync.pendingUploadCount
+            return "\(count) change\(count == 1 ? "" : "s") queued"
+        }
         switch services.sync.status {
-        case .idle, .offline: "Offline"
-        case .connecting: "Connecting"
-        case .connected: "Connected / up to date"
-        case .error: "Error"
+        case .idle: return "Waiting"
+        case .connecting: return "Connecting"
+        case .connected: return "Up to date"
+        case .offline: return "Offline — changes will queue"
+        case .error: return "Needs attention"
         }
     }
 
@@ -162,38 +175,10 @@ struct SettingsView: View {
         defer { isDeleting = false }
         do {
             try await services.auth.deleteAccount()
-            await services.sync.wipe()
+            successCount += 1
         } catch {
             deleteError = error.localizedDescription
-        }
-    }
-}
-
-private struct NotificationSettingsRow: View {
-    @ObservedObject private var notifications = NotificationManager.shared
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        switch notifications.authorizationStatus {
-        case .authorized, .ephemeral, .provisional:
-            Label("Push notifications allowed", systemImage: "checkmark.seal.fill")
-                .foregroundStyle(.green)
-        case .denied:
-            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                Label("Push notifications disabled in iOS Settings", systemImage: "xmark.seal")
-                    .foregroundStyle(.red)
-                Button("Open Settings") {
-                    if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
-                        openURL(url)
-                    }
-                }
-            }
-        case .notDetermined:
-            Button("Turn on push notifications") {
-                Task { await notifications.requestAuthorization() }
-            }
-        @unknown default:
-            Text("Push notification status unknown")
+            errorCount += 1
         }
     }
 }
@@ -201,28 +186,42 @@ private struct NotificationSettingsRow: View {
 private struct EditDisplayNameView: View {
     @EnvironmentObject private var services: AppServices
     @Environment(\.dismiss) private var dismiss
-    @State private var displayName: String
+    @State private var name: String
+    @State private var didSeed = false
+    @State private var isSaving = false
+    @State private var saveCount = 0
 
     init(initial: String) {
-        self._displayName = State(initialValue: initial)
+        self._name = State(initialValue: initial)
+        self._didSeed = State(initialValue: !initial.isEmpty)
     }
 
     var body: some View {
         Form {
-            Section("Profile") {
-                TextField("Display name", text: $displayName)
-            }
+            TextField("Display name", text: $name)
+                .textContentType(.name)
         }
-        .navigationTitle("Display Name")
+        .navigationTitle("Display name")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     Task {
-                        await services.profile.updateDisplayName(displayName)
+                        isSaving = true
+                        await services.profile.updateDisplayName(name.trimmingCharacters(in: .whitespaces))
+                        isSaving = false
+                        saveCount += 1
                         dismiss()
                     }
                 }
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+            }
+        }
+        .sensoryFeedback(.success, trigger: saveCount)
+        .task(id: services.profile.profile?.displayName) {
+            if !didSeed, let value = services.profile.profile?.displayName, !value.isEmpty {
+                name = value
+                didSeed = true
             }
         }
     }

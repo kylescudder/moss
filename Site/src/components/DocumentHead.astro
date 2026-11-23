@@ -1,35 +1,33 @@
 ---
+// Shared by every app's site (Scripts/SHARED_SITE.md); values come from app.json.
+import app from "../../app.json";
+
 interface Props {
-  title: string
-  description: string
-  ogTitle?: string
+  title: string;
+  description: string;
+  ogTitle?: string;
+  canonical?: boolean;
 }
 
-const { title, description, ogTitle = title } = Astro.props
-const canonical = new URL(Astro.url.pathname, Astro.site!).toString()
+const { title, description, ogTitle = title, canonical = true } = Astro.props;
+// The app links to pages without a trailing slash, so their canonical URLs do too.
+const path = Astro.url.pathname.replace(/(.)\/$/, "$1");
+const ogUrl = canonical ? new URL(path, app.origin).href : null;
+const iconType = app.icon.endsWith(".svg") ? "image/svg+xml" : "image/png";
 ---
 
-<meta charset='utf-8' />
-<meta
-  name='viewport'
-  content='width=device-width, initial-scale=1, viewport-fit=cover'
-/>
-<meta name='theme-color' content='#f3f5ef' />
-<title>{title}</title>
-<meta name='description' content={description} />
-<link rel='canonical' href={canonical} />
-
-<meta property='og:site_name' content='Moss' />
-<meta property='og:title' content={ogTitle} />
-<meta property='og:description' content={description} />
-<meta property='og:url' content={canonical} />
-<meta property='og:type' content='website' />
-<meta name='twitter:card' content='summary_large_image' />
-
-<link rel='preconnect' href='https://fonts.googleapis.com' />
-<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin />
-<link
-  href='https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap'
-  rel='stylesheet'
-/>
-<link rel='icon' href='/assets/moss-mark.svg' type='image/svg+xml' />
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <meta name="theme-color" content={app.themeColor} />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <meta property="og:title" content={ogTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:type" content="website" />
+  {ogUrl && <meta property="og:url" content={ogUrl} />}
+  <link rel="icon" href={app.icon} type={iconType} />
+</head>

@@ -1,11 +1,20 @@
 name: iOS · TestFlight
 
+# Archives the app and uploads it to TestFlight through the App Store Connect
+# API. The README's TestFlight section lists the one-time secrets and variables.
+
 on:
   workflow_dispatch:
+    inputs:
+      verify_delivery_id:
+        description: Check App Store Connect processing for an uploaded delivery UUID
+        type: string
+        required: false
   push:
     branches: [main]
     paths:
       - 'Moss/**'
+      - 'MossWidgets/**'
       - 'project.yml'
       - 'Config/Secrets.xcconfig.example'
       - 'Scripts/ci/**'
@@ -15,13 +24,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: moss-ios-testflight
+  group: ${{ inputs.verify_delivery_id && format('ios-testflight-status-{0}', inputs.verify_delivery_id) || 'ios-testflight' }}
   cancel-in-progress: false
 
 jobs:
   build:
     name: Archive & upload
-    runs-on: macos-26
+    if: ${{ !inputs.verify_delivery_id }}
+    runs-on: xcode-27
     timeout-minutes: 45
     env:
       SCHEME: Moss
@@ -33,15 +43,21 @@ jobs:
       APP_STORE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
       IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
-      IOS_MOSS_PROFILE_BASE64: ${{ secrets.IOS_MOSS_PROFILE_BASE64 }}
+      IOS_APP_PROFILE_BASE64: ${{ secrets.IOS_MOSS_PROFILE_BASE64 }}
+      IOS_WIDGETS_PROFILE_BASE64: ${{ secrets.IOS_MOSS_WIDGETS_PROFILE_BASE64 }}
       IOS_KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: Show Xcode version
-        run: xcodebuild -version
+      - name: Verify Xcode 27 and iOS 27 SDK
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path
+          sdk_version="$(xcrun --sdk iphoneos --show-sdk-version)"
+          echo "iOS SDK: $sdk_version"
+          [[ "$sdk_version" == 27 || "$sdk_version" == 27.* ]]
 
       - name: Install iOS platform (if missing)
         run: sudo xcodebuild -downloadPlatform iOS || true
@@ -52,41 +68,45 @@ jobs:
       - name: Write Secrets.xcconfig
         env:
           IOS_SECRETS: ${{ secrets.IOS_SECRETS_XCCONFIG }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          POWERSYNC_BASE_URL: ${{ vars.POWERSYNC_BASE_URL }}
         run: |
-          test -n "${IOS_SECRETS}" || (echo "::error::IOS_SECRETS_XCCONFIG is empty" && exit 1)
+          if [ -z "${IOS_SECRETS}" ]; then
+            echo "::error::IOS_SECRETS_XCCONFIG secret is empty"
+            exit 1
+          fi
           mkdir -p Config
-          printf '%s\n' "$IOS_SECRETS" > Config/Secrets.xcconfig
+          python3 - <<'PYCONFIG'
+          import os
+          import re
+          from pathlib import Path
 
-      - name: Validate app secrets
-        run: |
-          value_for() {
-            awk -F= -v key="$1" '$1 ~ "^[[:space:]]*" key "[[:space:]]*$" {
-              v=$2
-              for (i=3; i<=NF; i++) v=v "=" $i
-              gsub(/^[ \t]+|[ \t]+$/, "", v)
-              print v
-            }' Config/Secrets.xcconfig
+          config = os.environ["IOS_SECRETS"]
+          origins = {
+              "API_URL": "API_BASE_URL",
+              "POWERSYNC_URL": "POWERSYNC_BASE_URL",
           }
+          for setting, variable in origins.items():
+              origin = os.environ[variable]
+              if not re.fullmatch(r"https://[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+", origin):
+                  raise SystemExit(f"::error::{variable} must be a public HTTPS origin")
+              config = re.sub(rf"(?m)^[ \t]*{setting}[ \t]*=[^\n]*(?:\n|$)", "", config)
+              escaped = origin.replace("//", "/$()/", 1)
+              config = f"{config.rstrip(chr(10))}\n{setting} = {escaped}\n"
+          Path("Config/Secrets.xcconfig").write_text(config)
+          PYCONFIG
 
-          supabase_url="$(value_for SUPABASE_URL)"
-          supabase_key="$(value_for SUPABASE_ANON_KEY)"
-          resolved_supabase_url="$(printf '%s' "$supabase_url" | sed 's#/[$]()#/#g')"
-
-          case "$resolved_supabase_url" in
-            ""|*\$"("*|*your-project-ref.supabase.co*|*placeholder.supabase.co*)
-              echo "::error::SUPABASE_URL is missing, unresolved, or still a placeholder"
-              exit 1
-              ;;
-          esac
-
-          case "$supabase_key" in
-            ""|*\$"("*|*your-anon-key*|*your-supabase-anon-key*)
-              echo "::error::SUPABASE_ANON_KEY is missing, unresolved, or still a placeholder"
-              exit 1
-              ;;
-          esac
-
-          test "${#supabase_key}" -gt 40 || (echo "::error::SUPABASE_ANON_KEY is unexpectedly short" && exit 1)
+      - name: Verify public release endpoints
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          POWERSYNC_BASE_URL: ${{ vars.POWERSYNC_BASE_URL }}
+        run: |
+          set -euo pipefail
+          api_status="$(curl --silent --show-error --max-time 20 -w '%{http_code}' -o "$RUNNER_TEMP/api-health.json" "$API_BASE_URL/health/ready")"
+          [[ "$api_status" == 200 ]]
+          jq -e '.ok == true' "$RUNNER_TEMP/api-health.json" >/dev/null
+          sync_status="$(curl --silent --show-error --max-time 20 -w '%{http_code}' -o /dev/null "$POWERSYNC_BASE_URL/probes/readiness")"
+          [[ "$sync_status" == 200 ]]
 
       - name: Write App Store Connect API key
         env:
@@ -100,21 +120,19 @@ jobs:
           printf '%s\n' "$API_KEY_P8" > "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_KEY_ID}.p8"
           chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_KEY_ID}.p8"
 
-      - name: Install signing certificate and profile
+      - name: Install signing certificate and profiles
         run: |
           test -n "${IOS_DISTRIBUTION_CERTIFICATE_BASE64}" || (echo "::error::IOS_DISTRIBUTION_CERTIFICATE_BASE64 is empty" && exit 1)
           test -n "${IOS_DISTRIBUTION_CERTIFICATE_PASSWORD}" || (echo "::error::IOS_DISTRIBUTION_CERTIFICATE_PASSWORD is empty" && exit 1)
-          test -n "${IOS_MOSS_PROFILE_BASE64}" || (echo "::error::IOS_MOSS_PROFILE_BASE64 is empty" && exit 1)
+          test -n "${IOS_APP_PROFILE_BASE64}" || (echo "::error::IOS_MOSS_PROFILE_BASE64 is empty" && exit 1)
+          test -n "${IOS_WIDGETS_PROFILE_BASE64}" || (echo "::error::IOS_MOSS_WIDGETS_PROFILE_BASE64 is empty" && exit 1)
           test -n "${IOS_KEYCHAIN_PASSWORD}" || (echo "::error::IOS_KEYCHAIN_PASSWORD is empty" && exit 1)
 
-          certificate_path="$RUNNER_TEMP/moss-distribution.p12"
-          keychain_path="$RUNNER_TEMP/moss-signing.keychain-db"
+          certificate_path="$RUNNER_TEMP/distribution.p12"
+          keychain_path="$RUNNER_TEMP/signing.keychain-db"
           profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
-          profile_path="$RUNNER_TEMP/Moss_App_Store.mobileprovision"
-          profile_plist="$RUNNER_TEMP/Moss_App_Store.plist"
 
           printf '%s' "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
-
           security create-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$keychain_path"
           security set-keychain-settings -lut 21600 "$keychain_path"
           security unlock-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$keychain_path"
@@ -123,68 +141,79 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "$IOS_KEYCHAIN_PASSWORD" "$keychain_path"
 
           mkdir -p "$profiles_dir"
-          printf '%s' "$IOS_MOSS_PROFILE_BASE64" | base64 --decode > "$profile_path"
-          security cms -D -i "$profile_path" > "$profile_plist"
+          install_profile() {
+            local secret_value="$1"
+            local expected_name="$2"
+            local output_path="$RUNNER_TEMP/${expected_name// /_}.mobileprovision"
+            local plist_path="$RUNNER_TEMP/${expected_name// /_}.plist"
 
-          profile_name=$(/usr/libexec/PlistBuddy -c "Print :Name" "$profile_plist")
-          profile_uuid=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$profile_plist")
+            printf '%s' "$secret_value" | base64 --decode > "$output_path"
+            security cms -D -i "$output_path" > "$plist_path"
 
-          if [ "$profile_name" != "Moss App Store" ]; then
-            echo "::error::Expected provisioning profile 'Moss App Store' but secret contains '$profile_name'"
-            exit 1
-          fi
+            local profile_name
+            local profile_uuid
+            profile_name=$(/usr/libexec/PlistBuddy -c "Print :Name" "$plist_path")
+            profile_uuid=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$plist_path")
 
-          cp "$profile_path" "$profiles_dir/$profile_uuid.mobileprovision"
-          echo "Installed provisioning profile '$profile_name' as $profile_uuid.mobileprovision"
+            if [ "$profile_name" != "$expected_name" ]; then
+              echo "::error::Expected provisioning profile '$expected_name' but secret contains '$profile_name'"
+              exit 1
+            fi
+
+            cp "$output_path" "$profiles_dir/$profile_uuid.mobileprovision"
+            echo "Installed provisioning profile '$profile_name' as $profile_uuid.mobileprovision"
+          }
+
+          # project.yml names the app's profile first and the widgets' second.
+          profile_name() { sed -n 's/^ *PROVISIONING_PROFILE_SPECIFIER: *//p' project.yml | sed -n "$1p"; }
+          install_profile "$IOS_APP_PROFILE_BASE64" "$(profile_name 1)"
+          install_profile "$IOS_WIDGETS_PROFILE_BASE64" "$(profile_name 2)"
 
       - name: Set CURRENT_PROJECT_VERSION to run number
         run: |
-          perl -0pi -e 's/CURRENT_PROJECT_VERSION: "?[0-9]+"?/CURRENT_PROJECT_VERSION: "${{ github.run_number }}"/' project.yml
+          sed -i '' "s/CURRENT_PROJECT_VERSION: \"1\"/CURRENT_PROJECT_VERSION: \"${GITHUB_RUN_NUMBER}\"/" project.yml
 
       - name: Set DEVELOPMENT_TEAM
         if: env.APP_STORE_TEAM_ID != ''
         run: |
-          perl -0pi -e 's/DEVELOPMENT_TEAM: "?[^"\n]+"?/DEVELOPMENT_TEAM: "${{ env.APP_STORE_TEAM_ID }}"/' project.yml
+          sed -i '' "s/DEVELOPMENT_TEAM: \"\"/DEVELOPMENT_TEAM: \"${APP_STORE_TEAM_ID}\"/" project.yml
 
       - name: Generate Xcode project
         run: xcodegen generate
 
       - name: Resolve Swift packages
-        run: xcodebuild -resolvePackageDependencies -project Moss.xcodeproj -scheme "$SCHEME"
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project "$SCHEME.xcodeproj" \
+            -scheme "$SCHEME"
 
       - name: Archive
         run: |
           set -o pipefail
           xcodebuild archive \
-            -project Moss.xcodeproj \
+            -project "$SCHEME.xcodeproj" \
             -scheme "$SCHEME" \
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath "$ARCHIVE_PATH"
 
-      - name: Validate archived app config
+      - name: Verify archived backend configuration
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          POWERSYNC_BASE_URL: ${{ vars.POWERSYNC_BASE_URL }}
         run: |
-          app_plist="$ARCHIVE_PATH/Products/Applications/Moss.app/Info.plist"
-          test -f "$app_plist" || (echo "::error::Archived app Info.plist not found" && exit 1)
+          python3 - <<'PYCONFIG'
+          import os
+          import plistlib
+          from pathlib import Path
 
-          supabase_url="$(plutil -extract SUPABASE_URL raw -o - "$app_plist")"
-          supabase_key="$(plutil -extract SUPABASE_ANON_KEY raw -o - "$app_plist")"
-
-          case "$supabase_url" in
-            ""|*\$"("*|*your-project-ref.supabase.co*|*placeholder.supabase.co*)
-              echo "::error::Archived app has missing, unresolved, or placeholder SUPABASE_URL"
-              exit 1
-              ;;
-          esac
-
-          case "$supabase_key" in
-            ""|*\$"("*|*your-anon-key*|*your-supabase-anon-key*)
-              echo "::error::Archived app has missing, unresolved, or placeholder SUPABASE_ANON_KEY"
-              exit 1
-              ;;
-          esac
-
-          test "${#supabase_key}" -gt 40 || (echo "::error::Archived app SUPABASE_ANON_KEY is unexpectedly short" && exit 1)
+          info_path = Path(os.environ["ARCHIVE_PATH"]) / "Products/Applications" / f"{os.environ['SCHEME']}.app" / "Info.plist"
+          with info_path.open("rb") as info_file:
+              info = plistlib.load(info_file)
+          for key, variable in (("API_URL", "API_BASE_URL"), ("POWERSYNC_URL", "POWERSYNC_BASE_URL")):
+              if not os.environ[variable] or info.get(key) != os.environ[variable]:
+                  raise SystemExit(f"::error::Archived {key} does not match {variable}")
+          PYCONFIG
 
       - name: Export IPA
         run: |
@@ -195,10 +224,11 @@ jobs:
 
       - name: Upload to TestFlight
         run: |
-          shopt -s nullglob
-          ipas=("$EXPORT_PATH"/*.ipa)
-          IPA="${ipas[0]:-}"
-          test -n "$IPA" || (echo "::error::No .ipa produced by export" && exit 1)
+          IPA=$(ls "$EXPORT_PATH"/*.ipa | head -1)
+          if [ -z "$IPA" ]; then
+            echo "::error::No .ipa produced by export"
+            exit 1
+          fi
           xcrun altool --upload-app \
             --file "$IPA" \
             --type ios \
@@ -209,6 +239,30 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: Moss-failed-archive
+          name: ${{ env.SCHEME }}-failed-archive
           path: ${{ env.ARCHIVE_PATH }}
           retention-days: 7
+
+  processing:
+    name: Verify Apple processing
+    if: ${{ inputs.verify_delivery_id != '' }}
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DELIVERY_ID: ${{ inputs.verify_delivery_id }}
+      APP_STORE_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+      API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+    steps:
+      - name: Wait for the submitted build to process
+        run: |
+          set -euo pipefail
+          [[ "$DELIVERY_ID" =~ ^[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}$ ]]
+          umask 077
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s\n' "$API_KEY_P8" > "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_KEY_ID}.p8"
+          xcrun altool --build-status \
+            --delivery-id "$DELIVERY_ID" \
+            --apiKey "$APP_STORE_KEY_ID" \
+            --apiIssuer "$APP_STORE_ISSUER_ID" \
+            --wait --output-format json

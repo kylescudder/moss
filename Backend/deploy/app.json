@@ -1,0 +1,40 @@
+{
+  "project": "moss",
+  "database": "moss",
+  "ownerRole": "moss_owner",
+  "runtimeRole": "moss_runtime",
+  "apiRole": "moss_api",
+  "recoveryRole": "moss_recovery",
+  "syncRole": "moss_sync",
+  "syncStorageRole": "moss_sync_storage",
+  "syncStorageDatabase": "moss_sync",
+  "recoveryTables": [
+    "auth_user",
+    "auth_account",
+    "auth_session",
+    "auth_verification",
+    "auth_rate_limit",
+    "auth_email_limit",
+    "auth_jwks",
+    "profiles",
+    "trips",
+    "itinerary_items",
+    "device_tokens",
+    "trip_creation_quotas",
+    "trip_creation_events",
+    "iap_entitlements",
+    "native_codes",
+    "notification_inbox"
+  ],
+  "syncTables": [
+    "profiles",
+    "trips",
+    "itinerary_items",
+    "trip_creation_quotas",
+    "iap_entitlements"
+  ],
+  "deployURL": "https://deploy-api.growmoss.app/hooks/moss-api",
+  "signatureHeader": "X-Moss-Signature",
+  "receiverHeader": "x-moss-deploy-hook",
+  "runtimeDefaultRole": "moss_api"
+}

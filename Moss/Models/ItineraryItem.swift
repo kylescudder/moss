@@ -1,7 +1,7 @@
 import Foundation
 import PowerSync
 
-enum ItineraryItemKind: String, Codable, CaseIterable, Identifiable {
+enum ItineraryItemKind: String, Codable, CaseIterable, Identifiable, Sendable {
     case flight
     case lodging
     case food
@@ -14,7 +14,7 @@ enum ItineraryItemKind: String, Codable, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .flight: "Flight"
-        case .lodging: "Lodging"
+        case .lodging: "Stay"
         case .food: "Food"
         case .activity: "Activity"
         case .transport: "Transport"
@@ -34,24 +34,7 @@ enum ItineraryItemKind: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-extension ItineraryItem {
-    static func from(cursor: SqlCursor) -> ItineraryItem? {
-        do {
-            guard let id = UUID(uuidString: try cursor.getString(name: "id")),
-                  let tripID = UUID(uuidString: try cursor.getString(name: "trip_id")),
-                  let ownerID = UUID(uuidString: try cursor.getString(name: "owner_id")),
-                  let kind = ItineraryItemKind(rawValue: try cursor.getString(name: "kind")) else { return nil }
-            return ItineraryItem(id: id, tripID: tripID, ownerID: ownerID, kind: kind,
-                title: try cursor.getString(name: "title"), locationName: try cursor.getStringOptional(name: "location_name"),
-                startsAt: parseISO8601Date(try cursor.getStringOptional(name: "starts_at")),
-                endsAt: parseISO8601Date(try cursor.getStringOptional(name: "ends_at")), notes: try cursor.getStringOptional(name: "notes"),
-                sortOrder: try cursor.getInt(name: "sort_order"), createdAt: parseISO8601Date(try cursor.getStringOptional(name: "created_at")),
-                updatedAt: parseISO8601Date(try cursor.getStringOptional(name: "updated_at")), deletedAt: parseISO8601Date(try cursor.getStringOptional(name: "deleted_at")))
-        } catch { return nil }
-    }
-}
-
-struct ItineraryItem: Codable, Identifiable, Equatable {
+struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     var tripID: UUID
     var ownerID: UUID
@@ -64,26 +47,48 @@ struct ItineraryItem: Codable, Identifiable, Equatable {
     var sortOrder: Int
     var createdAt: Date?
     var updatedAt: Date?
-    var deletedAt: Date?
 
     enum CodingKeys: String, CodingKey {
-        case id
+        case id, kind, title, notes
         case tripID = "trip_id"
         case ownerID = "owner_id"
-        case kind
-        case title
         case locationName = "location_name"
         case startsAt = "starts_at"
         case endsAt = "ends_at"
-        case notes
         case sortOrder = "sort_order"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
-        case deletedAt = "deleted_at"
     }
 }
 
-struct ItineraryItemDraft {
+extension ItineraryItem {
+    static func from(cursor: SqlCursor) -> ItineraryItem? {
+        do {
+            guard let id = UUID(uuidString: try cursor.getString(name: "id")),
+                  let tripID = UUID(uuidString: try cursor.getString(name: "trip_id")),
+                  let ownerID = UUID(uuidString: try cursor.getString(name: "owner_id")),
+                  let kind = ItineraryItemKind(rawValue: try cursor.getString(name: "kind")) else { return nil }
+            return ItineraryItem(
+                id: id,
+                tripID: tripID,
+                ownerID: ownerID,
+                kind: kind,
+                title: try cursor.getString(name: "title"),
+                locationName: try cursor.getStringOptional(name: "location_name"),
+                startsAt: parseISO8601Date(try cursor.getStringOptional(name: "starts_at")),
+                endsAt: parseISO8601Date(try cursor.getStringOptional(name: "ends_at")),
+                notes: try cursor.getStringOptional(name: "notes"),
+                sortOrder: (try? cursor.getIntOptional(name: "sort_order")) ?? 0,
+                createdAt: parseISO8601Date(try cursor.getStringOptional(name: "created_at")),
+                updatedAt: parseISO8601Date(try cursor.getStringOptional(name: "updated_at"))
+            )
+        } catch {
+            return nil
+        }
+    }
+}
+
+struct ItineraryItemDraft: Sendable {
     var kind: ItineraryItemKind = .activity
     var title = ""
     var locationName = ""
@@ -91,7 +96,21 @@ struct ItineraryItemDraft {
     var endsAt = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
     var notes = ""
 
+    init(startsAt: Date = Date()) {
+        self.startsAt = startsAt
+        endsAt = Calendar.current.date(byAdding: .hour, value: 1, to: startsAt) ?? startsAt
+    }
+
+    init(item: ItineraryItem) {
+        kind = item.kind
+        title = item.title
+        locationName = item.locationName ?? ""
+        startsAt = item.startsAt ?? Date()
+        endsAt = item.endsAt ?? item.startsAt ?? Date()
+        notes = item.notes ?? ""
+    }
+
     var isValid: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        title.nilIfBlank != nil && endsAt >= startsAt
     }
 }

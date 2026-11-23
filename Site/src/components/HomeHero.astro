@@ -1,0 +1,66 @@
+---
+import { appStoreUrl } from '../lib/links'
+
+const stops = [
+  { time: '07:40', kind: 'Flight', title: 'Gatwick to Lisbon' },
+  { time: '11:30', kind: 'Lodging', title: 'Check in at the flat in Alfama' },
+  { time: '13:00', kind: 'Food', title: 'Lunch at Cervejaria Ramiro' },
+  { time: '16:00', kind: 'Transport', title: 'Tram 28 up to Graça', next: true },
+  {
+    time: '19:30',
+    kind: 'Activity',
+    title: 'Sunset at Senhora do Monte'
+  },
+  { time: '', kind: 'Note', title: 'Book Belém tower tickets for Saturday' }
+]
+---
+
+<div class='wrap'>
+    <section class='hero' aria-labelledby='hero-title'>
+      <div class='hero-copy'>
+        <h1 id='hero-title'>Your trip, in the order it happens.</h1>
+        <p class='lede'>
+          Moss keeps flights, stays, meals and plans together on your iPhone,
+          sorted by day. Open it and see what comes next.
+        </p>
+        <div class='actions'>
+          <a class='button' href={appStoreUrl}>Download on the App Store</a>
+          <a class='text-link' href='#how'>How it works</a>
+        </div>
+        <p class='fine'>
+          Free to download for iPhone and iPad.
+        </p>
+      </div>
+
+      <figure class='route' aria-labelledby='route-caption'>
+        <p class='route-trip'>
+          <strong>Lisbon</strong>
+          <span>14 to 17 May</span>
+        </p>
+        <p class='route-day'>Friday 14 May</p>
+        <ol class='stops'>
+          {
+            stops.map((stop) => (
+              <li class:list={['stop', { 'is-next': stop.next }]}>
+                {stop.time ? (
+                  <time>{stop.time}</time>
+                ) : (
+                  <span class='time-empty' />
+                )}
+                <span class='stop-text'>
+                  <span class='stop-title'>{stop.title}</span>
+                  <span class='stop-kind'>
+                    {stop.kind}
+                    {stop.next && <span class='next-tag'>Next</span>}
+                  </span>
+                </span>
+              </li>
+            ))
+          }
+        </ol>
+        <figcaption id='route-caption'>
+          An example day in Moss, using made-up plans.
+        </figcaption>
+      </figure>
+    </section>
+</div>

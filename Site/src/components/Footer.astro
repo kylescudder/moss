@@ -1,4 +1,6 @@
 ---
+import app from '../../app.json'
+
 const links = [
   { href: '/support', label: 'Support' },
   { href: '/privacy', label: 'Privacy' },
@@ -14,7 +16,7 @@ const links = [
     </div>
     <nav aria-label='Footer'>
       {links.map((link) => <a href={link.href}>{link.label}</a>)}
-      <a href='mailto:support@getmoss.app'>support@getmoss.app</a>
+      <a href={`mailto:${app.contact}`}>{app.contact}</a>
     </nav>
   </div>
 </footer>

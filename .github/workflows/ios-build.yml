@@ -5,18 +5,19 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "Moss/**"
-      - "MossTests/**"
-      - "project.yml"
-      - "Config/Secrets.xcconfig.example"
-      - "Scripts/ci/**"
-      - ".github/workflows/ios-build.yml"
+      - 'Moss/**'
+      - 'MossTests/**'
+      - 'MossWidgets/**'
+      - 'project.yml'
+      - 'Config/Secrets.xcconfig.example'
+      - 'Scripts/**'
+      - '.github/workflows/ios-build.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: moss-ios-build-${{ github.ref }}
+  group: ios-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -29,7 +30,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Verify shared iOS core checksums
+        run: sh Scripts/check-shared-ios-core.sh
+
+      - name: Verify shared push core checksums
+        run: sh Scripts/check-shared-push-core.sh
+
+      - name: Verify shared auth checksums
+        run: sh Scripts/check-shared-auth.sh
 
       - name: Show Xcode version
         run: xcodebuild -version
@@ -47,28 +57,30 @@ jobs:
         run: xcodegen generate
 
       - name: Resolve Swift packages
-        run: xcodebuild -resolvePackageDependencies -project Moss.xcodeproj -scheme "$SCHEME"
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project "$SCHEME.xcodeproj" \
+            -scheme "$SCHEME"
 
       - name: Build
         run: |
           set -o pipefail
           xcodebuild build \
-            -project Moss.xcodeproj \
+            -project "$SCHEME.xcodeproj" \
             -scheme "$SCHEME" \
             -configuration Debug \
             -destination "generic/platform=iOS Simulator" \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Test
+      - name: Unit tests
         run: |
           set -o pipefail
-          simulator_id="$(
-            xcrun simctl list devices available -j |
-              jq -r '[.devices[][] | select(.isAvailable and (.name | startswith("iPhone")))] | first | .udid'
-          )"
-          test -n "$simulator_id" && test "$simulator_id" != "null"
+          # Use whichever iPhone simulator the runner image ships, so a new
+          # Xcode image doesn't break the job by renaming devices.
+          simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')"
+          test -n "$simulator_id" || (echo "::error::No available iPhone simulator" && exit 1)
           xcodebuild test \
-            -project Moss.xcodeproj \
+            -project "$SCHEME.xcodeproj" \
             -scheme "$SCHEME" \
             -configuration Debug \
             -destination "platform=iOS Simulator,id=$simulator_id" \

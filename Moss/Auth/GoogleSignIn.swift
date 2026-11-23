@@ -2,9 +2,7 @@ import AuthenticationServices
 import UIKit
 
 enum GoogleSignIn {
-    /// Runs OAuth in the system authentication session and returns the callback
-    /// URL for Supabase to exchange. Keeping the session here gives the app
-    /// explicit control over presentation, cancellation, and callback handling.
+    /// Exchanges the app-specific OAuth proof-bound callback.
     @MainActor
     static func start(authURL: URL, callbackScheme: String) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in

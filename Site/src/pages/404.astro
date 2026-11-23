@@ -5,7 +5,9 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 <BaseLayout
   title='Page not found - Moss'
   description='This page does not exist on the Moss website.'
+  bodyClass='not-found-page'
 >
+  <main>
   <section class='lost' aria-labelledby='lost-title'>
     <div class='lost-line' aria-hidden='true'></div>
     <h1 id='lost-title'>Page not found</h1>
@@ -18,4 +20,5 @@ import BaseLayout from '../layouts/BaseLayout.astro'
       <a class='text-link' href='/support'>Get support</a>
     </div>
   </section>
+  </main>
 </BaseLayout>

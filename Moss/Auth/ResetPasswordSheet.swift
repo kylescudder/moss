@@ -1,12 +1,17 @@
 import SwiftUI
 
-/// Presented whenever Supabase establishes a password-recovery session. It
-/// cannot be dismissed into the app: the user must set a password or sign out.
+/// Presented by RootView whenever AuthClient.isPasswordRecovery flips true —
+/// i.e. the user just opened a password-reset link and the API has handed us a
+/// recovery session. The sheet is interactive-dismiss-disabled so the user
+/// either sets a new password or leaves recovery explicitly; we don't want to
+/// leave them stranded in the app on a recovery session they can't escape.
+/// This file is identical in every app; how the user leaves is
+/// `AuthAppConfiguration.passwordRecoveryExit`.
 struct ResetPasswordSheet: View {
     @EnvironmentObject private var services: AppServices
 
     @State private var password = ""
-    @State private var confirmation = ""
+    @State private var confirm = ""
     @State private var isWorking = false
     @State private var localError: String?
 
@@ -24,7 +29,7 @@ struct ResetPasswordSheet: View {
                         .background(Theme.Colors.surface)
                         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
 
-                    SecureField("Confirm new password", text: $confirmation)
+                    SecureField("Confirm new password", text: $confirm)
                         .textContentType(.newPassword)
                         .padding()
                         .background(Theme.Colors.surface)
@@ -48,12 +53,18 @@ struct ResetPasswordSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Sign out") {
-                        Task {
-                            _ = await PasswordRecoveryCleanup.signOut(
-                                signOut: { await services.auth.signOut() },
-                                wipe: { await services.sync.wipe() }
-                            )
+                    switch AuthAppConfiguration.passwordRecoveryExit {
+                    case .cancelRecovery:
+                        Button("Cancel") {
+                            services.auth.cancelPasswordRecovery()
+                        }
+                    case .signOut:
+                        Button("Sign out") {
+                            Task {
+                                if await services.auth.signOut() {
+                                    services.auth.isPasswordRecovery = false
+                                }
+                            }
                         }
                     }
                 }
@@ -64,23 +75,25 @@ struct ResetPasswordSheet: View {
     }
 
     private var isFormValid: Bool {
-        password.count >= 6 && password == confirmation
+        password.count >= 6 && password == confirm
     }
 
     private func save() async {
-        guard !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
         localError = nil
-
-        guard password == confirmation else {
+        guard password == confirm else {
             localError = "Passwords don't match."
             return
         }
-
-        _ = await PasswordRecoveryCleanup.updatePassword(
-            update: { await services.auth.updatePassword(newPassword: password) },
-            wipe: { await services.sync.wipe() }
-        )
+        _ = await services.auth.updatePassword(newPassword: password)
     }
+}
+
+/// How the user leaves the reset-password sheet without setting a password.
+enum PasswordRecoveryExit: Sendable {
+    /// Forget the reset link and return to the app.
+    case cancelRecovery
+    /// Sign out while retaining this account’s offline data.
+    case signOut
 }
