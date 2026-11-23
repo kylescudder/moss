@@ -7,11 +7,16 @@ interface Props {
 const { title, updated } = Astro.props
 ---
 
-<main class='legal-shell'>
-  <article class='legal'>
-    <p class='kicker'>Moss</p>
+<article class='document'>
+  <header class='document-head'>
     <h1>{title}</h1>
-    {updated && <p class='updated'>Last updated: {updated}</p>}
+    {updated && <p class='updated'>Last updated {updated}</p>}
+  </header>
+  <div class='document-body'>
     <slot />
-  </article>
-</main>
+  </div>
+  <p class='document-end'>
+    Something not covered here? Email{' '}
+    <a href='mailto:support@getmoss.app'>support@getmoss.app</a>.
+  </p>
+</article>

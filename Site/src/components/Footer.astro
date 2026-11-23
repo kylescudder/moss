@@ -1,30 +1,20 @@
 ---
-import type { NavLink } from './Header.astro'
-
-interface Props {
-  footerLabel?: string
-  footerLinks?: NavLink[]
-}
-
-const defaultFooterLabel = 'Moss'
-const defaultFooterLinks: NavLink[] = [
+const links = [
   { href: '/support', label: 'Support' },
   { href: '/privacy', label: 'Privacy' },
-  { href: '/terms', label: 'Terms' },
-  { href: 'mailto:support@getmoss.app', label: 'Email' }
+  { href: '/terms', label: 'Terms' }
 ]
-
-const { footerLabel = defaultFooterLabel, footerLinks = defaultFooterLinks } =
-  Astro.props
 ---
 
-<footer>
-  <span>{footerLabel}</span>
-  <span class='footer-links'>
-    {footerLinks.map((link) => (
-      <a class={link.class} href={link.href}>
-        {link.label}
-      </a>
-    ))}
-  </span>
+<footer class='site-footer'>
+  <div class='footer-inner'>
+    <div class='footer-brand'>
+      <img src='/assets/moss-mark.svg' alt='' width='28' height='28' />
+      <p><strong>Moss</strong> Travel, together.</p>
+    </div>
+    <nav aria-label='Footer'>
+      {links.map((link) => <a href={link.href}>{link.label}</a>)}
+      <a href='mailto:support@getmoss.app'>support@getmoss.app</a>
+    </nav>
+  </div>
 </footer>

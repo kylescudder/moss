@@ -1,94 +1,168 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
-import SupportSection from '../components/SupportSection.astro'
+import { appStoreUrl } from '../lib/links'
+
+const stops = [
+  { time: '07:40', kind: 'Flight', title: 'Gatwick to Lisbon' },
+  { time: '11:30', kind: 'Lodging', title: 'Check in at the flat in Alfama' },
+  { time: '13:00', kind: 'Food', title: 'Lunch at Cervejaria Ramiro' },
+  { time: '16:00', kind: 'Transport', title: 'Tram 28 up to Graça', next: true },
+  {
+    time: '19:30',
+    kind: 'Activity',
+    title: 'Sunset at Senhora do Monte'
+  },
+  { time: '', kind: 'Note', title: 'Book Belém tower tickets for Saturday' }
+]
+
+const today = [
+  { time: '09:00', title: 'Pastéis de Belém' },
+  { time: '10:30', title: 'Jerónimos Monastery' },
+  { time: '14:15', title: 'Train to Cascais' }
+]
+
+const planned = [
+  'Trips shared with the people you travel with',
+  'Maps of every place on a trip',
+  'Photos and journals',
+  'Packing lists and expenses'
+]
 ---
 
 <BaseLayout
   title='Moss — Travel, together'
-  description='Travel, together with Moss: plan trips, keep places and notes together, and remember every journey.'
+  description='Moss keeps your flights, stays, meals and plans together on your iPhone, sorted by day. Free on the App Store.'
   ogTitle='Moss — Travel, together'
 >
-  <main>
+  <div class='wrap'>
     <section class='hero' aria-labelledby='hero-title'>
       <div class='hero-copy'>
-        <p class='kicker'>Travel, together</p>
-        <h1 id='hero-title'>Moss</h1>
+        <h1 id='hero-title'>Your trip, in the order it happens.</h1>
         <p class='lede'>
-          Plan what is ahead, hold onto what matters, and keep every trip
-          connected in one thoughtful place.
+          Moss keeps flights, stays, meals and plans together on your iPhone,
+          sorted by day. Open it and see what comes next.
         </p>
-        <div class='button-row'>
-          <a
-            class='button button-moss'
-            href='mailto:support@getmoss.app?subject=Moss%20TestFlight'
-          >
-            Request TestFlight access
-          </a>
-          <a class='button button-line' href='#journeys'>
-            Explore Moss
-          </a>
+        <div class='actions'>
+          <a class='button' href={appStoreUrl}>Download on the App Store</a>
+          <a class='text-link' href='#how'>How it works</a>
         </div>
+        <p class='fine'>
+          Free to download for iPhone and iPad.
+        </p>
       </div>
-      <div class='journey-panel' aria-hidden='true'>
-        <div class='memory-card card-primary'>
-          <span>Kyoto</span>
-          <strong>Spring days, temple walks, quiet dinners.</strong>
-        </div>
-        <div class='memory-card card-secondary'>
-          <span>Next</span>
-          <strong>Notes, places, stays, and plans in one place.</strong>
-        </div>
-      </div>
+
+      <figure class='route' aria-labelledby='route-caption'>
+        <p class='route-trip'>
+          <strong>Lisbon</strong>
+          <span>14 to 17 May</span>
+        </p>
+        <p class='route-day'>Friday 14 May</p>
+        <ol class='stops'>
+          {
+            stops.map((stop) => (
+              <li class:list={['stop', { 'is-next': stop.next }]}>
+                {stop.time ? (
+                  <time>{stop.time}</time>
+                ) : (
+                  <span class='time-empty' />
+                )}
+                <span class='stop-text'>
+                  <span class='stop-title'>{stop.title}</span>
+                  <span class='stop-kind'>
+                    {stop.kind}
+                    {stop.next && <span class='next-tag'>Next</span>}
+                  </span>
+                </span>
+              </li>
+            ))
+          }
+        </ol>
+        <figcaption id='route-caption'>
+          An example day in Moss, using made-up plans.
+        </figcaption>
+      </figure>
     </section>
 
-    <section
-      class='feature-band'
-      id='journeys'
-      aria-labelledby='journeys-title'
-    >
-      <p class='kicker'>Before / During / After</p>
-      <h2 id='journeys-title'>A place for the whole trip.</h2>
-      <div class='feature-grid'>
-        <article>
-          <span>01</span>
-          <h3>Plan with room to breathe</h3>
-          <p>
-            Keep dates, destinations, travel times, activities, meals, and notes
-            together without turning the trip into a spreadsheet.
-          </p>
-        </article>
-        <article>
-          <span>02</span>
-          <h3>Travel with context</h3>
-          <p>
-            Moss starts with itineraries and grows toward maps, stays,
-            recommendations, companions, and the details you need nearby.
-          </p>
-        </article>
-        <article>
-          <span>03</span>
-          <h3>Return to the memory</h3>
-          <p>
-            Every journey should stay useful after it ends, with favourite
-            places, photos, notes, and journals ready to revisit.
-          </p>
-        </article>
-      </div>
-    </section>
+    <div class='bend' aria-hidden='true'></div>
 
-    <section class='memory-section' id='memory' aria-labelledby='memory-title'>
-      <div>
-        <p class='kicker'>Built to grow</p>
-        <h2 id='memory-title'>More than an itinerary.</h2>
+    <section class='journey' id='how' aria-label='How Moss works'>
+      <div class='station'>
+        <h2>Before you go</h2>
+        <div class='station-body'>
+          <p>
+            Start a trip with a destination and dates. As you book things, add
+            them: flights, stays, meals, activities, transport and notes. Moss
+            sorts them by day and time, so the plan reads top to bottom.
+          </p>
+          <dl class='ticket'>
+            <div><dt>Trip</dt><dd>Lisbon</dd></div>
+            <div><dt>Dates</dt><dd>14 to 17 May</dd></div>
+            <div><dt>Notes</dt><dd>Bring the good walking shoes.</dd></div>
+          </dl>
+        </div>
       </div>
-      <p>
-        Moss is beginning with planning because every trip needs a shape. The
-        long-term home is broader: shared trips, restaurants, hotels, flights,
-        packing, expenses, photos, journals, and the small details that make a
-        place feel yours.
-      </p>
-    </section>
 
-    <SupportSection />
-  </main>
+      <div class='station'>
+        <h2>On the day</h2>
+        <div class='station-body'>
+          <p>
+            Today shows everything happening today, across all your trips, in
+            time order. Turn on reminders and Moss will nudge you before things
+            start.
+          </p>
+          <div class='today'>
+            <p class='today-title'>Today</p>
+            <ol>
+              {
+                today.map((item) => (
+                  <li>
+                    <time>{item.time}</time>
+                    {item.title}
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class='station'>
+        <h2>Back home</h2>
+        <div class='station-body'>
+          <p>
+            Your trips sync across your devices and stay put when you're home.
+            When someone asks where you had that lunch, it's still there.
+          </p>
+        </div>
+      </div>
+
+      <div class='station is-terminus' id='download'>
+        <h2>Get Moss</h2>
+        <div class='station-body'>
+          <p>
+            Moss is on the App Store for iPhone and iPad. Your first two trips
+            are free. Supporter Monthly unlocks unlimited trips and helps fund
+            what comes next.
+          </p>
+          <div class='actions'>
+            <a class='button' href={appStoreUrl}>Download on the App Store</a>
+            <a class='text-link' href='/support'>Get support</a>
+          </div>
+        </div>
+      </div>
+
+      <div class='station is-planned'>
+        <h2>Further down the line</h2>
+        <div class='station-body'>
+          <p>
+            Planned, not built yet. These are next once the itinerary is solid:
+          </p>
+          <ul class='planned'>
+            {planned.map((item) => <li>{item}</li>)}
+          </ul>
+        </div>
+      </div>
+
+    </section>
+  </div>
 </BaseLayout>

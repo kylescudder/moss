@@ -8,10 +8,9 @@ interface Props {
   title: string
   description: string
   ogTitle?: string
-  bodyClass?: string
 }
 
-const { title, description, ogTitle = title, bodyClass = '' } = Astro.props
+const { title, description, ogTitle = title } = Astro.props
 ---
 
 <!doctype html>
@@ -19,9 +18,12 @@ const { title, description, ogTitle = title, bodyClass = '' } = Astro.props
   <head>
     <DocumentHead title={title} description={description} ogTitle={ogTitle} />
   </head>
-  <body class={bodyClass}>
+  <body>
+    <a class='skip-link' href='#main'>Skip to content</a>
     <Header />
-    <slot />
+    <main id='main'>
+      <slot />
+    </main>
     <Footer />
   </body>
 </html>
