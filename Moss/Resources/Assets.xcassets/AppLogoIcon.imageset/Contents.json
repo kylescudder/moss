@@ -1,7 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "moss-ball-logo.svg",
+      "filename" : "app-logo-icon.svg",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "app-logo-icon-dark.svg",
       "idiom" : "universal"
     }
   ],
