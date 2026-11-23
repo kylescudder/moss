@@ -81,7 +81,7 @@ jobs:
 
   publish:
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     outputs:
       digest: ${{ steps.manifest.outputs.digest }}
@@ -128,7 +128,7 @@ jobs:
   # so the webhook secret can only trigger a release this workflow built from main.
   deploy:
     needs: publish
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
