@@ -58,14 +58,14 @@ struct RootView: View {
 
 struct MainTabView: View {
     @State private var selection: MainTab = .today
-    @State private var newTripRequest = 0
+    @State private var showNewTrip = false
 
     var body: some View {
         TabView(selection: $selection) {
             NavigationStack { TodayView() }
                 .tabItem { Label("Today", systemImage: "sun.max") }
                 .tag(MainTab.today)
-            NavigationStack { TripsListView(newTripRequest: newTripRequest) }
+            NavigationStack { TripsListView() }
                 .tabItem { Label("Trips", systemImage: "suitcase") }
                 .tag(MainTab.trips)
             NavigationStack { SettingsView() }
@@ -73,12 +73,18 @@ struct MainTabView: View {
                 .tag(MainTab.settings)
         }
         .tint(Theme.Colors.accent)
-        .onReceive(NotificationCenter.default.publisher(for: .openNewTrip)) { _ in
-            selection = .trips
-            newTripRequest += 1
+        .sheet(isPresented: $showNewTrip) {
+            TripEditorView()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openToday)) { _ in
-            selection = .today
+        // Fires on appear with any action that arrived before the tabs existed.
+        .onReceive(QuickActionInbox.shared.actions) { action in
+            switch action {
+            case .newTrip:
+                selection = .trips
+                showNewTrip = true
+            case .today:
+                selection = .today
+            }
         }
     }
 }

@@ -10,15 +10,17 @@ private struct NextTripEntry: TimelineEntry {
 
 private struct NextTripProvider: TimelineProvider {
     func placeholder(in context: Context) -> NextTripEntry {
-        NextTripEntry(
+        let calendar = Calendar.current
+        return NextTripEntry(
             date: Date(),
             snapshot: NextTripSnapshot(
-                title: "Lisbon long weekend",
-                destination: "Lisbon, Portugal",
-                startsAt: Calendar.current.date(byAdding: .day, value: 6, to: Date()),
-                endsAt: Calendar.current.date(byAdding: .day, value: 9, to: Date()),
-                todaysItems: [],
-                upcomingTripCount: 2,
+                trips: [WidgetTrip(
+                    title: "Lisbon long weekend",
+                    destination: "Lisbon, Portugal",
+                    startsAt: calendar.date(byAdding: .day, value: 6, to: Date()),
+                    endsAt: calendar.date(byAdding: .day, value: 9, to: Date())
+                )],
+                items: [],
                 updatedAt: Date()
             )
         )
@@ -28,13 +30,17 @@ private struct NextTripProvider: TimelineProvider {
         completion(NextTripEntry(date: Date(), snapshot: WidgetSnapshotStore.nextTrip()))
     }
 
+    /// One entry now and one at each of the next seven midnights. Every entry
+    /// derives its trip and "today" from the dated snapshot, so the widget
+    /// moves on to the next day (and the next trip) while the app is closed.
     func getTimeline(in context: Context, completion: @escaping (Timeline<NextTripEntry>) -> Void) {
-        // Refresh at midnight so the countdown and "today" stay correct.
-        let midnight = Calendar.current.startOfDay(for: Date()).addingTimeInterval(24 * 60 * 60)
-        completion(Timeline(
-            entries: [NextTripEntry(date: Date(), snapshot: WidgetSnapshotStore.nextTrip())],
-            policy: .after(midnight)
-        ))
+        let calendar = Calendar.current
+        let snapshot = WidgetSnapshotStore.nextTrip()
+        let today = calendar.startOfDay(for: Date())
+        let midnights = (1...7).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
+        let entries = [NextTripEntry(date: Date(), snapshot: snapshot)]
+            + midnights.map { NextTripEntry(date: $0, snapshot: snapshot) }
+        completion(Timeline(entries: entries, policy: .atEnd))
     }
 }
 
@@ -44,26 +50,16 @@ private struct NextTripWidgetView: View {
 
     var body: some View {
         Group {
-            if let snapshot = entry.snapshot, let title = snapshot.title {
+            if let snapshot = entry.snapshot, snapshot.covers(entry.date),
+               let trip = snapshot.focusTrip(on: entry.date) {
                 HStack(alignment: .top, spacing: 16) {
-                    tripSummary(snapshot, title: title)
+                    tripSummary(trip)
                     if family == .systemMedium {
-                        todayList(snapshot)
+                        todayList(snapshot.items(on: entry.date))
                     }
                 }
             } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    Image(systemName: "suitcase")
-                        .font(.title2)
-                        .foregroundStyle(mossGreen)
-                    Spacer()
-                    Text("Where to next?")
-                        .font(.headline)
-                    Text("Plan a trip in Moss.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                placeholder(stale: entry.snapshot.map { !$0.covers(entry.date) } ?? false)
             }
         }
         .widgetURL(URL(string: "moss://shortcut/today"))
@@ -72,22 +68,35 @@ private struct NextTripWidgetView: View {
         }
     }
 
-    private func tripSummary(_ snapshot: NextTripSnapshot, title: String) -> some View {
+    private func placeholder(stale: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: "suitcase")
+                .font(.title2)
+                .foregroundStyle(mossGreen)
+            Spacer()
+            Text(stale ? "Open Moss" : "Where to next?")
+                .font(.headline)
+            Text(stale ? "to refresh your trips." : "Plan a trip in Moss.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private func tripSummary(_ trip: WidgetTrip) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(statusText(snapshot).uppercased())
+            Text(statusText(trip).uppercased())
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(mossGreen)
-            Text(title)
+            Text(trip.title)
                 .font(.headline)
                 .lineLimit(2)
-            if let destination = snapshot.destination {
-                Text(destination)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
+            Text(trip.destination)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
             Spacer(minLength: 0)
-            if let startsAt = snapshot.startsAt {
+            if let startsAt = trip.startsAt {
                 Text(startsAt, format: .dateTime.day().month(.abbreviated))
                     .font(.caption.weight(.medium))
             }
@@ -95,17 +104,17 @@ private struct NextTripWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
-    private func todayList(_ snapshot: NextTripSnapshot) -> some View {
+    private func todayList(_ items: [WidgetItem]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("TODAY")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
-            if snapshot.todaysItems.isEmpty {
+            if items.isEmpty {
                 Text("Nothing scheduled")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(snapshot.todaysItems, id: \.self) { item in
+                ForEach(items.prefix(3), id: \.self) { item in
                     Label {
                         Text(item.title).lineLimit(1)
                     } icon: {
@@ -119,14 +128,15 @@ private struct NextTripWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
-    private func statusText(_ snapshot: NextTripSnapshot) -> String {
-        guard let startsAt = snapshot.startsAt else { return "Upcoming" }
+    private func statusText(_ trip: WidgetTrip) -> String {
+        if trip.isActive(on: entry.date) { return "Happening now" }
+        guard let startsAt = trip.startsAt else { return "Upcoming" }
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: entry.date)
-        let start = calendar.startOfDay(for: startsAt)
-        let end = calendar.startOfDay(for: snapshot.endsAt ?? startsAt)
-        if start <= today && today <= end { return "Happening now" }
-        let days = calendar.dateComponents([.day], from: today, to: start).day ?? 0
+        let days = calendar.dateComponents(
+            [.day],
+            from: calendar.startOfDay(for: entry.date),
+            to: calendar.startOfDay(for: startsAt)
+        ).day ?? 0
         switch days {
         case ..<1: return "Upcoming"
         case 1: return "Tomorrow"

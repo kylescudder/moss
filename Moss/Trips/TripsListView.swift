@@ -2,8 +2,6 @@ import SwiftUI
 
 struct TripsListView: View {
     @EnvironmentObject private var services: AppServices
-    /// Incremented by the New Trip quick action.
-    var newTripRequest = 0
     @State private var showNewTrip = false
 
     var body: some View {
@@ -47,9 +45,6 @@ struct TripsListView: View {
         .refreshable { await services.refreshAll() }
         .sheet(isPresented: $showNewTrip) {
             TripEditorView()
-        }
-        .onChange(of: newTripRequest) { _, _ in
-            showNewTrip = true
         }
     }
 

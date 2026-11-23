@@ -124,18 +124,17 @@ final class AppServices: ObservableObject {
     }
 
     func publishWidgetSnapshot() {
-        let next = trips.currentTrips.first ?? trips.upcomingTrips.first
-        let todaysItems = itinerary.todaysItems()
-        WidgetSnapshotStore.saveNextTrip(
-            title: next?.title,
-            destination: next?.destination,
-            startsAt: next?.startsAt,
-            endsAt: next?.endsAt,
-            todaysItems: todaysItems.prefix(3).map {
-                TodayItemSnapshot(title: $0.title, symbol: $0.kind.symbol, startsAt: $0.startsAt)
-            },
-            upcomingTripCount: trips.upcomingTrips.count
-        )
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let horizon = calendar.date(byAdding: .day, value: WidgetSnapshotStore.itemHorizonDays + 1, to: today) ?? today
+        let trips = (trips.currentTrips + trips.upcomingTrips).prefix(20).map {
+            WidgetTrip(title: $0.title, destination: $0.destination, startsAt: $0.startsAt, endsAt: $0.endsAt)
+        }
+        let items = itinerary.items.compactMap { item -> WidgetItem? in
+            guard let startsAt = item.startsAt, startsAt >= today, startsAt < horizon else { return nil }
+            return WidgetItem(title: item.title, symbol: item.kind.symbol, startsAt: startsAt)
+        }
+        WidgetSnapshotStore.saveNextTrip(trips: Array(trips), items: Array(items.prefix(100)))
         WidgetCenter.shared.reloadTimelines(ofKind: WidgetSnapshotStore.nextTripWidgetKind)
     }
 
