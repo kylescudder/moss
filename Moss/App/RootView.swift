@@ -2,24 +2,34 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var services: AppServices
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
             switch services.auth.state {
             case .unknown:
-                LoadingView(message: "Loading Moss")
+                LoadingView(message: "Packing up...")
             case .signedOut:
-                NavigationStack {
-                    SignInView()
-                }
+                NavigationStack { SignInView() }
             case .signedIn:
-                if services.auth.isPasswordRecovery {
-                    NavigationStack {
-                        SignInView()
-                    }
+                if !services.auth.canAccessMainApp {
+                    NavigationStack { SignInView() }
                 } else {
-                    AppTabView()
+                    MainTabView()
+                        .id(services.auth.currentUserID)
                 }
+            }
+        }
+        .task { await services.auth.bootstrap(offlineAccount: services.sync.offlineAccount) }
+        .onOpenURL { url in handle(url: url) }
+        .onAppear { QuickActionRouter.activate() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                QuickActionRouter.activate()
+                if case .signedIn = services.auth.state {
+                    Task { await services.push.refreshRegistration() }
+                }
+                Task { await services.sync.retryConnection() }
             }
         }
         .sheet(isPresented: Binding(
@@ -40,31 +50,45 @@ struct RootView: View {
             )
         }
     }
+
+    private func handle(url: URL) {
+        QuickActionRouter.handle(url: url, auth: services.auth)
+    }
 }
 
-private struct AppTabView: View {
+struct MainTabView: View {
+    @State private var selection: MainTab = .today
+    @State private var showNewTrip = false
+
     var body: some View {
-        TabView {
-            NavigationStack {
-                TripsListView()
-            }
-            .tabItem {
-                Label("Trips", systemImage: "suitcase.fill")
-            }
-
-            NavigationStack {
-                TodayView()
-            }
-            .tabItem {
-                Label("Today", systemImage: "calendar")
-            }
-
-            NavigationStack {
-                SettingsView()
-            }
-            .tabItem {
-                Label("Settings", systemImage: "gearshape.fill")
+        TabView(selection: $selection) {
+            NavigationStack { TodayView() }
+                .tabItem { Label("Today", systemImage: "sun.max") }
+                .tag(MainTab.today)
+            NavigationStack { TripsListView() }
+                .tabItem { Label("Trips", systemImage: "suitcase") }
+                .tag(MainTab.trips)
+            NavigationStack { SettingsView() }
+                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(MainTab.settings)
+        }
+        .tint(Theme.Colors.accent)
+        .sheet(isPresented: $showNewTrip) {
+            TripEditorView()
+        }
+        // Fires on appear with any action that arrived before the tabs existed.
+        .onReceive(QuickActionInbox.shared.actions) { action in
+            switch action {
+            case .newTrip:
+                selection = .trips
+                showNewTrip = true
+            case .today:
+                selection = .today
             }
         }
     }
+}
+
+private enum MainTab: Hashable {
+    case today, trips, settings
 }

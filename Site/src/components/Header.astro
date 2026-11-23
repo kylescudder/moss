@@ -1,55 +1,45 @@
 ---
-export interface NavLink {
-  href: string
-  label: string
-  class?: string
-}
+const path = Astro.url.pathname;
+const current = path === "/" ? "home" : path.split("/").filter(Boolean)[0];
 
-interface Props {
-  navLinks?: NavLink[]
-}
-
-const path = Astro.url.pathname
-const defaultNavLinks =
-  path === '/'
+const navLinks =
+  current === "home"
     ? [
-        { href: '#journeys', label: 'Journeys', class: 'nav-word' },
-        { href: '#memory', label: 'Memory', class: 'nav-word' },
-        { href: '/support', label: 'Support', class: 'nav-word' }
+        { href: "#journeys", label: "Journeys" },
+        { href: "#memory", label: "Memory" },
+        { href: "/support", label: "Support" },
       ]
-    : path.startsWith('/support')
+    : current === "support"
       ? [
-          { href: '/', label: 'Home', class: 'nav-word' },
-          { href: '/privacy', label: 'Privacy', class: 'nav-word' },
-          { href: '/terms', label: 'Terms', class: 'nav-word' }
+          { href: "/", label: "Home" },
+          { href: "/privacy", label: "Privacy" },
+          { href: "/terms", label: "Terms" },
         ]
-      : path.startsWith('/privacy')
+      : current === "privacy"
         ? [
-            { href: '/support', label: 'Support', class: 'nav-word' },
-            { href: '/terms', label: 'Terms', class: 'nav-word' }
+            { href: "/support", label: "Support" },
+            { href: "/terms", label: "Terms" },
           ]
         : [
-            { href: '/support', label: 'Support', class: 'nav-word' },
-            { href: '/privacy', label: 'Privacy', class: 'nav-word' }
-          ]
-
-const { navLinks = defaultNavLinks } = Astro.props
+            { href: "/support", label: "Support" },
+            { href: "/privacy", label: "Privacy" },
+          ];
 ---
 
-<header class='site-header'>
-  <a class='brand-link' href='/' aria-label='Moss home'>
-    <span class='logo' aria-hidden='true'>
-      <img src='/assets/moss-mark.svg' alt='' />
+<header class="site-header">
+  <a class="brand-link" href="/" aria-label="Moss home">
+    <span class="logo" aria-hidden="true">
+      <img src="/assets/moss-mark.svg" alt="" width="38" height="38" />
     </span>
-    <span class='wordmark'>Moss</span>
+    <span class="wordmark">Moss</span>
   </a>
-  {navLinks.length > 0 && (
-    <nav class='variant-nav' aria-label='Site links'>
-      {navLinks.map((link) => (
-        <a class={link.class} href={link.href}>
+  <nav class="site-nav" aria-label="Site links">
+    {
+      navLinks.map((link) => (
+        <a class="nav-word" href={link.href}>
           {link.label}
         </a>
-      ))}
-    </nav>
-  )}
+      ))
+    }
+  </nav>
 </header>

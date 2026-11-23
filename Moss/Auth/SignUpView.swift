@@ -6,26 +6,28 @@ struct SignUpView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var displayName = ""
-    @State private var isWorking = false
-    @State private var isResendingConfirmation = false
+    @State private var isBusy = false
     @State private var awaitingConfirmation: String?
-    @State private var resendConfirmationMessage: String?
 
     var body: some View {
         ScrollView {
             VStack(spacing: Theme.Spacing.xl) {
                 VStack(spacing: Theme.Spacing.sm) {
-                    Text("Create account")
-                        .font(.largeTitle.weight(.bold))
-                    Text("Your trips sync across devices automatically.")
+                    Image("AppLogoIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 48, height: 48)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
+                    Text("Create account").font(.largeTitle.weight(.bold))
+                    Text("Your trips and itineraries sync across devices and stay available offline.")
                         .font(.callout)
                         .foregroundStyle(Theme.Colors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, Theme.Spacing.lg)
 
-                if let confirmationEmail = awaitingConfirmation {
-                    confirmationCard(email: confirmationEmail)
+                if let confirmEmail = awaitingConfirmation {
+                    confirmationCard(email: confirmEmail)
                 } else {
                     formContent
                 }
@@ -41,7 +43,7 @@ struct SignUpView: View {
     @ViewBuilder
     private var formContent: some View {
         VStack(spacing: Theme.Spacing.md) {
-            TextField("Display name (optional)", text: $displayName)
+            TextField("Your name", text: $displayName)
                 .textContentType(.name)
                 .padding()
                 .background(Theme.Colors.surface)
@@ -56,7 +58,7 @@ struct SignUpView: View {
                 .background(Theme.Colors.surface)
                 .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
 
-            SecureField("Password (min 6 characters)", text: $password)
+            SecureField("Password (min 6 chars)", text: $password)
                 .textContentType(.newPassword)
                 .padding()
                 .background(Theme.Colors.surface)
@@ -70,10 +72,10 @@ struct SignUpView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
 
-        PrimaryButton(title: "Create account", isLoading: isWorking) {
+        PrimaryButton(title: "Create account", isLoading: isBusy) {
             Task { await signUp() }
         }
-        .disabled(!isFormValid || isWorking)
+        .disabled(!isFormValid)
     }
 
     private func confirmationCard(email: String) -> some View {
@@ -91,21 +93,6 @@ struct SignUpView: View {
                     .multilineTextAlignment(.center)
             }
 
-            if let resendConfirmationMessage {
-                Text(resendConfirmationMessage)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.Colors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            SecondaryButton(
-                title: isResendingConfirmation ? "Sending..." : "Resend confirmation email",
-                systemImage: isResendingConfirmation ? nil : "arrow.clockwise"
-            ) {
-                Task { await resendConfirmation(email: email) }
-            }
-            .disabled(isResendingConfirmation)
-
             PrimaryButton(title: "Back to sign in") {
                 dismiss()
             }
@@ -117,38 +104,22 @@ struct SignUpView: View {
     }
 
     private var isFormValid: Bool {
-        email.contains("@") && email.contains(".") && password.count >= 6
+        !email.isEmpty && password.count >= 6 && displayName.nilIfBlank != nil
     }
 
     private func signUp() async {
-        guard !isWorking else { return }
-        isWorking = true
-        defer { isWorking = false }
-
-        let trimmedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        isBusy = true
+        defer { isBusy = false }
         let result = await services.auth.signUp(
             email: email,
             password: password,
-            displayName: trimmedDisplayName.isEmpty ? nil : trimmedDisplayName
+            displayName: displayName.nilIfBlank
         )
-
         switch result {
         case .signedIn, .none:
             break
         case .needsEmailConfirmation(let pendingEmail):
             awaitingConfirmation = pendingEmail
-            resendConfirmationMessage = nil
         }
-    }
-
-    private func resendConfirmation(email: String) async {
-        guard !isResendingConfirmation else { return }
-        isResendingConfirmation = true
-        defer { isResendingConfirmation = false }
-
-        let sent = await services.auth.resendSignupConfirmation(email: email)
-        resendConfirmationMessage = sent
-            ? "We sent a fresh confirmation link."
-            : services.auth.lastError
     }
 }

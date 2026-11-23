@@ -1,0 +1,21 @@
+{
+  "name": "Moss",
+  "token": "Moss",
+  "repository": "moss",
+  "origin": "https://moss.kylescudder.co.uk",
+  "themeColor": "#f8f7f1",
+  "icon": "/assets/moss-mark.svg",
+  "contact": "kyle@kylescudder.co.uk",
+  "support": "/support",
+  "pages": {
+    "/": "Travel, together",
+    "/privacy": "Privacy Policy",
+    "/terms": "Terms of Use",
+    "/support": "Support"
+  },
+  "routes": {},
+  "appLinks": {
+    "appIDs": ["6AAGJ9Y234.app.getmoss.moss"],
+    "paths": ["/*"]
+  }
+}

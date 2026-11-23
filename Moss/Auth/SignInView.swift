@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// The shared sign-in screen: email and password, Apple, Google, password
+/// reset. Retained local accounts never affect the signed-out screen. This file is identical in
+/// every app; branding comes from `AuthAppConfiguration`.
 struct SignInView: View {
     @EnvironmentObject private var services: AppServices
     @State private var email = ""
@@ -12,15 +15,15 @@ struct SignInView: View {
         ScrollView {
             VStack(spacing: Theme.Spacing.xl) {
                 VStack(spacing: Theme.Spacing.sm) {
-                    Image("AppLogoIcon")
+                    Image(AuthAppConfiguration.signInLogo.imageName)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 96, height: 96)
-                        .accessibilityHidden(true)
-
-                    Text("Moss")
+                        .frame(width: AuthAppConfiguration.signInLogo.size, height: AuthAppConfiguration.signInLogo.size)
+                        .clipShape(RoundedRectangle(cornerRadius: AuthAppConfiguration.signInLogo.cornerRadius))
+                    Text(AuthAppConfiguration.signInTitle)
                         .font(.largeTitle.weight(.bold))
-                    Text("Travel, together")
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                    Text(AuthAppConfiguration.signInTagline)
                         .font(.callout)
                         .foregroundStyle(Theme.Colors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -33,34 +36,26 @@ struct SignInView: View {
                         .textContentType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        .submitLabel(.next)
                         .padding()
                         .background(Theme.Colors.surface)
                         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
 
                     SecureField("Password", text: $password)
                         .textContentType(.password)
-                        .submitLabel(.go)
                         .padding()
                         .background(Theme.Colors.surface)
                         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
-                        .onSubmit {
-                            guard isFormValid else { return }
-                            Task { await signIn() }
-                        }
 
                     HStack {
                         Spacer()
-                        Button("Forgot password?") {
-                            showForgotPassword = true
-                        }
-                        .font(.footnote)
-                        .foregroundStyle(Theme.Colors.accent)
+                        Button("Forgot password?") { showForgotPassword = true }
+                            .font(.footnote)
+                            .foregroundStyle(Theme.Colors.accent)
                     }
                 }
 
-                if let message = services.auth.lastError {
-                    Text(message)
+                if let error = services.auth.lastError {
+                    Text(error)
                         .font(.footnote)
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -73,43 +68,39 @@ struct SignInView: View {
                     .disabled(!isFormValid || isWorking)
 
                     HStack {
-                        Rectangle()
-                            .fill(Theme.Colors.separator)
-                            .frame(height: 1)
-                        Text("or")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.Colors.textTertiary)
-                        Rectangle()
-                            .fill(Theme.Colors.separator)
-                            .frame(height: 1)
+                        Rectangle().fill(Theme.Colors.separator).frame(height: 1)
+                        Text("or").font(.footnote).foregroundStyle(Theme.Colors.textTertiary)
+                        Rectangle().fill(Theme.Colors.separator).frame(height: 1)
                     }
 
                     AppleSignInButton()
                         .frame(height: 50)
                         .disabled(isWorking)
 
-                    SecondaryButton(title: "Continue with Google", assetImage: "GoogleLogo") {
+                    SecondaryButton(
+                        title: "Continue with Google",
+                        assetImage: "GoogleLogo",
+                        iconTextSpacing: 12,
+                        titleFont: .custom("Roboto-Medium", size: 17, relativeTo: .body)
+                    ) {
                         Task { await googleSignIn() }
                     }
                     .disabled(isWorking)
                 }
 
-                Button("Create an account") {
-                    showSignUp = true
-                }
-                .font(.callout)
-                .padding(.top, Theme.Spacing.sm)
+                Button("Create an account") { showSignUp = true }
+                    .font(.callout)
+                    .padding(.top, Theme.Spacing.sm)
             }
+            .disabled(isWorking)
             .padding(.horizontal, Theme.Spacing.lg)
             .padding(.bottom, Theme.Spacing.xxl)
         }
         .background(Theme.Colors.background)
         .scrollDismissesKeyboard(.interactively)
-        .navigationDestination(isPresented: $showSignUp) {
-            SignUpView()
-        }
+        .navigationDestination(isPresented: $showSignUp) { SignUpView() }
         .sheet(isPresented: $showForgotPassword) {
-            ForgotPasswordSheet(email: email)
+            ForgotPasswordSheet(initialEmail: email)
                 .presentationDetents([.medium, .large])
         }
     }
@@ -134,4 +125,12 @@ struct SignInView: View {
         defer { isWorking = false }
         await services.auth.signInWithGoogle()
     }
+}
+
+/// The logo at the top of the sign-in screen. A zero corner radius leaves
+/// the image unclipped.
+struct SignInLogo: Sendable {
+    let imageName: String
+    let size: CGFloat
+    let cornerRadius: CGFloat
 }

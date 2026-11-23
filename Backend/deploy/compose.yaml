@@ -1,0 +1,18 @@
+# One project per app on Herman's existing PostgreSQL network. Service names are
+# app-prefixed because Compose publishes each service name as a DNS alias on
+# every network, including the shared platform-db and ingress networks.
+name: ${BACKEND_PROJECT:?app project name required}
+services:
+  moss-api:
+    extends: { file: compose.shared.yaml, service: api }
+  moss-sync:
+    extends: { file: compose.shared.yaml, service: sync }
+networks:
+  platform-db:
+    external: true
+    name: platform-db
+  app-sync:
+    internal: true
+  ingress:
+    external: true
+    name: ${BACKEND_INGRESS_NETWORK:?reviewed tunnel network required}

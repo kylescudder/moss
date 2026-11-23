@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>API_URL</key>
+	<string>$(API_URL)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -37,12 +39,18 @@
 	<string>Moss uses your location to help you understand places near your trip.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Moss saves the trip memories and exports you choose to create.</string>
+	<key>POWERSYNC_URL</key>
+	<string>$(POWERSYNC_URL)</string>
+	<key>PUSH_GATEWAY_APPLICATION_ID</key>
+	<string>$(PUSH_GATEWAY_APPLICATION_ID)</string>
+	<key>PUSH_GATEWAY_URL</key>
+	<string>$(PUSH_GATEWAY_URL)</string>
 	<key>SENTRY_DSN</key>
 	<string>$(SENTRY_DSN)</string>
-	<key>SUPABASE_ANON_KEY</key>
-	<string>$(SUPABASE_ANON_KEY)</string>
-	<key>SUPABASE_URL</key>
-	<string>$(SUPABASE_URL)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Roboto-Medium.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

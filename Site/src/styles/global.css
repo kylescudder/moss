@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,750&family=IBM+Plex+Mono:wght@500;700&family=Work+Sans:wght@500;650;750&display=swap');
+
 :root {
   color-scheme: light;
   --ink: #1d231c;
@@ -33,6 +35,12 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--moss);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 img,
@@ -83,7 +91,7 @@ svg {
   font-size: 20px;
 }
 
-.variant-nav {
+.site-nav {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -91,7 +99,7 @@ svg {
   gap: 8px;
 }
 
-.variant-nav a {
+.site-nav a {
   min-width: 38px;
   height: 34px;
   padding: 0 12px;
@@ -105,7 +113,7 @@ svg {
   font-weight: 700;
 }
 
-.variant-nav a:hover {
+.site-nav a:hover {
   color: #fbfbf3;
   background: var(--moss);
   border-color: var(--moss);
@@ -132,7 +140,8 @@ svg {
   max-width: 720px;
 }
 
-.kicker {
+.kicker,
+.eyebrow {
   margin: 0 0 18px;
   color: var(--moss);
   font-family: 'IBM Plex Mono', monospace;
@@ -307,8 +316,6 @@ h3 {
 .feature-band > .kicker,
 .feature-band > h2,
 .feature-grid,
-.memory-section,
-.support-section,
 .legal {
   max-width: var(--max);
   margin-left: auto;
@@ -316,6 +323,8 @@ h3 {
 }
 
 .feature-grid {
+  padding: 0;
+  list-style: none;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
@@ -323,18 +332,24 @@ h3 {
   background: var(--line);
 }
 
-.feature-grid article {
+.feature-grid li {
   min-height: 260px;
   padding: 28px;
   background: var(--surface);
 }
 
 .feature-grid p,
-.memory-section p,
+.memory-section > p,
 .legal p,
 .legal li {
   color: var(--muted);
   line-height: 1.68;
+}
+
+/* Full-bleed bands whose content lines up with the hero and the journeys band. */
+.memory-section,
+.support-section {
+  padding-inline: max(clamp(18px, 5vw, 64px), calc((100% - var(--max)) / 2));
 }
 
 .memory-section {
@@ -344,7 +359,7 @@ h3 {
   align-items: start;
 }
 
-.memory-section p {
+.memory-section > p {
   margin-top: 12px;
   font-size: clamp(18px, 2vw, 22px);
 }
@@ -362,7 +377,7 @@ h3 {
   justify-content: flex-end;
 }
 
-footer {
+.site-footer {
   min-height: 70px;
   padding: 22px clamp(18px, 5vw, 64px);
   display: flex;
@@ -452,7 +467,7 @@ footer {
     flex-direction: column;
   }
 
-  .variant-nav {
+  .site-nav {
     justify-content: flex-start;
   }
 
@@ -469,12 +484,24 @@ footer {
     bottom: 34px;
   }
 
-  footer {
+  .site-footer {
     align-items: flex-start;
     flex-direction: column;
   }
 
   .footer-links {
     justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .button,
+  .button:hover {
+    transition: none;
+    transform: none;
   }
 }
