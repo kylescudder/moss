@@ -3,9 +3,9 @@
   "token": "Moss",
   "repository": "moss",
   "origin": "https://growmoss.app",
-  "themeColor": "#f8f7f1",
+  "themeColor": "#f3f5ef",
   "icon": "/assets/moss-mark.svg",
-  "contact": "kyle@kylescudder.co.uk",
+  "contact": "support@growmoss.app",
   "support": "/support",
   "pages": {
     "/": "Travel, together",

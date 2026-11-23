@@ -1,45 +1,29 @@
 ---
-const path = Astro.url.pathname;
-const current = path === "/" ? "home" : path.split("/").filter(Boolean)[0];
-
-const navLinks =
-  current === "home"
-    ? [
-        { href: "#journeys", label: "Journeys" },
-        { href: "#memory", label: "Memory" },
-        { href: "/support", label: "Support" },
-      ]
-    : current === "support"
-      ? [
-          { href: "/", label: "Home" },
-          { href: "/privacy", label: "Privacy" },
-          { href: "/terms", label: "Terms" },
-        ]
-      : current === "privacy"
-        ? [
-            { href: "/support", label: "Support" },
-            { href: "/terms", label: "Terms" },
-          ]
-        : [
-            { href: "/support", label: "Support" },
-            { href: "/privacy", label: "Privacy" },
-          ];
+const path = Astro.url.pathname
+const links = [
+  { href: path === '/' ? '#how' : '/#how', label: 'How it works' },
+  { href: '/support', label: 'Support' }
+]
 ---
 
-<header class="site-header">
-  <a class="brand-link" href="/" aria-label="Moss home">
-    <span class="logo" aria-hidden="true">
-      <img src="/assets/moss-mark.svg" alt="" width="38" height="38" />
-    </span>
-    <span class="wordmark">Moss</span>
+<a class='skip-link' href='#content'>Skip to content</a>
+<header class='site-header'>
+  <a class='brand' href='/' aria-label='Moss home'>
+    <img src='/assets/moss-mark.svg' alt='' width='36' height='36' />
+    <span>Moss</span>
   </a>
-  <nav class="site-nav" aria-label="Site links">
+  <nav aria-label='Site'>
     {
-      navLinks.map((link) => (
-        <a class="nav-word" href={link.href}>
+      links.map((link) => (
+        <a
+          href={link.href}
+          aria-current={link.href === path ? 'page' : undefined}
+        >
           {link.label}
         </a>
       ))
     }
   </nav>
 </header>
+<!-- The shared layout puts each page's <main> right after the header. -->
+<span id='content' tabindex='-1'></span>

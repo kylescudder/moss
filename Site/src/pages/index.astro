@@ -1,21 +1,17 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
-import HomeHero from "../components/HomeHero.astro";
-import HomeJourneys from "../components/HomeJourneys.astro";
-import HomeMemory from "../components/HomeMemory.astro";
-import HomeSupport from "../components/HomeSupport.astro";
+import BaseLayout from '../layouts/BaseLayout.astro'
+import HomeHero from '../components/HomeHero.astro'
+import HomeHowItWorks from '../components/HomeHowItWorks.astro'
 ---
 
 <BaseLayout
-  title="Moss — Travel, together"
-  description="Travel, together with Moss: plan trips, keep places and notes together, and remember every journey."
-  ogTitle="Moss — Travel, together"
-  bodyClass="home-page"
+  title='Moss — Travel, together'
+  description='Moss keeps your flights, stays, meals and plans together on your iPhone, sorted by day. Free on the App Store.'
+  ogTitle='Moss — Travel, together'
+  bodyClass='home-page'
 >
   <main>
     <HomeHero />
-    <HomeJourneys />
-    <HomeMemory />
-    <HomeSupport />
+    <HomeHowItWorks />
   </main>
 </BaseLayout>

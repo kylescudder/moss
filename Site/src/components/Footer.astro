@@ -1,17 +1,22 @@
 ---
-import app from "../../app.json";
+import app from '../../app.json'
 
 const links = [
-  { href: "/support", label: "Support" },
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
-  { href: `mailto:${app.contact}`, label: "Email" },
-];
+  { href: '/support', label: 'Support' },
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/terms', label: 'Terms' }
+]
 ---
 
-<footer class="site-footer">
-  <span>Moss</span>
-  <span class="footer-links">
-    {links.map((link) => <a href={link.href}>{link.label}</a>)}
-  </span>
+<footer class='site-footer'>
+  <div class='footer-inner'>
+    <div class='footer-brand'>
+      <img src='/assets/moss-mark.svg' alt='' width='28' height='28' />
+      <p><strong>Moss</strong> Travel, together.</p>
+    </div>
+    <nav aria-label='Footer'>
+      {links.map((link) => <a href={link.href}>{link.label}</a>)}
+      <a href={`mailto:${app.contact}`}>{app.contact}</a>
+    </nav>
+  </div>
 </footer>

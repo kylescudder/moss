@@ -1,0 +1,100 @@
+---
+import { appStoreUrl } from '../lib/links'
+
+const today = [
+  { time: '09:00', title: 'Pastéis de Belém' },
+  { time: '10:30', title: 'Jerónimos Monastery' },
+  { time: '14:15', title: 'Train to Cascais' }
+]
+
+const planned = [
+  'Trips shared with the people you travel with',
+  'Maps of every place on a trip',
+  'Photos and journals',
+  'Packing lists and expenses'
+]
+---
+
+<div class='wrap'>
+    <div class='bend' aria-hidden='true'></div>
+
+    <section class='journey' id='how' aria-label='How Moss works'>
+      <div class='station'>
+        <h2>Before you go</h2>
+        <div class='station-body'>
+          <p>
+            Start a trip with a destination and dates. As you book things, add
+            them: flights, stays, meals, activities, transport and notes. Moss
+            sorts them by day and time, so the plan reads top to bottom.
+          </p>
+          <dl class='ticket'>
+            <div><dt>Trip</dt><dd>Lisbon</dd></div>
+            <div><dt>Dates</dt><dd>14 to 17 May</dd></div>
+            <div><dt>Notes</dt><dd>Bring the good walking shoes.</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <div class='station'>
+        <h2>On the day</h2>
+        <div class='station-body'>
+          <p>
+            Today shows everything happening today, across all your trips, in
+            time order. Turn on reminders and Moss will nudge you before things
+            start.
+          </p>
+          <div class='today'>
+            <p class='today-title'>Today</p>
+            <ol>
+              {
+                today.map((item) => (
+                  <li>
+                    <time>{item.time}</time>
+                    {item.title}
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class='station'>
+        <h2>Back home</h2>
+        <div class='station-body'>
+          <p>
+            Your trips sync across your devices and stay put when you're home.
+            When someone asks where you had that lunch, it's still there.
+          </p>
+        </div>
+      </div>
+
+      <div class='station is-terminus' id='download'>
+        <h2>Get Moss</h2>
+        <div class='station-body'>
+          <p>
+            Moss is on the App Store for iPhone and iPad. Your first two trips
+            are free. Supporter Monthly unlocks unlimited trips and helps fund
+            what comes next.
+          </p>
+          <div class='actions'>
+            <a class='button' href={appStoreUrl}>Download on the App Store</a>
+            <a class='text-link' href='/support'>Get support</a>
+          </div>
+        </div>
+      </div>
+
+      <div class='station is-planned'>
+        <h2>Further down the line</h2>
+        <div class='station-body'>
+          <p>
+            Planned, not built yet. These are next once the itinerary is solid:
+          </p>
+          <ul class='planned'>
+            {planned.map((item) => <li>{item}</li>)}
+          </ul>
+        </div>
+      </div>
+
+    </section>
+</div>
