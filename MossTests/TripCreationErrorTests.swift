@@ -1,5 +1,5 @@
 import XCTest
-@testable import Moss
+@testable import AppUnderTest
 
 final class TripCreationErrorTests: XCTestCase {
     func testEveryCreationErrorHasTheExpectedPresentation() {

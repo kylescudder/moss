@@ -194,7 +194,7 @@ wait for Apple's processing of an earlier upload. CI stamps
 
 ## Shared code
 
-Moss, Diald and Deadwax Club keep five sets of files byte-for-byte identical.
+Moss keeps five sets of files byte-for-byte identical with the other iOS apps.
 CI fails if any of them drift:
 
 | Check | Covers |

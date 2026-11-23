@@ -34,9 +34,9 @@ paths working.
 
 ## Structure
 
-Moss, Diald and Deadwax Club share this site's layout, tooling, image and
-workflows; [Scripts/SHARED_SITE.md](../Scripts/SHARED_SITE.md) lists the shared
-files and the app hooks. Moss's own files are `app.json`, `app.caddy`, the
+Every iOS app shares this site's layout, tooling, image and workflows;
+[Scripts/SHARED_SITE.md](../Scripts/SHARED_SITE.md) lists the shared files and
+the app hooks. Moss's own files are `app.json`, `app.caddy`, the
 header, footer and `Home*` components, the pages, `src/styles/global.css`,
 `public/assets/` and `public/.well-known/apple-app-site-association`.
 

@@ -11,8 +11,9 @@ Moss — native iOS 17+ SwiftUI travel companion for planning trips, keeping day
 Every iOS app uses the same repository layout, app scaffolding and CI. Read
 `Scripts/SHARED_IOS_CORE.md` before adding folders, shared UI primitives,
 configuration keys or workflows. Five checksum manifests keep shared files
-byte-for-byte identical with the other apps (Diald and Deadwax Club), and CI
-runs all of them:
+byte-for-byte identical with the other iOS apps, and CI runs all of them.
+Never name another app in this repository; shared files read app values from
+hooks:
 
 - `Scripts/check-shared-ios-core.sh` — `AppSecrets`, `AppBootstrap`, `Theme`, `LoadingView`, `LottieAnimationView`, `PrimaryButton`, `Logger`, `AppearanceManager`, `Card`, `EmptyState`, `PushAuthorizationRow`, `AppDelegate`, `QuickActionRouter`, `AppGroupStore`, the shared sign-in views (`SignInView`, `ForgotPasswordSheet`, `ResetPasswordSheet`, `AppleSignInButton`), the billing core (`BillingRepository`, `SubscriptionAccessState`, `CreationQuotaProviding`, `SubscriptionPaywallView`), the sync core (`PowerSyncManager`, `APIConnector`, `SyncIssueStore`), the `Shared*Tests`, `setup.sh` and the iOS workflows.
 - `Scripts/check-shared-auth.sh` — Better Auth backend and native auth (`SHARED_AUTH.md`).
@@ -53,7 +54,7 @@ bun run preview                            # previews the production build
 cd Site && bun run format:check            # check Astro/CSS formatting with Prettier
 ```
 
-`MossTests` contains focused trip-creation, quota and model tests; `Shared*Tests.swift` are identical in every app. There is no iOS linter or formatter configured. The Astro site has `format` and `format:check` scripts under `Site/package.json`; don't invent additional validation commands.
+`MossTests` contains focused trip-creation, quota, widget and model tests; `Shared*Tests.swift` are identical in every app. Every test file imports the app as `@testable import AppUnderTest`, which the test target's `-module-alias AppUnderTest=Moss` flag in `project.yml` maps to the `Moss` module. There is no iOS linter or formatter configured. The Astro site has `format` and `format:check` scripts under `Site/package.json`; don't invent additional validation commands.
 
 ## Backend
 
@@ -176,7 +177,7 @@ The dependency lower bounds live in `project.yml`; generated Xcode package state
 - **Swift strict concurrency / iOS SDKs** — `UNUserNotificationCenterDelegate`, `ASWebAuthenticationSession`, AppIntents, WidgetKit timelines, and UIKit callbacks can gain isolation requirements between toolchains.
 - **Astro / Prettier** — site dependencies are pinned through `Site/bun.lock`; keep the lockfile with intentional updates and run both the production build and `format:check`.
 
-Dependency versions follow Diald and Deadwax Club so the shared files compile against the same SDKs; bump them in every app together. When an SDK bump breaks compilation, check the dependency's release notes and update the shared abstraction rather than scattering compatibility workarounds across views.
+Dependency versions match the other iOS apps so the shared files compile against the same SDKs; bump them in every app together. When an SDK bump breaks compilation, check the dependency's release notes and update the shared abstraction rather than scattering compatibility workarounds across views.
 
 ## Folder casing
 

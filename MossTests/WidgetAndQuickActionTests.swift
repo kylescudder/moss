@@ -1,6 +1,6 @@
 import Combine
 import XCTest
-@testable import Moss
+@testable import AppUnderTest
 
 final class WidgetSnapshotTests: XCTestCase {
     private var calendar: Calendar {

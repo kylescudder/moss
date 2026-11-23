@@ -1,5 +1,5 @@
 import XCTest
-@testable import Moss
+@testable import AppUnderTest
 
 final class TripModelTests: XCTestCase {
     private let calendar = Calendar(identifier: .gregorian)
@@ -63,12 +63,12 @@ final class TripModelTests: XCTestCase {
         XCTAssertTrue(verified.isVerified(at: now))
         XCTAssertFalse(verified.isVerified(at: date(21)), "expired")
 
-        let otherApp = OfflineEntitlementSnapshot(
-            productID: BillingAppConfiguration.productID, bundleID: "club.diald", status: "active",
+        let otherBundle = OfflineEntitlementSnapshot(
+            productID: BillingAppConfiguration.productID, bundleID: "com.example.other", status: "active",
             expiresAt: date(20), revokedAt: nil, environment: "Production", signedAt: date(1),
             verifiedAt: date(1), verificationSource: "device"
         )
-        XCTAssertFalse(otherApp.isVerified(at: now))
+        XCTAssertFalse(otherBundle.isVerified(at: now))
 
         let unverified = OfflineEntitlementSnapshot(
             productID: BillingAppConfiguration.productID, bundleID: "app.getmoss.moss", status: "active",
