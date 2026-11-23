@@ -33,7 +33,7 @@
     "trip_creation_quotas",
     "iap_entitlements"
   ],
-  "deployURL": "https://deploy-moss-api.kylescudder.co.uk/hooks/moss-api",
+  "deployURL": "https://deploy-api.growmoss.app/hooks/moss-api",
   "signatureHeader": "X-Moss-Signature",
   "receiverHeader": "x-moss-deploy-hook",
   "runtimeDefaultRole": "moss_api"

@@ -14,6 +14,6 @@ enum BillingAppConfiguration {
         "\(count) \(count == 1 ? "trip" : "trips") created"
     }
 
-    static let privacyPolicyURL = URL(string: "https://moss.kylescudder.co.uk/privacy")!
-    static let termsOfUseURL = URL(string: "https://moss.kylescudder.co.uk/terms")!
+    static let privacyPolicyURL = URL(string: "https://growmoss.app/privacy")!
+    static let termsOfUseURL = URL(string: "https://growmoss.app/terms")!
 }

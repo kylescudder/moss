@@ -1,7 +1,7 @@
 # Moss site
 
 The static Astro home, privacy, terms and support pages for the Moss iOS app.
-Public hostname: **moss.kylescudder.co.uk**.
+Public hostname: **growmoss.app**.
 
 ## Development
 
@@ -51,11 +51,11 @@ commit in `X-Moss-Revision`. Herman checks the attestation and the pages before
 switching, keeps the previous image for rollback, and the workflow waits until
 the public site reports the new commit. Run the workflow manually to redeploy.
 
-| Setting                                          | Kind                 | Purpose                                                                 |
-| ------------------------------------------------ | -------------------- | ----------------------------------------------------------------------- |
-| `DEPLOY_HOST`                                    | repository variable  | Herman deploy hostname (`deploy-moss.kylescudder.co.uk`), behind Access |
-| `SITE_BASE_URL`                                  | repository variable  | Public origin checked for the new revision                              |
-| `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | `production` secrets | Access service token for the deploy hostname                            |
-| `DEPLOY_WEBHOOK_SECRET`                          | `production` secret  | HMAC key for deploy requests                                            |
+| Setting                                          | Kind                 | Purpose                                                       |
+| ------------------------------------------------ | -------------------- | ------------------------------------------------------------- |
+| `DEPLOY_HOST`                                    | repository variable  | Herman deploy hostname (`deploy.growmoss.app`), behind Access |
+| `SITE_BASE_URL`                                  | repository variable  | Public origin checked for the new revision                    |
+| `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | `production` secrets | Access service token for the deploy hostname                  |
+| `DEPLOY_WEBHOOK_SECRET`                          | `production` secret  | HMAC key for deploy requests                                  |
 
 Host setup and recovery are in Herman's platform runbook.
