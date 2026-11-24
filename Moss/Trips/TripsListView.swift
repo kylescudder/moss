@@ -54,8 +54,14 @@ struct TripsListView: View {
             Section(title) {
                 ForEach(trips) { trip in
                     NavigationLink(value: trip) {
-                        TripRow(trip: trip, itemCount: services.itinerary.items(for: trip.id).count)
+                        TripRow(
+                            trip: trip,
+                            itemCount: services.itinerary.items(for: trip.id).count,
+                            sharingSummary: services.sharingSummary(for: trip)
+                        )
                     }
+                    // Only the owner deletes a trip; others leave it from its Share screen.
+                    .deleteDisabled(!services.isOwner(of: trip))
                 }
                 .onDelete { offsets in
                     Task {
@@ -72,6 +78,7 @@ struct TripsListView: View {
 struct TripRow: View {
     let trip: Trip
     var itemCount = 0
+    var sharingSummary: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
@@ -89,6 +96,10 @@ struct TripRow: View {
                 }
             }
             .captionSecondary()
+            if let sharingSummary {
+                Label(sharingSummary, systemImage: "person.2")
+                    .captionSecondary()
+            }
         }
         .padding(.vertical, Theme.Spacing.xs)
     }

@@ -12,6 +12,7 @@ including deleted trips.
 - Offline-first SQLite mirrored to PostgreSQL on Herman through self-hosted PowerSync
 - Trips with destination, dates and notes
 - Day-by-day itineraries: flights, stays, food, activities, transport and notes
+- Share one trip, or every trip you own, with other Moss accounts as editors or viewers; invites to new emails wait until that address signs up and is confirmed
 - Today screen with the current or next trip and today's plans
 - Home Screen widget (next trip and today) and App Shortcuts to plan a trip or open today
 - Supporter subscription for unlimited trips
@@ -51,6 +52,7 @@ Moss/
   Notifications/   shared push core and APNs registration
   Resources/       assets, Moss.icon, animations, fonts, StoreKit configuration
   Settings/        settings, appearance, profile repository
+  Sharing/         shared sharing core, trip and all-trips sharing screens
   Sync/            PowerSync schema, manager, connector, sync issues
   Trips/           trips list, detail, editor, repository and creation quota
   Utilities/       display formatting
@@ -197,7 +199,7 @@ wait for Apple's processing of an earlier upload. CI stamps
 Complimentary billing access follows `Scripts/SHARED_IOS_CORE.md`; see
 `docs/complimentary-access.md` for the administrator grant and revoke procedure.
 
-Moss keeps five sets of files byte-for-byte identical with the other iOS apps.
+Moss keeps six sets of files byte-for-byte identical with the other iOS apps.
 CI fails if any of them drift:
 
 | Check | Covers |
@@ -207,6 +209,7 @@ CI fails if any of them drift:
 | `Scripts/check-shared-push-core.sh` | Push registration core ([SHARED_PUSH_CORE.md](Scripts/SHARED_PUSH_CORE.md)) |
 | `Scripts/check-shared-infra.sh` | Backend deployment and provisioning ([SHARED_INFRA.md](Scripts/SHARED_INFRA.md)) |
 | `Scripts/check-shared-site.sh` | Astro site layout, tooling, image and site workflows ([SHARED_SITE.md](Scripts/SHARED_SITE.md)) |
+| `Scripts/check-shared-sharing-core.sh` | Sharing models, repository, member screen and tests, used by the apps that share data ([SHARED_SHARING_CORE.md](Scripts/SHARED_SHARING_CORE.md)) |
 
 ## Development notes
 

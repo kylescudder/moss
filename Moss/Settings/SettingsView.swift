@@ -33,6 +33,18 @@ struct SettingsView: View {
                 }
             }
 
+            Section {
+                NavigationLink {
+                    AllTripsSharingView()
+                } label: {
+                    Label("Share all my trips", systemImage: "person.2")
+                }
+            } header: {
+                Text("Sharing")
+            } footer: {
+                Text("To share one trip, open it and tap Share.")
+            }
+
             Section("Notifications") {
                 PushAuthorizationRow()
             }

@@ -7,6 +7,7 @@ import {
   integer,
   uuid,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex
@@ -77,6 +78,115 @@ export const itineraryItems = pgTable(
     ),
     index('itinerary_items_trip_sort_idx').on(t.trip_id, t.sort_order),
     index('itinerary_items_owner_updated_idx').on(t.owner_id, t.updated_at)
+  ]
+)
+// Sharing. A trip is shared through trip_members; "all my trips" is shared
+// through library_members, whose library_id is the owner's profile ID, so a
+// member sees every trip that account owns, now and later. Each space has an
+// owner row. Invites to emails without a verified account wait in the
+// *_pending_invites tables until that email is verified.
+const shareRole = (name: string) => text(name).notNull().default('editor')
+const membership = () => ({
+  user_id: uuid('user_id')
+    .notNull()
+    .references(() => profiles.id, { onDelete: 'cascade' }),
+  role: shareRole('role'),
+  invited_by: uuid('invited_by').references(() => profiles.id, {
+    onDelete: 'set null'
+  }),
+  joined_at: timestamp('joined_at', { withTimezone: true })
+    .notNull()
+    .defaultNow()
+})
+const invitation = () => ({
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull(),
+  role: shareRole('role'),
+  invited_by: uuid('invited_by')
+    .notNull()
+    .references(() => profiles.id, { onDelete: 'cascade' }),
+  created_at: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  accepted_at: timestamp('accepted_at', { withTimezone: true })
+})
+export const tripMembers = pgTable(
+  'trip_members',
+  {
+    trip_id: uuid('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    ...membership()
+  },
+  (t) => [
+    primaryKey({ columns: [t.trip_id, t.user_id] }),
+    index('trip_members_user_idx').on(t.user_id),
+    check(
+      'trip_members_role_check',
+      sql`${t.role} in ('owner','editor','viewer')`
+    )
+  ]
+)
+export const tripPendingInvites = pgTable(
+  'trip_pending_invites',
+  {
+    trip_id: uuid('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    ...invitation()
+  },
+  (t) => [
+    uniqueIndex('trip_pending_invites_trip_email_idx').on(t.trip_id, t.email),
+    index('trip_pending_invites_email_idx').on(t.email),
+    check(
+      'trip_pending_invites_role_check',
+      sql`${t.role} in ('editor','viewer')`
+    ),
+    check(
+      'trip_pending_invites_email_check',
+      sql`${t.email} = lower(${t.email})`
+    )
+  ]
+)
+export const libraryMembers = pgTable(
+  'library_members',
+  {
+    library_id: uuid('library_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    ...membership()
+  },
+  (t) => [
+    primaryKey({ columns: [t.library_id, t.user_id] }),
+    index('library_members_user_idx').on(t.user_id),
+    check(
+      'library_members_role_check',
+      sql`${t.role} in ('owner','editor','viewer')`
+    )
+  ]
+)
+export const libraryPendingInvites = pgTable(
+  'library_pending_invites',
+  {
+    library_id: uuid('library_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    ...invitation()
+  },
+  (t) => [
+    uniqueIndex('library_pending_invites_library_email_idx').on(
+      t.library_id,
+      t.email
+    ),
+    index('library_pending_invites_email_idx').on(t.email),
+    check(
+      'library_pending_invites_role_check',
+      sql`${t.role} in ('editor','viewer')`
+    ),
+    check(
+      'library_pending_invites_email_check',
+      sql`${t.email} = lower(${t.email})`
+    )
   ]
 )
 export const deviceTokens = pgTable(

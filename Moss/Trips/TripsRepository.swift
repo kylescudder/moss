@@ -292,9 +292,16 @@ final class TripsRepository: ObservableObject {
         ) ?? 0
     }
 
+    /// The account's own trips, trips shared with it, and every trip of an
+    /// account that shares all its trips with it.
     private static let selectSQL = """
         select * from trips
-        where owner_id = ? and deleted_at is null
+        where deleted_at is null
+          and (
+            owner_id = ?1
+            or id in (select trip_id from trip_members where user_id = ?1)
+            or owner_id in (select library_id from library_members where user_id = ?1)
+          )
         order by starts_at asc, created_at asc
         """
 }

@@ -8,6 +8,7 @@ struct TripDetailView: View {
     @State private var showEditTrip = false
     @State private var itemToEdit: ItineraryItem?
     @State private var showDeleteConfirm = false
+    @State private var showSharing = false
 
     private var trip: Trip? {
         services.trips.trips.first { $0.id == tripID }
@@ -40,9 +41,18 @@ struct TripDetailView: View {
     }
 
     private func content(for trip: Trip) -> some View {
-        List {
+        let canEdit = services.canEdit(trip)
+        let isOwner = services.isOwner(of: trip)
+        return List {
             Section {
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                    if let summary = services.sharingSummary(for: trip) {
+                        Label(
+                            isOwner ? summary : "\(summary) · \(services.role(for: trip)?.label ?? ShareRole.viewer.label)",
+                            systemImage: "person.2"
+                        )
+                        .captionSecondary()
+                    }
                     Label(trip.destination, systemImage: "mappin.and.ellipse")
                         .font(.title3.weight(.semibold))
                     if let range = trip.dateRangeText {
@@ -62,9 +72,11 @@ struct TripDetailView: View {
                     EmptyState(
                         systemImage: "calendar.badge.plus",
                         title: "Nothing planned yet",
-                        message: "Add flights, stays, meals, activities and notes.",
-                        actionTitle: "Add a plan",
-                        action: { showAddItem = true }
+                        message: canEdit
+                            ? "Add flights, stays, meals, activities and notes."
+                            : "Plans added to this trip appear here.",
+                        actionTitle: canEdit ? "Add a plan" : nil,
+                        action: canEdit ? { showAddItem = true } : nil
                     )
                 }
                 .listRowBackground(Color.clear)
@@ -78,6 +90,7 @@ struct TripDetailView: View {
                                 ItineraryItemRow(item: item)
                             }
                             .foregroundStyle(Theme.Colors.textPrimary)
+                            .deleteDisabled(!canEdit)
                         }
                         .onDelete { offsets in
                             Task {
@@ -91,28 +104,50 @@ struct TripDetailView: View {
             }
         }
         .toolbar {
+            if canEdit {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showAddItem = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel("Add a plan")
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showAddItem = true
+                    showSharing = true
                 } label: {
-                    Image(systemName: "plus")
+                    Image(systemName: "person.badge.plus")
                 }
-                .accessibilityLabel("Add a plan")
+                .accessibilityLabel("Share")
             }
-            ToolbarItem(placement: .secondaryAction) {
-                Button("Edit trip", systemImage: "pencil") { showEditTrip = true }
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                Button("Delete trip", systemImage: "trash", role: .destructive) {
-                    showDeleteConfirm = true
+            if canEdit {
+                ToolbarItem(placement: .secondaryAction) {
+                    Button("Edit trip", systemImage: "pencil") { showEditTrip = true }
                 }
             }
+            if isOwner {
+                ToolbarItem(placement: .secondaryAction) {
+                    Button("Delete trip", systemImage: "trash", role: .destructive) {
+                        showDeleteConfirm = true
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showSharing) {
+            TripSharingView(trip: trip)
         }
         .sheet(isPresented: $showAddItem) {
             ItineraryItemEditorView(trip: trip)
         }
         .sheet(item: $itemToEdit) { item in
-            ItineraryItemEditorView(trip: trip, item: item)
+            // Viewers open the plan read-only so they can still see its notes.
+            if services.canEdit(trip) {
+                ItineraryItemEditorView(trip: trip, item: item)
+            } else {
+                ItineraryItemDetailView(item: item)
+            }
         }
         .sheet(isPresented: $showEditTrip) {
             TripEditorView(trip: trip)
@@ -126,7 +161,7 @@ struct TripDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("The trip and its plans are removed from every device. Deleting a trip doesn't restore a free trip.")
+            Text("The trip and its plans are removed from every device, including the devices of everyone it's shared with. Deleting a trip doesn't restore a free trip.")
         }
     }
 }

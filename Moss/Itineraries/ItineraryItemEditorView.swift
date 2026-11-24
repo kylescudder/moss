@@ -73,7 +73,7 @@ struct ItineraryItemEditorView: View {
         let saved = if let itemToEdit {
             await services.itinerary.update(itemToEdit, with: draft)
         } else {
-            await services.itinerary.create(draft, tripID: trip.id)
+            await services.itinerary.create(draft, trip: trip)
         }
         if saved {
             saveCount += 1
