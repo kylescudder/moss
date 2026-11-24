@@ -12,7 +12,7 @@ including deleted trips.
 - Offline-first SQLite mirrored to PostgreSQL on Herman through self-hosted PowerSync
 - Trips with destination, dates and notes
 - Day-by-day itineraries: flights, stays, food, activities, transport and notes
-- Share one trip, or every trip you own, with other Moss accounts as editors or viewers; invites to new emails wait until that address signs up and is confirmed
+- Share one trip, or every trip you own, with other Moss accounts as editors or viewers; invitees get an email and accept or decline in the app
 - Today screen with the current or next trip and today's plans
 - Home Screen widget (next trip and today) and App Shortcuts to plan a trip or open today
 - Supporter subscription for unlimited trips

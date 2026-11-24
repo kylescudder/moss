@@ -6,7 +6,7 @@ struct TripsListView: View {
 
     var body: some View {
         Group {
-            if services.trips.trips.isEmpty {
+            if services.trips.trips.isEmpty && services.sharingInbox.entries.isEmpty {
                 if services.trips.isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -21,6 +21,7 @@ struct TripsListView: View {
                 }
             } else {
                 List {
+                    ShareInvitesSection(inbox: services.sharingInbox)
                     section("Happening now", trips: services.trips.currentTrips)
                     section("Upcoming", trips: services.trips.upcomingTrips)
                     section("Past", trips: services.trips.pastTrips)

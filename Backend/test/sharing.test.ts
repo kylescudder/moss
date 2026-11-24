@@ -19,7 +19,20 @@ const auth = createAuth(db, {
     sent.push({ email, url })
   }
 })
-const app = createApplication({ auth, pool })
+const invites: {
+  email: string
+  url: string
+  invite: { inviter: string; target: string }
+}[] = []
+let emailDown = false
+const app = createApplication({
+  auth,
+  pool,
+  sendEmail: async (email, _kind, url, invite) => {
+    if (emailDown) throw new Error('Email delivery unavailable')
+    invites.push({ email, url, invite })
+  }
+})
 
 beforeAll(async () => {
   await migrate(db, { migrationsFolder: './drizzle' })
@@ -109,6 +122,49 @@ async function readTrip(token: string, id: string) {
   return call('/api/data/trips/' + id, token)
 }
 
+type Account = { token: string; id: string; email: string }
+type Incoming = {
+  id: string
+  space_id: string
+  space_name: string
+  inviter_name: string
+  role: string
+}
+
+async function incoming(invitee: Account, space: 'trip' | 'library') {
+  const response = await share(invitee.token, space + '/incoming', {})
+  expect(response.status).toBe(200)
+  return (await response.json()) as Incoming[]
+}
+
+/** Invite someone, then accept it in their app. */
+async function shareWith(
+  owner: Account,
+  invitee: Account,
+  space: 'trip' | 'library',
+  spaceID: string,
+  role: 'editor' | 'viewer'
+) {
+  const invited = await share(owner.token, space + '/invite', {
+    space_id: spaceID,
+    email: invitee.email,
+    role
+  })
+  expect(await invited.json()).toEqual({ status: 'pending' })
+  const invite = (await incoming(invitee, space)).find(
+    (i) => i.space_id === spaceID
+  )!
+  const accepted = await share(invitee.token, space + '/accept', {
+    invite_id: invite.id
+  })
+  expect(accepted.status).toBe(200)
+  expect(await accepted.json()).toEqual({
+    status: 'accepted',
+    space_id: spaceID
+  })
+  return invite
+}
+
 test('a trip shared with an editor can be read and planned but not deleted or re-shared', async () => {
   const owner = await account('owner')
   const editor = await account('editor')
@@ -121,7 +177,36 @@ test('a trip shared with an editor can be read and planned but not deleted or re
     role: 'editor'
   })
   expect(invited.status).toBe(200)
-  expect(await invited.json()).toEqual({ status: 'added' })
+  expect(await invited.json()).toEqual({ status: 'pending' })
+
+  // Nobody is added until they accept; the invite is emailed to them.
+  expect((await readTrip(editor.token, tripID)).status).toBe(404)
+  expect(invites.findLast((m) => m.email === editor.email)).toEqual({
+    email: editor.email,
+    url: 'https://growmoss.app/invites',
+    invite: { inviter: 'owner', target: 'the trip “Shared trip”' }
+  })
+  const [invite] = await incoming(editor, 'trip')
+  expect(invite).toMatchObject({
+    space_id: tripID,
+    space_name: 'Shared trip',
+    inviter_name: 'owner',
+    role: 'editor'
+  })
+  expect(await incoming(stranger, 'trip')).toEqual([])
+  // Someone else can't accept it, even with its ID.
+  const stolen = await share(stranger.token, 'trip/accept', {
+    invite_id: invite!.id
+  })
+  expect(stolen.status).toBe(422)
+  expect((await stolen.json()).code).toBe('MX006')
+  expect(
+    (await share(editor.token, 'trip/accept', { invite_id: invite!.id })).status
+  ).toBe(200)
+  // An accepted invite can't be used again.
+  expect(
+    (await share(editor.token, 'trip/accept', { invite_id: invite!.id })).status
+  ).toBe(422)
 
   expect((await readTrip(editor.token, tripID)).status).toBe(200)
   expect((await readTrip(stranger.token, tripID)).status).toBe(404)
@@ -206,11 +291,7 @@ test('a viewer reads a shared trip and its plans but every change is refused', a
       })
     ).status
   ).toBe(200)
-  await share(owner.token, 'trip/invite', {
-    space_id: tripID,
-    email: viewer.email,
-    role: 'viewer'
-  })
+  await shareWith(owner, viewer, 'trip', tripID, 'viewer')
 
   expect((await readTrip(viewer.token, tripID)).status).toBe(200)
   expect(
@@ -261,12 +342,11 @@ test('sharing all trips covers trips created later, and removal ends access', as
   const member = await account('library-member')
   const before = await createTrip(owner.token, 'Before')
 
-  const invited = await share(owner.token, 'library/invite', {
-    space_id: owner.id,
-    email: member.email,
-    role: 'editor'
-  })
-  expect(await invited.json()).toEqual({ status: 'added' })
+  const invite = await shareWith(owner, member, 'library', owner.id, 'editor')
+  expect(invite.space_name).toBe("All of library-owner's trips")
+  expect(invites.findLast((m) => m.email === member.email)?.invite.target).toBe(
+    'all their trips'
+  )
   const after = await createTrip(owner.token, 'After')
 
   for (const id of [before, after])
@@ -301,11 +381,7 @@ test('sharing all trips covers trips created later, and removal ends access', as
 
   // A member cannot remove someone else; the owner can.
   const otherMember = await account('library-other')
-  await share(owner.token, 'library/invite', {
-    space_id: owner.id,
-    email: otherMember.email,
-    role: 'viewer'
-  })
+  await shareWith(owner, otherMember, 'library', owner.id, 'viewer')
   expect(
     (
       await share(member.token, 'library/remove_member', {
@@ -346,33 +422,41 @@ test('sharing all trips covers trips created later, and removal ends access', as
   expect(ownerRow.rows).toEqual([{ role: 'owner' }])
 })
 
-test('an invite to a new email waits for that address to be verified', async () => {
+test('someone who signs up later accepts the invite in the app, never automatically', async () => {
   const owner = await account('pending-owner')
   const tripID = await createTrip(owner.token)
   const email = `later-${unique()}@example.test`
 
-  const invited = await share(owner.token, 'trip/invite', {
-    space_id: tripID,
-    email,
-    role: 'viewer'
-  })
-  expect(await invited.json()).toEqual({ status: 'pending' })
-  const library = await share(owner.token, 'library/invite', {
-    space_id: owner.id,
-    email,
-    role: 'editor'
-  })
-  expect(await library.json()).toEqual({ status: 'pending' })
+  for (const [space, id, role] of [
+    ['trip', tripID, 'viewer'],
+    ['library', owner.id, 'editor']
+  ] as const) {
+    const invited = await share(owner.token, space + '/invite', {
+      space_id: id,
+      email,
+      role
+    })
+    expect(await invited.json()).toEqual({ status: 'pending' })
+  }
 
-  // Signing up with the address isn't enough: it must be verified first.
   await signUp(email, 'Later')
-  const unverified = await pool.query(
-    'select 1 from trip_members m join auth_user u on u.id = m.user_id where u.email = $1',
-    [email]
-  )
-  expect(unverified.rowCount).toBe(0)
-
   const invitee = await verifyAndSignIn(email)
+  // Verifying the address no longer adds them to anything.
+  const joined = await pool.query(
+    'select 1 from trip_members where user_id = $1 union all select 1 from library_members where user_id = $1 and library_id <> $1',
+    [invitee.id]
+  )
+  expect(joined.rowCount).toBe(0)
+  expect((await readTrip(invitee.token, tripID)).status).toBe(404)
+
+  const [tripInvite] = await incoming(invitee, 'trip')
+  const [libraryInvite] = await incoming(invitee, 'library')
+  expect(tripInvite).toMatchObject({ space_id: tripID, role: 'viewer' })
+  expect(libraryInvite).toMatchObject({ space_id: owner.id, role: 'editor' })
+  await share(invitee.token, 'trip/accept', { invite_id: tripInvite!.id })
+  await share(invitee.token, 'library/accept', {
+    invite_id: libraryInvite!.id
+  })
   const trip = await pool.query(
     'select role from trip_members where trip_id = $1 and user_id = $2',
     [tripID, invitee.id]
@@ -383,12 +467,60 @@ test('an invite to a new email waits for that address to be verified', async () 
     [owner.id, invitee.id]
   )
   expect(all.rows).toEqual([{ role: 'editor' }])
-  const accepted = await pool.query(
+  expect(await incoming(invitee, 'trip')).toEqual([])
+  const open = await pool.query(
     'select count(*)::int as open from trip_pending_invites where email = $1 and accepted_at is null',
     [email]
   )
-  expect(accepted.rows[0].open).toBe(0)
+  expect(open.rows[0].open).toBe(0)
   expect((await readTrip(invitee.token, tripID)).status).toBe(200)
+})
+
+test('declining removes the invite, and a failed email still leaves it in the app', async () => {
+  const owner = await account('decline-owner')
+  const invitee = await account('decline-invitee')
+  const tripID = await createTrip(owner.token)
+  await share(owner.token, 'trip/invite', {
+    space_id: tripID,
+    email: invitee.email,
+    role: 'editor'
+  })
+  const [invite] = await incoming(invitee, 'trip')
+  expect(
+    (await share(invitee.token, 'trip/decline', { invite_id: invite!.id }))
+      .status
+  ).toBe(200)
+  expect(await incoming(invitee, 'trip')).toEqual([])
+  expect(
+    (await share(invitee.token, 'trip/accept', { invite_id: invite!.id }))
+      .status
+  ).toBe(422)
+  expect((await readTrip(invitee.token, tripID)).status).toBe(404)
+
+  emailDown = true
+  try {
+    const invited = await share(owner.token, 'trip/invite', {
+      space_id: tripID,
+      email: invitee.email,
+      role: 'viewer'
+    })
+    expect(invited.status).toBe(200)
+  } finally {
+    emailDown = false
+  }
+  expect((await incoming(invitee, 'trip')).map((i) => i.role)).toEqual([
+    'viewer'
+  ])
+
+  // Someone who already has access can't be invited again.
+  await shareWith(owner, invitee, 'trip', tripID, 'viewer')
+  const again = await share(owner.token, 'trip/invite', {
+    space_id: tripID,
+    email: invitee.email,
+    role: 'editor'
+  })
+  expect(again.status).toBe(422)
+  expect((await again.json()).message).toBe('They already have access.')
 })
 
 test('owners can revoke pending invites; others cannot', async () => {

@@ -18,6 +18,10 @@ final class AppServices: ObservableObject {
     /// Who each trip is shared with, and who all of this account's trips are shared with.
     private(set) var tripSharing: SharingRepository
     private(set) var librarySharing: SharingRepository
+    /// Invites sent to this account, across one-trip and all-trips sharing.
+    private(set) var sharingInbox: SharingInbox
+    /// An invite email's link was opened; RootView shows the invites once signed in.
+    @Published var showsInvites = false
 
     /// The creation allowance the shared paywall reports.
     var creationQuota: any CreationQuotaProviding { trips }
@@ -39,6 +43,7 @@ final class AppServices: ObservableObject {
         self.profile = ProfileRepository(database: sync.database)
         self.tripSharing = SharingRepository(space: .trip, database: sync.database, auth: auth, owner: sync.accountID)
         self.librarySharing = SharingRepository(space: .library, database: sync.database, auth: auth, owner: sync.accountID)
+        self.sharingInbox = SharingInbox([tripSharing, librarySharing])
 
         for child: any ObservableObject in [auth, sync, syncIssues, billing, push] {
             (child.objectWillChange as? ObservableObjectPublisher)?
@@ -82,6 +87,7 @@ final class AppServices: ObservableObject {
         itinerary = ItineraryRepository(database: sync.database)
         tripSharing = SharingRepository(space: .trip, database: sync.database, auth: auth, owner: sync.accountID)
         librarySharing = SharingRepository(space: .library, database: sync.database, auth: auth, owner: sync.accountID)
+        sharingInbox = SharingInbox([tripSharing, librarySharing])
         bindAccountPublishers()
         publishWidgetSnapshot()
         objectWillChange.send()
@@ -136,6 +142,7 @@ final class AppServices: ObservableObject {
         await profile.refresh()
         await trips.refresh()
         await itinerary.refresh()
+        await sharingInbox.refresh()
         if refreshRemoteRegistration {
             await push.refreshRegistration()
         }

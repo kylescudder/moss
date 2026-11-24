@@ -9,6 +9,12 @@ import { processNotification } from './iap'
 const settings = loadSettings()
 const { db, pool } = connectDatabase(settings.DATABASE_URL)
 const spool = new NotificationSpool(settings.NOTIFICATION_SPOOL)
+const sendEmail = createEmailSender(pool, {
+  key: settings.BREVO_API_KEY,
+  from: settings.AUTH_EMAIL_FROM,
+  dailyLimit: settings.AUTH_EMAIL_DAILY_LIMIT,
+  origin: new URL(settings.BETTER_AUTH_URL).origin
+})
 const auth = createAuth(db, {
   baseURL: settings.BETTER_AUTH_URL,
   secret: settings.BETTER_AUTH_SECRET,
@@ -22,19 +28,15 @@ const auth = createAuth(db, {
     clientSecret: settings.APPLE_CLIENT_SECRET,
     appBundleIdentifier: 'app.getmoss.moss'
   },
-  sendEmail: createEmailSender(pool, {
-    key: settings.BREVO_API_KEY,
-    from: settings.AUTH_EMAIL_FROM,
-    dailyLimit: settings.AUTH_EMAIL_DAILY_LIMIT,
-    origin: new URL(settings.BETTER_AUTH_URL).origin
-  })
+  sendEmail
 })
 const app = createApplication({
   auth,
   pool,
   origin: settings.BETTER_AUTH_URL,
   appleEnvironments: settings.APPLE_ENVIRONMENTS,
-  spool
+  spool,
+  sendEmail
 })
 const server = Bun.serve({
   port: settings.PORT,
