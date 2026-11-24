@@ -133,6 +133,9 @@ identical across all application repositories.
 
 ### Subscriptions
 
+Complimentary billing access follows `Scripts/SHARED_IOS_CORE.md`; see
+`docs/complimentary-access.md` for the administrator grant and revoke procedure.
+
 - `BillingRepository`, `SubscriptionAccessState` and `SubscriptionPaywallView` are the shared billing core (rules in `Scripts/SHARED_IOS_CORE.md`, tests in `SharedBillingTests`). Moss's values (`app.moss.supporter.monthly`, the verification message and paywall copy) live in `Moss/Billing/BillingAppConfiguration.swift`, and the paywall reads the lifetime trip count through `AppServices.creationQuota` (`TripsRepository`).
 - Purchase calls include the signed-in user UUID as `appAccountToken`. Verified transactions are mirrored to `/api/iap/transactions`; App Store Server Notifications V2 update the same `iap_entitlements` row through `/api/iap/notifications`. Never restore payload-only decoding or direct client writes.
 - The free limit is `AppServices.freeTripLimit == 2`. The `trips` insert trigger seeds and atomically increments `trip_creation_quotas` for every genuine insert, so soft or hard deletion never restores allowance. Any change to the limit or what counts as a trip creation must update the database trigger, status function, client gate, tests, paywall copy and the site's legal pages together.
