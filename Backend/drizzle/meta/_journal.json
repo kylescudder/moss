@@ -15,6 +15,13 @@
       "when": 1795450268759,
       "tag": "0001_authorization-and-quotas",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795513158042,
+      "tag": "0002_premium-access",
+      "breakpoints": true
     }
   ]
 }

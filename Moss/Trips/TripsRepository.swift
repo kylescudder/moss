@@ -114,7 +114,7 @@ final class TripsRepository: ObservableObject {
         let id = tripID.uuidString.lowercased()
         let now = Date().iso8601
         let cachedStatus = try await localTripCreationStatus()
-        let allowsUnlimited = billing.subscriptionState == .active
+        let allowsUnlimited = billing.isSubscribed
             || cachedStatus.hasVerifiedEntitlement
         let freeLimit = AppServices.freeTripLimit
         do {
@@ -241,10 +241,15 @@ final class TripsRepository: ObservableObject {
             mapper: OfflineEntitlementSnapshot.from(cursor:)
         )
         let entitlement = entitlementRows.compactMap { $0 }.first
+        let hasPremiumAccount = try await database.getOptional(
+            sql: "select is_premium_account from profiles where id = ? and deleted_at is null",
+            parameters: [userID],
+            mapper: { try $0.getIntOptional(name: "is_premium_account") ?? 0 }
+        ) == 1
         return TripCreationStatus(
             lifetimeCount: serverCount + pendingCount,
             freeLimit: AppServices.freeTripLimit,
-            hasVerifiedEntitlement: entitlement?.isCurrentlyVerified == true
+            hasVerifiedEntitlement: hasPremiumAccount || entitlement?.isCurrentlyVerified == true
         )
     }
 

@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import {
   check,
+  boolean,
   bigint,
   index,
   integer,
@@ -31,6 +32,7 @@ export const profiles = pgTable('profiles', {
     .references(() => authUser.id, { onDelete: 'cascade' }),
   username: text('username').unique(),
   display_name: text('display_name'),
+  is_premium_account: boolean('is_premium_account').notNull().default(false),
   ...dates()
 })
 export const trips = pgTable(

@@ -823,3 +823,73 @@ test('device unregister removes only the authenticated owner token and is idempo
   )
   expect(remaining.rows).toEqual([{ user_id: other.id }])
 })
+
+test('admin premium access bypasses the cap and revocation restores it without resetting usage', async () => {
+  const owner = await nativeAccount('premium-access@example.test')
+  const other = await nativeAccount('premium-other@example.test')
+  const status = async (token = owner.token) =>
+    (await dataRequest('/api/trips/status', token)).json()
+  const create = () =>
+    dataRequest('/api/sync/upload', owner.token, {
+      table: 'trips',
+      id: crypto.randomUUID(),
+      op: 'put',
+      data: { title: 'Gifted trip', destination: 'Lisbon' }
+    })
+  expect((await status()).has_verified_entitlement).toBe(false)
+  await pool.query(
+    'update profiles set is_premium_account = true where id = $1',
+    [owner.id]
+  )
+  expect((await status()).has_verified_entitlement).toBe(true)
+  expect((await status(other.token)).has_verified_entitlement).toBe(false)
+  for (let i = 0; i < 3; i++) expect((await create()).status).toBe(200)
+  expect((await status()).lifetime_count).toBe(3)
+  await pool.query(
+    'update profiles set is_premium_account = false where id = $1',
+    [owner.id]
+  )
+  expect((await status()).has_verified_entitlement).toBe(false)
+  const rejected = await create()
+  expect(rejected.status).toBe(422)
+  expect((await rejected.json()).code).toBe('MX001')
+  expect((await status()).lifetime_count).toBe(3)
+})
+
+test('premium access cannot be self-granted through sync or request-role SQL', async () => {
+  const owner = await nativeAccount('premium-forgery@example.test')
+  const forged = await dataRequest('/api/sync/upload', owner.token, {
+    table: 'profiles',
+    id: owner.id,
+    op: 'patch',
+    data: { is_premium_account: 1 }
+  })
+  expect(forged.status).toBe(422)
+  const edit = await dataRequest('/api/sync/upload', owner.token, {
+    table: 'profiles',
+    id: owner.id,
+    op: 'patch',
+    data: { display_name: 'Still editable' }
+  })
+  expect(edit.status).toBe(200)
+  const client = await pool.connect()
+  try {
+    for (const sql of [
+      'update profiles set is_premium_account = true where id = $1',
+      'insert into profiles (id, is_premium_account) values ($1, true)'
+    ]) {
+      await client.query('begin')
+      await client.query('set local role moss_api')
+      await client.query("select set_config('moss.user_id', $1, true)", [
+        owner.id
+      ])
+      await expect(client.query(sql, [owner.id])).rejects.toMatchObject({
+        code: '42501'
+      })
+      await client.query('rollback')
+    }
+  } finally {
+    await client.query('rollback')
+    client.release()
+  }
+})

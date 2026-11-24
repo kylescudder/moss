@@ -80,6 +80,11 @@ final class AppServices: ObservableObject {
 
     private func bindAccountPublishers() {
         accountCancellables.removeAll()
+        profile.$profile
+            .map { $0?.isPremiumAccount == true }
+            .removeDuplicates()
+            .sink { [weak billing] granted in billing?.setAccessOverride(granted) }
+            .store(in: &accountCancellables)
         for child: any ObservableObject in [trips, itinerary, profile] {
             (child.objectWillChange as? ObservableObjectPublisher)?
                 .sink { [weak self] in self?.objectWillChange.send() }
