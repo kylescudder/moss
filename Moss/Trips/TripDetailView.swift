@@ -90,7 +90,6 @@ struct TripDetailView: View {
                                 ItineraryItemRow(item: item)
                             }
                             .foregroundStyle(Theme.Colors.textPrimary)
-                            .disabled(!canEdit)
                             .deleteDisabled(!canEdit)
                         }
                         .onDelete { offsets in
@@ -143,7 +142,12 @@ struct TripDetailView: View {
             ItineraryItemEditorView(trip: trip)
         }
         .sheet(item: $itemToEdit) { item in
-            ItineraryItemEditorView(trip: trip, item: item)
+            // Viewers open the plan read-only so they can still see its notes.
+            if services.canEdit(trip) {
+                ItineraryItemEditorView(trip: trip, item: item)
+            } else {
+                ItineraryItemDetailView(item: item)
+            }
         }
         .sheet(isPresented: $showEditTrip) {
             TripEditorView(trip: trip)
