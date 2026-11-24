@@ -94,6 +94,48 @@ enum DatabaseSchema {
         ]
     )
 
+    /// Read-only sharing state (see `SharingAppConfiguration`). The server
+    /// writes these through the sharing endpoints; each member row's `id` is
+    /// `<space>:<user>`.
+    static let tripMembers = memberTable("trip_members", spaceColumn: "trip_id")
+    static let tripPendingInvites = inviteTable("trip_pending_invites", spaceColumn: "trip_id")
+    static let libraryMembers = memberTable("library_members", spaceColumn: "library_id")
+    static let libraryPendingInvites = inviteTable("library_pending_invites", spaceColumn: "library_id")
+
+    private static func memberTable(_ name: String, spaceColumn: String) -> Table {
+        Table(
+            name: name,
+            columns: [
+                .text(spaceColumn),
+                .text("user_id"),
+                .text("role"),
+                .text("invited_by"),
+                .text("joined_at"),
+            ],
+            indexes: [
+                Index(name: "\(name)_space", columns: [IndexedColumn.ascending(spaceColumn)]),
+                Index(name: "\(name)_user", columns: [IndexedColumn.ascending("user_id")]),
+            ]
+        )
+    }
+
+    private static func inviteTable(_ name: String, spaceColumn: String) -> Table {
+        Table(
+            name: name,
+            columns: [
+                .text(spaceColumn),
+                .text("email"),
+                .text("role"),
+                .text("invited_by"),
+                .text("created_at"),
+                .text("accepted_at"),
+            ],
+            indexes: [
+                Index(name: "\(name)_space", columns: [IndexedColumn.ascending(spaceColumn)]),
+            ]
+        )
+    }
+
     /// Device-only ledger used to reserve free allowance while creations are
     /// waiting in PowerSync's upload queue.
     static let pendingTrips = Table(
@@ -113,6 +155,10 @@ enum DatabaseSchema {
         itineraryItems,
         tripCreationQuotas,
         iapEntitlements,
+        tripMembers,
+        tripPendingInvites,
+        libraryMembers,
+        libraryPendingInvites,
         pendingTrips,
     ])
 }

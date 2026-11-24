@@ -24,14 +24,22 @@
     "trip_creation_events",
     "iap_entitlements",
     "native_codes",
-    "notification_inbox"
+    "notification_inbox",
+    "trip_members",
+    "trip_pending_invites",
+    "library_members",
+    "library_pending_invites"
   ],
   "syncTables": [
     "profiles",
     "trips",
     "itinerary_items",
     "trip_creation_quotas",
-    "iap_entitlements"
+    "iap_entitlements",
+    "trip_members",
+    "trip_pending_invites",
+    "library_members",
+    "library_pending_invites"
   ],
   "deployURL": "https://deploy-api.growmoss.app/hooks/moss-api",
   "signatureHeader": "X-Moss-Signature",

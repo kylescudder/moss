@@ -6,12 +6,19 @@ import PowerSync
 enum SyncAppConfiguration {
     static let databaseFilename = "moss.sqlite"
 
-    /// Every account that owns local rows or pending creations.
+    /// Every account that owns local rows or pending creations. Trips shared
+    /// with this account belong to someone else, so a trip (and its items)
+    /// only counts while it is not shared with anyone: a shared trip's owner
+    /// is already known from `profiles`.
     static let offlineOwnerQuery = """
         select id from profiles
-        union select owner_id as id from trips
-        union select owner_id as id from itinerary_items
         union select user_id as id from pending_trips
+        union select owner_id as id from trips
+          where id not in (select trip_id from trip_members where role <> 'owner')
+            and owner_id not in (select library_id from library_members where role <> 'owner')
+        union select owner_id as id from itinerary_items
+          where trip_id not in (select trip_id from trip_members where role <> 'owner')
+            and owner_id not in (select library_id from library_members where role <> 'owner')
         """
 
     /// Tables PowerSync may upload. Read-only snapshots (quota, entitlement)

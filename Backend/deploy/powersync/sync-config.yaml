@@ -20,6 +20,60 @@ streams:
     auto_subscribe: true
     query: select * from itinerary_items where owner_id = auth.user_id()
 
+  # --- sharing -------------------------------------------------------------
+  # A trip is shared through trip_members; every trip an account owns is
+  # shared through library_members (library_id = the owner's profile ID).
+  # Itinerary items carry their trip owner's owner_id, so each needs only a
+  # single-level subquery. Member tables have composite keys, so each stream
+  # synthesises an `id`. Pending invites (with their emails) go to owners only.
+  member_trips:
+    auto_subscribe: true
+    query: |
+      select * from trips
+      where id in (select trip_id from trip_members where user_id = auth.user_id())
+
+  member_itinerary_items:
+    auto_subscribe: true
+    query: |
+      select * from itinerary_items
+      where trip_id in (select trip_id from trip_members where user_id = auth.user_id())
+
+  library_trips:
+    auto_subscribe: true
+    query: |
+      select * from trips
+      where owner_id in (select library_id from library_members where user_id = auth.user_id())
+
+  library_itinerary_items:
+    auto_subscribe: true
+    query: |
+      select * from itinerary_items
+      where owner_id in (select library_id from library_members where user_id = auth.user_id())
+
+  member_trip_members:
+    auto_subscribe: true
+    query: |
+      select trip_id || ':' || user_id as id, trip_id, user_id, role, invited_by, joined_at
+      from trip_members
+      where trip_id in (select trip_id from trip_members where user_id = auth.user_id())
+
+  owned_trip_pending_invites:
+    auto_subscribe: true
+    query: |
+      select * from trip_pending_invites
+      where trip_id in (select id from trips where owner_id = auth.user_id())
+
+  member_library_members:
+    auto_subscribe: true
+    query: |
+      select library_id || ':' || user_id as id, library_id, user_id, role, invited_by, joined_at
+      from library_members
+      where library_id in (select library_id from library_members where user_id = auth.user_id())
+
+  owned_library_pending_invites:
+    auto_subscribe: true
+    query: select * from library_pending_invites where library_id = auth.user_id()
+
   user_trip_quota:
     auto_subscribe: true
     query: |

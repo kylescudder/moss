@@ -10,7 +10,7 @@ Moss — native iOS 17+ SwiftUI travel companion for planning trips, keeping day
 
 Every iOS app uses the same repository layout, app scaffolding and CI. Read
 `Scripts/SHARED_IOS_CORE.md` before adding folders, shared UI primitives,
-configuration keys or workflows. Five checksum manifests keep shared files
+configuration keys or workflows. Six checksum manifests keep shared files
 byte-for-byte identical with the other iOS apps, and CI runs all of them.
 Never name another app in this repository; shared files read app values from
 hooks:
@@ -20,6 +20,7 @@ hooks:
 - `Scripts/check-shared-push-core.sh` — push registration core and its adapters (`PushManager`, `PushRegistration`, `AuthClient+PushIdentity`; `SHARED_PUSH_CORE.md`).
 - `Scripts/check-shared-infra.sh` — backend deployment and provisioning (`SHARED_INFRA.md`).
 - `Scripts/check-shared-site.sh` — the `Site/` layout, tooling, image and site workflows (`SHARED_SITE.md`).
+- `Scripts/check-shared-sharing-core.sh` — the sharing core (`SharingModels`, `SharingRepository`, `ShareMembersSections`, `SharedSharingTests`; `SHARED_SHARING_CORE.md`), shared only with the other apps that let people share data. The app's spaces live in `Sharing/SharingAppConfiguration.swift`.
 
 Never edit a shared file in one app only. Put app-specific values behind the
 hooks listed in `SHARED_IOS_CORE.md` (`Theme+App.swift`, `AuthAppConfiguration`,
@@ -107,9 +108,9 @@ identical across all application repositories.
 ### iOS app composition
 
 - `MossApp` creates one `@StateObject AppServices`, injects it with `environmentObject`, installs `AppDelegate` for APNs registration callbacks, applies the saved appearance, and configures Sentry through `AppBootstrap`.
-- `AppServices` (`Moss/App/AppServices.swift`) is the composition root. It owns `AuthClient`, `PowerSyncManager`, `SyncIssueStore`, `BillingRepository`, `TripsRepository`, `ItineraryRepository`, `PushManager` and `ProfileRepository`. It re-broadcasts each child's `objectWillChange`, so views can observe the single environment object, and replaces the account repositories through `sync.accountDatabaseDidChange` when the signed-in account changes.
+- `AppServices` (`Moss/App/AppServices.swift`) is the composition root. It owns `AuthClient`, `PowerSyncManager`, `SyncIssueStore`, `BillingRepository`, `TripsRepository`, `ItineraryRepository`, `PushManager`, `ProfileRepository` and the two `SharingRepository` instances (`tripSharing`, `librarySharing`). It re-broadcasts each child's `objectWillChange`, so views can observe the single environment object, and replaces the account repositories through `sync.accountDatabaseDidChange` when the signed-in account changes.
 - `RootView` switches on auth state (`.unknown` / `.signedOut` / `.signedIn`) and handles password-recovery presentation, sync issues and incoming URLs. The signed-in `MainTabView` is Today / Trips / Settings.
-- On sign-in, `AppServices.applyAuth` starts the profile, trip and itinerary watches, activates push, synchronizes StoreKit entitlements and refreshes local snapshots. Subscription state is `.active` only after both local StoreKit verification and server confirmation succeed; mirror delays remain `.verifying`. On sign-out it ends the push session, stops the watches and resets in-memory subscription state.
+- On sign-in, `AppServices.applyAuth` starts the profile, trip, itinerary and sharing watches, activates push, synchronizes StoreKit entitlements and refreshes local snapshots. Subscription state is `.active` only after both local StoreKit verification and server confirmation succeed; mirror delays remain `.verifying`. On sign-out it ends the push session, stops the watches and resets in-memory subscription state.
 - New trip creation must continue through `AppServices.canCreateNewTrip()`: non-subscribers may create two lifetime trips, including deleted ones, while edits and itinerary items remain unlimited. It prefers the API's `/api/trips/status` (backed by `get_trip_creation_status`) and falls back offline to synced quota/entitlement rows plus the device-only `pending_trips` ledger. The insert trigger remains the transactional authority.
 
 ### Data access and PowerSync
@@ -120,9 +121,18 @@ identical across all application repositories.
 - PowerSync tables are SQLite views, so use plain parameterized inserts/updates rather than Postgres `ON CONFLICT` SQL locally. A replayed trip `put` for a trip that already exists is accepted without re-running the quota trigger.
 - Known permanent Postgres validation failures are acknowledged and surfaced through `SyncIssueStore`, allowing PowerSync to restore server state instead of blocking the queue forever. Transient/network failures must throw so PowerSync retries them. Do not broaden permanent-error classification without proving the error cannot succeed on retry.
 - Sync rules are Edition 3 (`Backend/deploy/powersync/sync-config.yaml`). They sync profile, trip and itinerary item tombstones, plus read-only owner-scoped quota and verified-entitlement snapshots. `pending_trips` is local-only and reserves allowance until the server quota stream confirms an accepted insertion.
-- Postgres schema lives in ordered Drizzle migrations under `Backend/drizzle/`. `profiles`, `trips`, `itinerary_items` and `device_tokens` are user-owned and protected by RLS; an itinerary item must belong to a trip the same user owns (`MX003`). `trip_creation_quotas` is the protected monotonic counter, while `trip_creation_events` is the durable per-trip ledger. Clients read usage only through `get_trip_creation_status` behind `/api/trips/status`. `iap_entitlements` is written only by the API's verified IAP paths through `record_verified_iap_entitlement`.
+- Postgres schema lives in ordered Drizzle migrations under `Backend/drizzle/`. `profiles`, `trips`, `itinerary_items` and `device_tokens` are protected by RLS; trips and items are readable by anyone the trip is shared with (see Sharing), and an itinerary item's `owner_id` is always its trip's owner (`MX003`). `trip_creation_quotas` is the protected monotonic counter, while `trip_creation_events` is the durable per-trip ledger. Clients read usage only through `get_trip_creation_status` behind `/api/trips/status`. `iap_entitlements` is written only by the API's verified IAP paths through `record_verified_iap_entitlement`.
 - Trips and itinerary items use soft-delete tombstones (`deleted_at`); repository reads filter them out and delete actions set the timestamp.
 - UUID strings sent to the API are lowercased throughout. Swift model coding keys, Postgres columns, enum raw values (`ItineraryItemKind` ↔ the `kind` check constraint), API/function return shapes, and PowerSync rules must be updated together when a persisted field changes.
+
+### Sharing
+
+- Moss uses the shared sharing core (`Scripts/SHARED_SHARING_CORE.md`, tests in `SharedSharingTests`) with two spaces declared in `Moss/Sharing/SharingAppConfiguration.swift`: `.trip` (`trip_members`, `trip_pending_invites`, one trip) and `.library` (`library_members`, `library_pending_invites`; the space ID is the owner's profile ID, so a member sees every trip that account owns, including future ones). Every trip and every profile has an `owner` member row, created by triggers.
+- Roles: owners and editors change the trip and its plans; viewers only read; only the owner deletes a trip or changes who it's shared with. `AppServices.role(for:)` (`Moss/Sharing/TripAccess.swift`) takes the stronger of the trip and library roles and decides what the UI offers; RLS (`trip_role`, `can_read_trip`, `can_edit_trip`) and the `guard_shared_trip_update` trigger enforce it. A viewer's change is refused with `MX003`, so the queue drops it and PowerSync restores the server row.
+- Itinerary items always carry the trip owner's `owner_id`, whoever adds them, so each sync stream is a single-level subquery (`member_*` through `trip_members`, `library_*` through `library_members`). Pending invites sync to the space's owner only. `SyncAppConfiguration.offlineOwnerQuery` ignores shared trips so other people's rows never look like a second offline account.
+- Membership tables are read-only to the API role. Changes go through `POST /api/sharing/<trip|library>/<invite|remove_member|revoke_invite|member_profiles>` (`Backend/src/sharing.ts`), backed by the `share_*` security-definer functions in `Backend/drizzle/0004_sharing-access.sql`. Their refusals use `MX006` (invalid invite, 422) and `MX007` (not the owner, 403) with messages the app shows as-is.
+- An invite to an email with a verified account adds them at once. Otherwise it waits in `*_pending_invites` until an account with that email is verified (the `auth_user_share_invites` trigger), so an unverified sign-up with someone else's address never joins anything.
+- The trip detail's Share button opens `TripSharingView`; Settings › Sharing opens `AllTripsSharingView`, which also lists what others share with this account and lets the user leave.
 
 ### Authentication and profiles
 

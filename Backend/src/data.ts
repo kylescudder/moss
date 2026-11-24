@@ -63,8 +63,18 @@ export async function uploadChange(
       userID
     ])
   }
+  // Items belong to their trip's owner, whoever on the trip adds them, so a
+  // shared trip's itinerary syncs to everyone it is shared with.
+  let ownerID = userID
+  if (table === 'itinerary_items' && typeof data.trip_id === 'string') {
+    const trip = await client.query(
+      'select owner_id from trips where id = $1',
+      [data.trip_id]
+    )
+    if (trip.rowCount === 1) ownerID = String(trip.rows[0].owner_id)
+  }
   if (
-    (data.owner_id !== undefined && data.owner_id !== userID) ||
+    (data.owner_id !== undefined && data.owner_id !== ownerID) ||
     (table === 'profiles' && id !== userID)
   ) {
     throw new RequestError(
@@ -90,10 +100,13 @@ export async function uploadChange(
         403,
         'Use account deletion to remove a profile.'
       )
-    await client.query(
+    const deleted = await client.query(
       `update ${table} set deleted_at = coalesce(deleted_at, statement_timestamp()) where id = $1`,
       [id]
     )
+    // RLS hides the row from a viewer's update: refuse it rather than drop it.
+    if (deleted.rowCount !== 1)
+      throw new RequestError('MX003', 403, 'Record is read-only.')
     return
   }
   // An earlier batch may have inserted the trip before a later item failed.
@@ -103,13 +116,15 @@ export async function uploadChange(
   const values: unknown[] = keys.map((key) => data[key])
   if (existing.rowCount === 1) {
     if (!keys.length) return
-    await client.query(
+    const updated = await client.query(
       `update ${table} set ${keys.map((key, i) => `"${key}" = $${i + 2}`).join(', ')} where id = $1`,
       [id, ...values]
     )
+    if (updated.rowCount !== 1)
+      throw new RequestError('MX003', 403, 'Record is read-only.')
   } else {
     const names = ['id', ...(table === 'profiles' ? [] : ['owner_id']), ...keys]
-    const params = [id, ...(table === 'profiles' ? [] : [userID]), ...values]
+    const params = [id, ...(table === 'profiles' ? [] : [ownerID]), ...values]
     await client.query(
       `insert into ${table} (${names.map((n) => `"${n}"`).join(',')}) values (${params.map((_, i) => '$' + (i + 1)).join(',')})`,
       params

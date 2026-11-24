@@ -6,6 +6,7 @@ import type { Auth } from './auth'
 import { z } from 'zod'
 import { RequestError, uploadChange, writableTable } from './data'
 import { nativeOAuth } from './native-oauth'
+import { sharingAction } from './sharing'
 import { processNotification, syncTransaction } from './iap'
 import type { NotificationSpool } from './notification-spool'
 import {
@@ -203,6 +204,18 @@ export function createApplication({
             return Response.json({ accepted: true })
           }
           if (
+            url.pathname.startsWith('/api/sharing/') &&
+            request.method === 'POST'
+          ) {
+            return Response.json(
+              await sharingAction(
+                client,
+                url.pathname.slice('/api/sharing/'.length),
+                await request.json()
+              )
+            )
+          }
+          if (
             url.pathname.startsWith('/api/data/') &&
             request.method === 'GET'
           ) {
@@ -259,6 +272,15 @@ export function createApplication({
         error && typeof error === 'object' && 'code' in error
           ? String(error.code)
           : ''
+      // Sharing refusals carry fixed messages written for the app to show.
+      if (code === 'MX006' || code === 'MX007')
+        return Response.json(
+          {
+            code,
+            message: error instanceof Error ? error.message : 'Sharing failed.'
+          },
+          { status: code === 'MX007' ? 403 : 422 }
+        )
       if (
         [
           'MX001',

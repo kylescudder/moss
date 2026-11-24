@@ -81,8 +81,11 @@ final class ItineraryRepository: ObservableObject {
         }
     }
 
-    func create(_ draft: ItineraryItemDraft, tripID: UUID) async -> Bool {
-        guard let userID else { return false }
+    /// Items belong to the trip's owner, whoever adds them, so they sync to
+    /// everyone the trip is shared with.
+    func create(_ draft: ItineraryItemDraft, trip: Trip) async -> Bool {
+        guard userID != nil else { return false }
+        let tripID = trip.id
         let now = Date().iso8601
         let sortOrder = items(for: tripID).count
         do {
@@ -95,7 +98,7 @@ final class ItineraryRepository: ObservableObject {
                 """,
                 parameters: [
                     UUID().uuidString.lowercased(),
-                    userID,
+                    trip.ownerID.uuidString.lowercased(),
                     tripID.uuidString.lowercased(),
                     draft.kind.rawValue,
                     draft.title.nilIfBlank,
@@ -158,13 +161,18 @@ final class ItineraryRepository: ObservableObject {
         }
     }
 
+    /// Items of every visible trip, including trips shared with the account.
     /// Items of deleted trips stay hidden until the server tombstones them.
     private static let selectSQL = """
         select itinerary_items.* from itinerary_items
         join trips on trips.id = itinerary_items.trip_id
-        where itinerary_items.owner_id = ?
-          and itinerary_items.deleted_at is null
+        where itinerary_items.deleted_at is null
           and trips.deleted_at is null
+          and (
+            trips.owner_id = ?1
+            or trips.id in (select trip_id from trip_members where user_id = ?1)
+            or trips.owner_id in (select library_id from library_members where user_id = ?1)
+          )
         order by itinerary_items.starts_at asc, itinerary_items.sort_order asc
         """
 }

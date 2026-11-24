@@ -15,6 +15,9 @@ final class AppServices: ObservableObject {
     private(set) var itinerary: ItineraryRepository
     let push: PushManager
     private(set) var profile: ProfileRepository
+    /// Who each trip is shared with, and who all of this account's trips are shared with.
+    private(set) var tripSharing: SharingRepository
+    private(set) var librarySharing: SharingRepository
 
     /// The creation allowance the shared paywall reports.
     var creationQuota: any CreationQuotaProviding { trips }
@@ -34,6 +37,8 @@ final class AppServices: ObservableObject {
         self.itinerary = ItineraryRepository(database: sync.database)
         self.push = PushManager.shared
         self.profile = ProfileRepository(database: sync.database)
+        self.tripSharing = SharingRepository(space: .trip, database: sync.database, auth: auth, owner: sync.accountID)
+        self.librarySharing = SharingRepository(space: .library, database: sync.database, auth: auth, owner: sync.accountID)
 
         for child: any ObservableObject in [auth, sync, syncIssues, billing, push] {
             (child.objectWillChange as? ObservableObjectPublisher)?
@@ -69,10 +74,14 @@ final class AppServices: ObservableObject {
         profile.stopWatching()
         trips.stopWatching()
         itinerary.stopWatching()
+        tripSharing.stopWatching()
+        librarySharing.stopWatching()
         billing.resetForSignOut()
         profile = ProfileRepository(database: sync.database)
         trips = TripsRepository(auth: auth, billing: billing, database: sync.database)
         itinerary = ItineraryRepository(database: sync.database)
+        tripSharing = SharingRepository(space: .trip, database: sync.database, auth: auth, owner: sync.accountID)
+        librarySharing = SharingRepository(space: .library, database: sync.database, auth: auth, owner: sync.accountID)
         bindAccountPublishers()
         publishWidgetSnapshot()
         objectWillChange.send()
@@ -85,7 +94,7 @@ final class AppServices: ObservableObject {
             .removeDuplicates()
             .sink { [weak billing] granted in billing?.setAccessOverride(granted) }
             .store(in: &accountCancellables)
-        for child: any ObservableObject in [trips, itinerary, profile] {
+        for child: any ObservableObject in [trips, itinerary, profile, tripSharing, librarySharing] {
             (child.objectWillChange as? ObservableObjectPublisher)?
                 .sink { [weak self] in self?.objectWillChange.send() }
                 .store(in: &accountCancellables)
@@ -104,6 +113,8 @@ final class AppServices: ObservableObject {
             profile.stopWatching()
             trips.stopWatching()
             itinerary.stopWatching()
+            tripSharing.stopWatching()
+            librarySharing.stopWatching()
             publishWidgetSnapshot()
             return
         }
@@ -111,6 +122,8 @@ final class AppServices: ObservableObject {
         profile.startWatching(userID: id)
         trips.startWatching(userID: id)
         itinerary.startWatching(userID: id)
+        tripSharing.startWatching(userID: id)
+        librarySharing.startWatching(userID: id)
         guard auth.state == state else { return }
         // Install watches before suspension so a later sign-out can stop them.
         await push.activate()
