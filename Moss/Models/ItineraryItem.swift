@@ -34,6 +34,33 @@ enum ItineraryItemKind: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
+enum TransportMode: String, Codable, CaseIterable, Identifiable, Sendable {
+    case transit, driving, walking, cycling
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .transit: "Public transport"
+        case .driving: "Driving"
+        case .walking: "Walking"
+        case .cycling: "Cycling"
+        }
+    }
+}
+
+struct TravelTimeRequest: Equatable, Identifiable, Sendable {
+    let id = UUID()
+    let from: String
+    let to: String
+    let mode: TransportMode
+    let departure: Date
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.from == rhs.from && lhs.to == rhs.to && lhs.mode == rhs.mode && lhs.departure == rhs.departure
+    }
+}
+
 struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     var tripID: UUID
@@ -41,6 +68,8 @@ struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
     var kind: ItineraryItemKind
     var title: String
     var locationName: String?
+    var destinationName: String? = nil
+    var transportMode: TransportMode? = nil
     var startsAt: Date?
     var endsAt: Date?
     var notes: String?
@@ -53,6 +82,8 @@ struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
         case tripID = "trip_id"
         case ownerID = "owner_id"
         case locationName = "location_name"
+        case destinationName = "destination_name"
+        case transportMode = "transport_mode"
         case startsAt = "starts_at"
         case endsAt = "ends_at"
         case sortOrder = "sort_order"
@@ -62,6 +93,16 @@ struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
 }
 
 extension ItineraryItem {
+    var locationSummary: String? {
+        guard kind == .transport else { return locationName?.nilIfBlank }
+        switch (locationName?.nilIfBlank, destinationName?.nilIfBlank) {
+        case let (from?, to?): return "\(from) → \(to)"
+        case let (from?, nil): return "From \(from)"
+        case let (nil, to?): return "To \(to)"
+        case (nil, nil): return nil
+        }
+    }
+
     static func from(cursor: SqlCursor) -> ItineraryItem? {
         do {
             guard let id = UUID(uuidString: try cursor.getString(name: "id")),
@@ -75,6 +116,8 @@ extension ItineraryItem {
                 kind: kind,
                 title: try cursor.getString(name: "title"),
                 locationName: try cursor.getStringOptional(name: "location_name"),
+                destinationName: try cursor.getStringOptional(name: "destination_name"),
+                transportMode: (try cursor.getStringOptional(name: "transport_mode")).flatMap(TransportMode.init(rawValue:)),
                 startsAt: parseISO8601Date(try cursor.getStringOptional(name: "starts_at")),
                 endsAt: parseISO8601Date(try cursor.getStringOptional(name: "ends_at")),
                 notes: try cursor.getStringOptional(name: "notes"),
@@ -92,6 +135,8 @@ struct ItineraryItemDraft: Sendable {
     var kind: ItineraryItemKind = .activity
     var title = ""
     var locationName = ""
+    var destinationName = ""
+    var transportMode: TransportMode? = nil
     var startsAt = Date()
     var endsAt = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
     var notes = ""
@@ -105,9 +150,22 @@ struct ItineraryItemDraft: Sendable {
         kind = item.kind
         title = item.title
         locationName = item.locationName ?? ""
+        destinationName = item.destinationName ?? ""
+        transportMode = item.transportMode
         startsAt = item.startsAt ?? Date()
         endsAt = item.endsAt ?? item.startsAt ?? Date()
         notes = item.notes ?? ""
+    }
+
+    var travelTimeRequest: TravelTimeRequest? {
+        guard kind == .transport, let from = locationName.nilIfBlank,
+              let to = destinationName.nilIfBlank, let transportMode else { return nil }
+        return TravelTimeRequest(from: from, to: to, mode: transportMode, departure: startsAt)
+    }
+
+    mutating func applyTravelTime(_ duration: TimeInterval, for request: TravelTimeRequest) {
+        guard travelTimeRequest == request, duration.isFinite, duration > 0 else { return }
+        endsAt = startsAt.addingTimeInterval(duration)
     }
 
     var isValid: Bool {

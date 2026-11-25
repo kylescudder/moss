@@ -13,8 +13,14 @@ struct ItineraryItemDetailView: View {
                         Label(item.kind.label, systemImage: item.kind.symbol)
                     }
                     LabeledContent("Title", value: item.title)
+                    if item.kind == .transport, let mode = item.transportMode {
+                        LabeledContent("Travel by", value: mode.label)
+                    }
                     if let locationName = item.locationName {
-                        LabeledContent("Location", value: locationName)
+                        LabeledContent(item.kind == .transport ? "From" : "Location", value: locationName)
+                    }
+                    if item.kind == .transport, let destinationName = item.destinationName {
+                        LabeledContent("To", value: destinationName)
                     }
                 }
 

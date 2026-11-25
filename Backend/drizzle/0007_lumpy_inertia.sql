@@ -1,0 +1,2 @@
+ALTER TABLE "itinerary_items" ADD COLUMN "transport_mode" text;--> statement-breakpoint
+ALTER TABLE "itinerary_items" ADD CONSTRAINT "itinerary_items_transport_mode_check" CHECK ("itinerary_items"."transport_mode" in ('transit','driving','walking','cycling'));

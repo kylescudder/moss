@@ -179,8 +179,12 @@ struct ItineraryItemRow: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 Text(item.title)
                     .font(.headline)
-                if let locationName = item.locationName {
-                    Text(locationName)
+                if let locationSummary = item.locationSummary {
+                    Text(locationSummary)
+                        .footnoteSecondary()
+                }
+                if item.kind == .transport, let mode = item.transportMode {
+                    Text(mode.label)
                         .footnoteSecondary()
                 }
                 if let timeText = item.timeText {

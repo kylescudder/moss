@@ -26,6 +26,8 @@ const columns = {
     'kind',
     'title',
     'location_name',
+    'destination_name',
+    'transport_mode',
     'starts_at',
     'ends_at',
     'notes',

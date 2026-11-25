@@ -92,9 +92,9 @@ final class ItineraryRepository: ObservableObject {
             try await database.execute(
                 sql: """
                 insert into itinerary_items
-                  (id, owner_id, trip_id, kind, title, location_name, starts_at, ends_at,
+                  (id, owner_id, trip_id, kind, title, location_name, destination_name, transport_mode, starts_at, ends_at,
                    notes, sort_order, created_at, updated_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 parameters: [
                     UUID().uuidString.lowercased(),
@@ -103,6 +103,8 @@ final class ItineraryRepository: ObservableObject {
                     draft.kind.rawValue,
                     draft.title.nilIfBlank,
                     draft.locationName.nilIfBlank,
+                    draft.kind == .transport ? draft.destinationName.nilIfBlank : nil,
+                    draft.kind == .transport ? draft.transportMode?.rawValue : nil,
                     draft.startsAt.iso8601,
                     draft.endsAt.iso8601,
                     draft.notes.nilIfBlank,
@@ -125,7 +127,7 @@ final class ItineraryRepository: ObservableObject {
             try await database.execute(
                 sql: """
                 update itinerary_items set
-                  kind = ?, title = ?, location_name = ?, starts_at = ?, ends_at = ?,
+                  kind = ?, title = ?, location_name = ?, destination_name = ?, transport_mode = ?, starts_at = ?, ends_at = ?,
                   notes = ?, updated_at = ?
                 where id = ?
                 """,
@@ -133,6 +135,8 @@ final class ItineraryRepository: ObservableObject {
                     draft.kind.rawValue,
                     draft.title.nilIfBlank,
                     draft.locationName.nilIfBlank,
+                    draft.kind == .transport ? draft.destinationName.nilIfBlank : nil,
+                    draft.kind == .transport ? draft.transportMode?.rawValue : nil,
                     draft.startsAt.iso8601,
                     draft.endsAt.iso8601,
                     draft.notes.nilIfBlank,
