@@ -8,6 +8,7 @@ struct ItineraryItemEditorView: View {
     @State private var draft: ItineraryItemDraft
     @State private var isSaving = false
     @State private var saveCount = 0
+    @State private var travelTimeRequest: TravelTimeRequest?
 
     init(trip: Trip, item: ItineraryItem? = nil) {
         self.trip = trip
@@ -26,12 +27,32 @@ struct ItineraryItemEditorView: View {
                         }
                     }
                     TextField("Title", text: $draft.title)
-                    TextField("Location", text: $draft.locationName)
+                    if draft.kind == .transport {
+                        TextField("From", text: $draft.locationName)
+                        TextField("To", text: $draft.destinationName)
+                        Picker("Travel by", selection: $draft.transportMode) {
+                            Text("Choose a mode").tag(TransportMode?.none)
+                            ForEach(TransportMode.allCases) { mode in
+                                Text(mode.label).tag(Optional(mode))
+                            }
+                        }
+                    } else {
+                        TextField("Location", text: $draft.locationName)
+                    }
                 }
 
                 Section("When") {
                     DatePicker("Starts", selection: $draft.startsAt)
                     DatePicker("Ends", selection: $draft.endsAt, in: draft.startsAt...)
+                    if draft.kind == .transport {
+                        Button("Calculate travel time", systemImage: "map") {
+                            travelTimeRequest = draft.travelTimeRequest
+                        }
+                        .disabled(draft.travelTimeRequest == nil)
+                        Text("Choose From, To and a travel mode to estimate your end time with Apple Maps. You can also set Ends yourself.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                    }
                 }
 
                 Section("Notes") {
@@ -62,6 +83,11 @@ struct ItineraryItemEditorView: View {
             .onChange(of: draft.startsAt) { old, start in
                 let duration = max(draft.endsAt.timeIntervalSince(old), 0)
                 draft.endsAt = start.addingTimeInterval(duration)
+            }
+            .sheet(item: $travelTimeRequest) { request in
+                TransportTravelTimeView(request: request) { duration in
+                    draft.applyTravelTime(duration, for: request)
+                }
             }
             .sensoryFeedback(.success, trigger: saveCount)
         }

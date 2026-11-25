@@ -1,0 +1,1 @@
+ALTER TABLE "itinerary_items" ADD COLUMN "destination_name" text;

@@ -43,6 +43,20 @@
       "when": 1795555788724,
       "tag": "0005_invite-acceptance",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795644736750,
+      "tag": "0006_opposite_typhoid_mary",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795645031212,
+      "tag": "0007_lumpy_inertia",
+      "breakpoints": true
     }
   ]
 }

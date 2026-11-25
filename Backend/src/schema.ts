@@ -65,6 +65,8 @@ export const itineraryItems = pgTable(
     kind: text('kind').notNull().default('activity'),
     title: text('title').notNull(),
     location_name: text('location_name'),
+    destination_name: text('destination_name'),
+    transport_mode: text('transport_mode'),
     starts_at: timestamp('starts_at', { withTimezone: true }),
     ends_at: timestamp('ends_at', { withTimezone: true }),
     notes: text('notes'),
@@ -75,6 +77,10 @@ export const itineraryItems = pgTable(
     check(
       'itinerary_items_kind_check',
       sql`${t.kind} in ('flight','lodging','food','activity','transport','note')`
+    ),
+    check(
+      'itinerary_items_transport_mode_check',
+      sql`${t.transport_mode} in ('transit','driving','walking','cycling')`
     ),
     index('itinerary_items_trip_sort_idx').on(t.trip_id, t.sort_order),
     index('itinerary_items_owner_updated_idx').on(t.owner_id, t.updated_at)

@@ -171,9 +171,11 @@ test('itinerary items belong to a trip the uploader owns', async () => {
     op: 'put',
     data: {
       trip_id: tripID,
-      kind: 'food',
-      title: 'Dinner',
-      location_name: 'Gion',
+      kind: 'transport',
+      title: 'Train',
+      location_name: 'Kyoto',
+      destination_name: 'Osaka',
+      transport_mode: 'transit',
       starts_at: '2026-12-01T19:00:00Z',
       sort_order: 3
     }
@@ -187,9 +189,56 @@ test('itinerary items belong to a trip the uploader owns', async () => {
   expect(read).toMatchObject({
     owner_id: owner.id,
     trip_id: tripID,
-    kind: 'food',
-    sort_order: 3
+    kind: 'transport',
+    sort_order: 3,
+    location_name: 'Kyoto',
+    destination_name: 'Osaka',
+    transport_mode: 'transit'
   })
+  for (const destination of ['Nara', null]) {
+    expect(
+      (
+        await dataRequest('/api/sync/upload', owner.token, {
+          table: 'itinerary_items',
+          id: itemID,
+          op: 'patch',
+          data: { destination_name: destination }
+        })
+      ).status
+    ).toBe(200)
+    expect(
+      await (
+        await dataRequest('/api/data/itinerary_items/' + itemID, owner.token)
+      ).json()
+    ).toMatchObject({ location_name: 'Kyoto', destination_name: destination })
+  }
+  for (const mode of ['driving', 'walking', 'cycling', null]) {
+    expect(
+      (
+        await dataRequest('/api/sync/upload', owner.token, {
+          table: 'itinerary_items',
+          id: itemID,
+          op: 'patch',
+          data: { transport_mode: mode }
+        })
+      ).status
+    ).toBe(200)
+    expect(
+      await (
+        await dataRequest('/api/data/itinerary_items/' + itemID, owner.token)
+      ).json()
+    ).toMatchObject({ transport_mode: mode })
+  }
+  expect(
+    (
+      await dataRequest('/api/sync/upload', owner.token, {
+        table: 'itinerary_items',
+        id: itemID,
+        op: 'patch',
+        data: { transport_mode: 'teleport' }
+      })
+    ).status
+  ).toBe(422)
   // Another account cannot attach items to, read, or edit this trip's items.
   const foreign = await dataRequest('/api/sync/upload', other.token, {
     ...item,

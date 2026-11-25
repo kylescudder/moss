@@ -48,6 +48,8 @@ enum DatabaseSchema {
             .text("kind"),
             .text("title"),
             .text("location_name"),
+            .text("destination_name"),
+            .text("transport_mode"),
             .text("starts_at"),
             .text("ends_at"),
             .text("notes"),

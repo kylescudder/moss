@@ -89,6 +89,47 @@ final class TripSharingTests: XCTestCase {
         XCTAssertEqual(Set(owners), [me])
     }
 
+    func testTransportRouteSurvivesCreationEditingAndChangingKind() async throws {
+        let database = makeDatabase()
+        let tripID = try await insertTrip(database, owner: me, title: "Porto")
+        let trip = Trip(id: try XCTUnwrap(UUID(uuidString: tripID)), ownerID: try XCTUnwrap(UUID(uuidString: me)), title: "Porto", destination: "Portugal")
+        let itinerary = ItineraryRepository(database: database)
+        itinerary.startWatching(userID: me)
+        defer { itinerary.stopWatching() }
+        var draft = ItineraryItemDraft()
+        draft.kind = .transport
+        draft.transportMode = .transit
+        draft.title = "Train"
+        draft.locationName = "  Porto Campanhã  "
+        draft.destinationName = "  Lisboa Oriente  "
+
+        let created = await itinerary.create(draft, trip: trip)
+        XCTAssertTrue(created)
+        try await waitUntil { itinerary.items.count == 1 }
+        let item = try XCTUnwrap(itinerary.items.first)
+        XCTAssertEqual(item.transportMode, .transit)
+        XCTAssertEqual(item.locationName, "Porto Campanhã")
+        XCTAssertEqual(item.destinationName, "Lisboa Oriente")
+        XCTAssertEqual(item.locationSummary, "Porto Campanhã → Lisboa Oriente")
+
+        var edited = ItineraryItemDraft(item: item)
+        XCTAssertEqual(edited.destinationName, "Lisboa Oriente")
+        edited.destinationName = "Coimbra"
+        edited.transportMode = .driving
+        let updated = await itinerary.update(item, with: edited)
+        XCTAssertTrue(updated)
+        try await waitUntil { itinerary.items.first?.destinationName == "Coimbra" }
+
+        XCTAssertEqual(itinerary.items.first?.transportMode, .driving)
+        edited.kind = .activity
+        let changedKind = await itinerary.update(item, with: edited)
+        XCTAssertTrue(changedKind)
+        try await waitUntil { itinerary.items.first?.kind == .activity }
+        XCTAssertNil(itinerary.items.first?.destinationName)
+        XCTAssertNil(itinerary.items.first?.transportMode)
+        XCTAssertEqual(itinerary.items.first?.locationSummary, "Porto Campanhã")
+    }
+
     // MARK: Helpers
 
     private func makeDatabase() -> PowerSyncDatabaseProtocol {

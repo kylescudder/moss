@@ -78,6 +78,31 @@ final class TripModelTests: XCTestCase {
         XCTAssertFalse(unverified.isVerified(at: now))
     }
 
+    func testTransportSummaryHandlesPartialRoutesAndLegacyPlans() throws {
+        let json = """
+        {"id":"00000000-0000-0000-0000-000000000001","trip_id":"00000000-0000-0000-0000-000000000002","owner_id":"00000000-0000-0000-0000-000000000003","kind":"transport","title":"Train","location_name":"Porto","sort_order":0}
+        """
+        var item = try JSONDecoder().decode(ItineraryItem.self, from: Data(json.utf8))
+        XCTAssertNil(item.destinationName)
+        XCTAssertNil(item.transportMode)
+        XCTAssertEqual(ItineraryItemDraft(item: item).destinationName, "")
+        XCTAssertEqual(item.locationSummary, "From Porto")
+        item.destinationName = "Lisbon"
+        item.transportMode = .driving
+        XCTAssertEqual(item.locationSummary, "Porto → Lisbon")
+        let decoded = try JSONDecoder().decode(ItineraryItem.self, from: JSONEncoder().encode(item))
+        XCTAssertEqual(decoded.destinationName, "Lisbon")
+        XCTAssertEqual(decoded.transportMode, .driving)
+        item.locationName = " "
+        XCTAssertEqual(item.locationSummary, "To Lisbon")
+        item.destinationName = " "
+        XCTAssertNil(item.locationSummary)
+        item.kind = .food
+        item.locationName = "Restaurant"
+        item.destinationName = "Hidden"
+        XCTAssertEqual(item.locationSummary, "Restaurant")
+    }
+
     func testQuickActionsRouteFromMossShortcutURLs() {
         XCTAssertEqual(Set(AppQuickAction.allCases.map(\.rawValue)), ["newTrip", "today"])
         XCTAssertEqual(AppQuickAction.pendingStorageKey, "moss.pendingQuickAction")
