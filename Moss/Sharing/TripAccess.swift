@@ -7,6 +7,11 @@ import Foundation
 extension AppServices {
     var currentUserID: String? { auth.currentUserID?.uuidString.lowercased() }
 
+    var signedInEmail: String? {
+        if case let .signedIn(_, email) = auth.state { return email }
+        return nil
+    }
+
     func role(for trip: Trip) -> ShareRole? {
         guard let userID = currentUserID else { return nil }
         let ownerID = trip.ownerID.uuidString.lowercased()

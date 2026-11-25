@@ -28,6 +28,7 @@ struct AllTripsSharingView: View {
 
     var body: some View {
         Form {
+            ShareInvitesSection(inbox: services.sharingInbox)
             if let userID = services.currentUserID {
                 Section {
                     Text("People you add here see every trip you own, including trips you plan later. To share just one trip, open it and tap Share.")

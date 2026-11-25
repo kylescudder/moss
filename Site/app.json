@@ -11,7 +11,8 @@
     "/": "Travel, together",
     "/privacy": "Privacy Policy",
     "/terms": "Terms of Use",
-    "/support": "Support"
+    "/support": "Support",
+    "/invites": "Accept it in the app"
   },
   "routes": {},
   "appLinks": {

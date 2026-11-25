@@ -18,10 +18,13 @@ extension SharingSpace {
         removeMember: SharingEndpoint(path: "api/sharing/trip/remove_member", keys: ["space_id", "user_id"]),
         revokeInvite: SharingEndpoint(path: "api/sharing/trip/revoke_invite", keys: ["invite_id"]),
         memberProfiles: SharingEndpoint(path: "api/sharing/trip/member_profiles", keys: ["space_id"]),
+        incoming: SharingEndpoint(path: "api/sharing/trip/incoming", keys: []),
+        accept: SharingEndpoint(path: "api/sharing/trip/accept", keys: ["invite_id"]),
+        decline: SharingEndpoint(path: "api/sharing/trip/decline", keys: ["invite_id"]),
         copy: SharingCopy(
             destination: "this trip",
-            pendingFooter: "They join this trip once they sign up and confirm this email address.",
-            inviteFooter: "Editors can change the trip and add plans. Viewers can only look. If they don't have a Moss account yet, they join when they sign up with this email."
+            pendingFooter: "They join this trip once they accept the invite in Moss.",
+            inviteFooter: "We'll email them an invite to accept in Moss. Editors can change the trip and add plans; viewers can only look."
         )
     )
 
@@ -34,10 +37,13 @@ extension SharingSpace {
         removeMember: SharingEndpoint(path: "api/sharing/library/remove_member", keys: ["space_id", "user_id"]),
         revokeInvite: SharingEndpoint(path: "api/sharing/library/revoke_invite", keys: ["invite_id"]),
         memberProfiles: SharingEndpoint(path: "api/sharing/library/member_profiles", keys: ["space_id"]),
+        incoming: SharingEndpoint(path: "api/sharing/library/incoming", keys: []),
+        accept: SharingEndpoint(path: "api/sharing/library/accept", keys: ["invite_id"]),
+        decline: SharingEndpoint(path: "api/sharing/library/decline", keys: ["invite_id"]),
         copy: SharingCopy(
             destination: "all your trips",
-            pendingFooter: "They see all your trips once they sign up and confirm this email address.",
-            inviteFooter: "They see every trip you own, including trips you plan later. Editors can change them and add plans; viewers can only look. Only you can delete your trips."
+            pendingFooter: "They see all your trips once they accept the invite in Moss.",
+            inviteFooter: "We'll email them an invite to accept in Moss. They'll see every trip you own, including trips you plan later. Editors can change them and add plans; viewers can only look. Only you can delete your trips."
         )
     )
 }

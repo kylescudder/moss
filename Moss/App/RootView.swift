@@ -30,7 +30,16 @@ struct RootView: View {
                     Task { await services.push.refreshRegistration() }
                 }
                 Task { await services.sync.retryConnection() }
+                if services.auth.canAccessMainApp {
+                    Task { await services.sharingInbox.refresh() }
+                }
             }
+        }
+        .sheet(isPresented: Binding(
+            get: { services.auth.canAccessMainApp && services.showsInvites },
+            set: { services.showsInvites = $0 }
+        )) {
+            ShareInvitesView(inbox: services.sharingInbox, signedInEmail: services.signedInEmail)
         }
         .sheet(isPresented: Binding(
             get: { services.auth.isPasswordRecovery },
@@ -52,6 +61,11 @@ struct RootView: View {
     }
 
     private func handle(url: URL) {
+        // Invite emails link to https://growmoss.app/invites.
+        if url.scheme == "https", url.path == "/invites" {
+            services.showsInvites = true
+            return
+        }
         QuickActionRouter.handle(url: url, auth: services.auth)
     }
 }

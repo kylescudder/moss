@@ -1,0 +1,39 @@
+---
+import app from "../../app.json";
+import LegalArticle from "../components/LegalArticle.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { appStoreUrl } from "../lib/links";
+---
+
+<BaseLayout
+  title="Invites - Moss"
+  description="Accept an invite to plan trips together in Moss."
+  bodyClass="legal-page"
+>
+  <LegalArticle title="Your invite">
+    <p>Someone invited you to plan trips together in Moss.</p>
+
+    <h2>Accept it in the app</h2>
+    <ol>
+      <li>
+        Install Moss on your iPhone or iPad:{" "}
+        <a href={appStoreUrl}>Download on the App Store</a>.
+      </li>
+      <li>
+        Sign in, or create an account, with the email address the invite was
+        sent to.
+      </li>
+      <li>Open Trips and tap Accept on the invite.</li>
+    </ol>
+    <p>
+      If Moss is already installed, opening this link on your iPhone or iPad
+      takes you straight to your invites. Nobody is added to a trip until they
+      accept.
+    </p>
+
+    <h2>Questions</h2>
+    <p>
+      Email <a href={`mailto:${app.contact}`}>{app.contact}</a>.
+    </p>
+  </LegalArticle>
+</BaseLayout>

@@ -6,7 +6,9 @@ import type { Auth } from './auth'
 import { z } from 'zod'
 import { RequestError, uploadChange, writableTable } from './data'
 import { nativeOAuth } from './native-oauth'
-import { sharingAction } from './sharing'
+import { sharingAction, type Invitation } from './sharing'
+import { authApp } from './auth-app'
+import type { InviteDetails } from './email'
 import { processNotification, syncTransaction } from './iap'
 import type { NotificationSpool } from './notification-spool'
 import {
@@ -46,14 +48,35 @@ export function createApplication({
   pool,
   origin = 'http://localhost:3147',
   appleEnvironments = ['Sandbox'],
-  spool
+  spool,
+  sendEmail
 }: {
   auth: Auth
   pool: Pool
   origin?: string
   appleEnvironments?: string[]
   spool?: NotificationSpool
+  sendEmail?: (
+    email: string,
+    kind: 'invite',
+    url: string,
+    invite: InviteDetails
+  ) => Promise<void>
 }) {
+  // The invite is saved before its email goes out, and stays usable in the
+  // app if the email can't be sent.
+  const emailInvitation = async (invitation: Invitation, senderID: string) => {
+    if (!sendEmail || !authApp.invitesURL) return
+    try {
+      await sendEmail(invitation.email, 'invite', authApp.invitesURL, {
+        inviter: invitation.inviter,
+        target: invitation.target,
+        senderID
+      })
+    } catch {
+      // Budget exhausted or Brevo unavailable; the invite is in the app.
+    }
+  }
   return async (request: Request): Promise<Response> => {
     try {
       const url = new URL(request.url)
@@ -99,6 +122,27 @@ export function createApplication({
       const session = await auth.api.getSession({ headers: request.headers })
       if (!session?.user.emailVerified)
         throw new RequestError('MX002', 401, 'Sign in with a verified account.')
+      if (
+        url.pathname.startsWith('/api/sharing/') &&
+        request.method === 'POST'
+      ) {
+        const input = await request.json()
+        const result = await transaction(
+          pool,
+          (client) =>
+            sharingAction(
+              client,
+              url.pathname.slice('/api/sharing/'.length),
+              input
+            ),
+          session.user.id
+        )
+        if (result.invitation)
+          await emailInvitation(result.invitation, session.user.id)
+        return Response.json(result.body, {
+          headers: { 'cache-control': 'no-store' }
+        })
+      }
       const response = await transaction(
         pool,
         async (client) => {
@@ -202,18 +246,6 @@ export function createApplication({
               ]
             )
             return Response.json({ accepted: true })
-          }
-          if (
-            url.pathname.startsWith('/api/sharing/') &&
-            request.method === 'POST'
-          ) {
-            return Response.json(
-              await sharingAction(
-                client,
-                url.pathname.slice('/api/sharing/'.length),
-                await request.json()
-              )
-            )
           }
           if (
             url.pathname.startsWith('/api/data/') &&
