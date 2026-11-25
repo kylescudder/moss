@@ -88,10 +88,19 @@ struct TransportTravelTimeView: View {
         .onDisappear { model.cancel() }
     }
 
+    private func placeLabel(_ place: MKMapItem) -> String {
+        let name = place.name?.nilIfBlank
+        let address = place.placemark.title?.nilIfBlank
+        if let name, let address, name != address {
+            return "\(name), \(address)"
+        }
+        return name ?? address ?? "Place"
+    }
+
     private func placePicker(_ title: String, places: [MKMapItem], selection: Binding<Int>) -> some View {
         Picker(title, selection: selection) {
             ForEach(places.indices, id: \.self) { index in
-                Text(places[index].placemark.title ?? places[index].name ?? "Place")
+                Text(placeLabel(places[index]))
                     .tag(index)
             }
         }
