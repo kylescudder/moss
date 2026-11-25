@@ -22,7 +22,7 @@ const auth = createAuth(db, {
 const invites: {
   email: string
   url: string
-  invite: { inviter: string; target: string }
+  invite: { inviter: string; target: string; senderID: string }
 }[] = []
 let emailDown = false
 const app = createApplication({
@@ -184,7 +184,11 @@ test('a trip shared with an editor can be read and planned but not deleted or re
   expect(invites.findLast((m) => m.email === editor.email)).toEqual({
     email: editor.email,
     url: 'https://growmoss.app/invites',
-    invite: { inviter: 'owner', target: 'the trip “Shared trip”' }
+    invite: {
+      inviter: 'owner',
+      target: 'the trip “Shared trip”',
+      senderID: owner.id
+    }
   })
   const [invite] = await incoming(editor, 'trip')
   expect(invite).toMatchObject({

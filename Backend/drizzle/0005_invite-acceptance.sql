@@ -59,7 +59,9 @@ begin
   ) then
     raise exception using errcode = 'MX006', message = 'They already have access.';
   end if;
-  -- Each invite sends an email, so one account can send only so many a day.
+  -- Limits invite rows. Revoking deletes rows, so this is not what bounds
+  -- email: the API's email sender caps each account's invite mail in
+  -- auth_email_limit, which revoking or re-sending can't reset.
   if (
     select count(*) from (
       select 1 from public.trip_pending_invites

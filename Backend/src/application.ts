@@ -65,12 +65,13 @@ export function createApplication({
 }) {
   // The invite is saved before its email goes out, and stays usable in the
   // app if the email can't be sent.
-  const emailInvitation = async (invitation: Invitation) => {
+  const emailInvitation = async (invitation: Invitation, senderID: string) => {
     if (!sendEmail || !authApp.invitesURL) return
     try {
       await sendEmail(invitation.email, 'invite', authApp.invitesURL, {
         inviter: invitation.inviter,
-        target: invitation.target
+        target: invitation.target,
+        senderID
       })
     } catch {
       // Budget exhausted or Brevo unavailable; the invite is in the app.
@@ -136,7 +137,8 @@ export function createApplication({
             ),
           session.user.id
         )
-        if (result.invitation) await emailInvitation(result.invitation)
+        if (result.invitation)
+          await emailInvitation(result.invitation, session.user.id)
         return Response.json(result.body, {
           headers: { 'cache-control': 'no-store' }
         })
