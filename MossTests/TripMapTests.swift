@@ -25,20 +25,6 @@ final class TripMapTests: XCTestCase {
         XCTAssertTrue(TripMapPlace.places(for: [transport]).isEmpty)
     }
 
-    func testTravelLinesFollowPinsAndDoNotBridgeUnresolvedPlaces() {
-        let places = TripMapPlace.places(for: [item(location: "A"), item(location: "B"), item(location: "C")])
-        let start = CLLocationCoordinate2D(latitude: 51.5, longitude: -0.1)
-        let middle = CLLocationCoordinate2D(latitude: 51.6, longitude: -0.2)
-        let end = CLLocationCoordinate2D(latitude: 51.7, longitude: -0.3)
-        let legs = TripMapLeg.legs(for: places, coordinates: [places[0].id: start, places[1].id: middle, places[2].id: end])
-        XCTAssertEqual(legs.count, 2)
-        XCTAssertEqual(legs[0].coordinates.map(\.latitude), [51.5, 51.6])
-        XCTAssertEqual(legs[1].coordinates.map(\.latitude), [51.6, 51.7])
-        XCTAssertTrue(TripMapLeg.legs(for: places, coordinates: [places[0].id: start, places[2].id: end]).isEmpty)
-        XCTAssertTrue(TripMapLeg.legs(for: Array(places.prefix(2)), coordinates: [places[0].id: start, places[1].id: start]).isEmpty)
-        XCTAssertTrue(TripMapLeg.legs(for: [], coordinates: [:]).isEmpty)
-    }
-
     func testFailedSearchCanBeRetriedAndSuccessfulPlacesAreCached() async {
         let model = TripMapPlaces()
         let places = TripMapPlace.places(for: [item()])

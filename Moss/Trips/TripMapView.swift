@@ -23,6 +23,8 @@ struct TripMapView: View {
     let canEdit: Bool
     let setVisited: (Bool, ItineraryItem) async -> Bool
     @StateObject private var locations = TripMapPlaces()
+    @StateObject private var routes = TripMapRoutes()
+    @State private var routeRetry = 0
     @State private var position: MapCameraPosition = .automatic
     @State private var selection: String?
     @State private var saving: Set<UUID> = []
@@ -31,6 +33,10 @@ struct TripMapView: View {
     @State private var showsTravelLines = true
 
     private var places: [TripMapPlace] { TripMapPlace.places(for: items) }
+    private var routeInputs: [TripMapRouteInput] {
+        guard showsTravelLines, !locations.isLoading else { return [] }
+        return TripMapRouteInput.inputs(for: items, coordinates: locations.coordinates)
+    }
     private var locatedItems: [ItineraryItem] {
         let ids = Set(places.map(\.itemID))
         return items.filter { ids.contains($0.id) }
@@ -51,9 +57,11 @@ struct TripMapView: View {
                 Section {
                     Map(position: $position, selection: $selection) {
                         if showsTravelLines {
-                            ForEach(TripMapLeg.legs(for: places, coordinates: locations.coordinates)) { leg in
-                                MapPolyline(coordinates: leg.coordinates)
-                                    .stroke(Theme.Colors.accent, style: StrokeStyle(lineWidth: 3, dash: [6, 5]))
+                            ForEach(routeInputs) { input in
+                                if let polyline = routes.polylines[input.id] {
+                                    MapPolyline(polyline)
+                                        .stroke(Theme.Colors.accent, lineWidth: 4)
+                                }
                             }
                         }
                         ForEach(places) { place in
@@ -75,9 +83,9 @@ struct TripMapView: View {
                         position = .automatic
                         selection = nil
                     }
-                    Toggle("Travel lines", isOn: $showsTravelLines)
+                    Toggle("Transport routes", isOn: $showsTravelLines)
                     if showsTravelLines {
-                        Text("Dashed lines connect pins in itinerary order. They aren't directions or recorded travel routes.")
+                        Text("Apple Maps routes use each transport plan's travel mode. Routes may be unavailable for some modes or places.")
                             .font(.caption)
                             .foregroundStyle(Theme.Colors.textSecondary)
                     }
@@ -86,6 +94,14 @@ struct TripMapView: View {
                     Text("Visit progress is shared with everyone on this trip. Marking a transport plan updates both endpoints.")
                         .font(.caption)
                         .foregroundStyle(Theme.Colors.textSecondary)
+                    if routes.isLoading {
+                        ProgressView("Finding transport routes…")
+                    }
+                    if !routes.unavailable.isEmpty {
+                        Text("Some transport routes aren't available in this map. Open the plan's route in Apple Maps for more options.")
+                            .font(.footnote)
+                        Button("Retry transport routes") { routeRetry += 1 }
+                    }
                     if locations.isLoading {
                         ProgressView("Finding places…")
                     }
@@ -116,6 +132,9 @@ struct TripMapView: View {
         .task(id: SearchKey(places: places, destination: trip.destination, retry: retry)) {
             await locations.load(places, destination: trip.destination)
         }
+        .task(id: RouteKey(inputs: routeInputs, retry: routeRetry)) {
+            await routes.load(routeInputs)
+        }
         .alert("Visit not saved", isPresented: $saveFailed) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -142,6 +161,29 @@ struct TripMapView: View {
                     .font(.caption)
                 }
             }
+            if item.kind == .transport {
+                if let mode = item.transportMode,
+                   let from = item.locationName?.nilIfBlank, let to = item.destinationName?.nilIfBlank {
+                    if showsTravelLines, routes.unavailable.contains(item.id) {
+                        Label("Route unavailable for \(mode.label.lowercased())", systemImage: "exclamationmark.circle")
+                            .font(.caption)
+                    }
+                    Button("Open route in Apple Maps", systemImage: "arrow.triangle.turn.up.right.diamond") {
+                        guard let fromCoordinate = locations.coordinates["\(item.id):from"],
+                              let toCoordinate = locations.coordinates["\(item.id):to"] else { return }
+                        let source = MKMapItem(placemark: MKPlacemark(coordinate: fromCoordinate))
+                        let destination = MKMapItem(placemark: MKPlacemark(coordinate: toCoordinate))
+                        source.name = from
+                        destination.name = to
+                        MKMapItem.openMaps(with: [source, destination], launchOptions: [MKLaunchOptionsDirectionsModeKey: mode.mapsDirectionsMode])
+                    }
+                    .disabled(locations.coordinates["\(item.id):from"] == nil || locations.coordinates["\(item.id):to"] == nil)
+                } else {
+                    Text("Add From, To and a travel mode to this plan to show its route.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                }
+            }
             if canEdit {
                 Button(item.visitedAt == nil ? "Mark as visited" : "Mark as unvisited",
                        systemImage: item.visitedAt == nil ? "checkmark.circle" : "arrow.uturn.backward") {
@@ -158,6 +200,11 @@ struct TripMapView: View {
         }
         .buttonStyle(.borderless)
         .padding(.vertical, Theme.Spacing.xs)
+    }
+
+    private struct RouteKey: Equatable {
+        let inputs: [TripMapRouteInput]
+        let retry: Int
     }
 
     private struct SearchKey: Equatable {
