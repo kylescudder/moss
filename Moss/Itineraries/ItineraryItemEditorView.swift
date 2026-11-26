@@ -28,8 +28,8 @@ struct ItineraryItemEditorView: View {
                     }
                     TextField("Title", text: $draft.title)
                     if draft.kind == .transport {
-                        TextField("From", text: $draft.locationName)
-                        TextField("To", text: $draft.destinationName)
+                        LocationSearchField(title: "From", text: $draft.locationName)
+                        LocationSearchField(title: "To", text: $draft.destinationName)
                         Picker("Travel by", selection: $draft.transportMode) {
                             Text("Choose a mode").tag(TransportMode?.none)
                             ForEach(TransportMode.allCases) { mode in
@@ -37,7 +37,7 @@ struct ItineraryItemEditorView: View {
                             }
                         }
                     } else {
-                        TextField("Location", text: $draft.locationName)
+                        LocationSearchField(title: "Location", text: $draft.locationName)
                     }
                 }
 
