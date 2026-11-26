@@ -35,6 +35,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Moss uses the camera to attach photos to your travel plans.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Moss uses your location to help you understand places near your trip.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

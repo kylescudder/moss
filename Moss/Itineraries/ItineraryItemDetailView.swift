@@ -4,6 +4,7 @@ import SwiftUI
 struct ItineraryItemDetailView: View {
     @Environment(\.dismiss) private var dismiss
     let item: ItineraryItem
+    @State private var selectedPhoto: PlanPhoto?
 
     var body: some View {
         NavigationStack {
@@ -33,6 +34,16 @@ struct ItineraryItemDetailView: View {
                     }
                 }
 
+                if !item.photos.isEmpty {
+                    Section("Photos") {
+                        ForEach(item.photos) { photo in
+                            Button { selectedPhoto = photo } label: { PlanPhotoThumbnail(photo: photo) }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("View plan photo")
+                        }
+                    }
+                }
+
                 if let notes = item.notes {
                     Section("Notes") {
                         Text(notes)
@@ -48,5 +59,6 @@ struct ItineraryItemDetailView: View {
                 }
             }
         }
+        .sheet(item: $selectedPhoto) { PlanPhotoViewer(photo: $0) }
     }
 }

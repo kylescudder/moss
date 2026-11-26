@@ -60,6 +60,7 @@ targets:
           UIColorName: ""
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        NSCameraUsageDescription: Moss uses the camera to attach photos to your travel plans.
         NSLocationWhenInUseUsageDescription: Moss uses your location to help you understand places near your trip.
         NSPhotoLibraryAddUsageDescription: Moss saves the trip memories and exports you choose to create.
         CFBundleURLTypes:

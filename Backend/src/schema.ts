@@ -70,10 +70,15 @@ export const itineraryItems = pgTable(
     starts_at: timestamp('starts_at', { withTimezone: true }),
     ends_at: timestamp('ends_at', { withTimezone: true }),
     notes: text('notes'),
+    photos_json: text('photos_json'),
     sort_order: integer('sort_order').notNull().default(0),
     ...dates()
   },
   (t) => [
+    check(
+      'itinerary_items_photos_size_check',
+      sql`${t.photos_json} is null or octet_length(${t.photos_json}) <= 500000`
+    ),
     check(
       'itinerary_items_kind_check',
       sql`${t.kind} in ('flight','lodging','food','activity','transport','note')`

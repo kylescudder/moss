@@ -942,3 +942,67 @@ test('premium access cannot be self-granted through sync or request-role SQL', a
     client.release()
   }
 })
+
+test('all plan types persist photos, preserve them through older-client edits, and allow removal', async () => {
+  const owner = await nativeAccount('photos-owner@example.test')
+  const other = await nativeAccount('photos-other@example.test')
+  const tripID = crypto.randomUUID()
+  expect(
+    (
+      await dataRequest('/api/sync/upload', owner.token, {
+        table: 'trips',
+        id: tripID,
+        op: 'put',
+        data: { title: 'Photo trip', destination: 'Lisbon' }
+      })
+    ).status
+  ).toBe(200)
+  const photos = JSON.stringify([
+    {
+      id: crypto.randomUUID(),
+      jpeg: Buffer.from([255, 216, 1, 255, 217]).toString('base64')
+    }
+  ])
+  for (const kind of [
+    'flight',
+    'lodging',
+    'food',
+    'activity',
+    'transport',
+    'note'
+  ]) {
+    const id = crypto.randomUUID()
+    const patch = (data: unknown, token = owner.token) =>
+      dataRequest('/api/sync/upload', token, {
+        table: 'itinerary_items',
+        id,
+        op: 'patch',
+        data
+      })
+    const read = async () =>
+      (await dataRequest('/api/data/itinerary_items/' + id, owner.token)).json()
+    expect(
+      (
+        await dataRequest('/api/sync/upload', owner.token, {
+          table: 'itinerary_items',
+          id,
+          op: 'put',
+          data: { trip_id: tripID, title: 'Plan', kind, photos_json: photos }
+        })
+      ).status
+    ).toBe(200)
+    expect(await read()).toMatchObject({ kind, photos_json: photos })
+    expect((await patch({ title: 'Updated title' })).status).toBe(200)
+    expect(await read()).toMatchObject({ photos_json: photos })
+    expect((await patch({ photos_json: '[]' }, other.token)).status).not.toBe(
+      200
+    )
+    expect(
+      (await dataRequest('/api/data/itinerary_items/' + id, other.token)).status
+    ).not.toBe(200)
+    expect((await patch({ photos_json: '[invalid]' })).status).toBe(422)
+    expect(await read()).toMatchObject({ photos_json: photos })
+    expect((await patch({ photos_json: '[]' })).status).toBe(200)
+    expect(await read()).toMatchObject({ photos_json: '[]' })
+  }
+})

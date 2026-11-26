@@ -57,6 +57,13 @@
       "when": 1795645031212,
       "tag": "0007_lumpy_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795695042561,
+      "tag": "0008_daily_scorpion",
+      "breakpoints": true
     }
   ]
 }

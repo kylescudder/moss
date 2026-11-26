@@ -53,6 +53,7 @@ enum DatabaseSchema {
             .text("starts_at"),
             .text("ends_at"),
             .text("notes"),
+            .text("photos_json"),
             .integer("sort_order"),
             .text("created_at"),
             .text("updated_at"),

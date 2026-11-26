@@ -73,6 +73,7 @@ struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
     var startsAt: Date?
     var endsAt: Date?
     var notes: String?
+    var photosJSON: String? = nil
     var sortOrder: Int
     var createdAt: Date?
     var updatedAt: Date?
@@ -86,6 +87,7 @@ struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
         case transportMode = "transport_mode"
         case startsAt = "starts_at"
         case endsAt = "ends_at"
+        case photosJSON = "photos_json"
         case sortOrder = "sort_order"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
@@ -93,6 +95,8 @@ struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
 }
 
 extension ItineraryItem {
+    var photos: [PlanPhoto] { PlanPhoto.decode(photosJSON) }
+
     var locationSummary: String? {
         guard kind == .transport else { return locationName?.nilIfBlank }
         switch (locationName?.nilIfBlank, destinationName?.nilIfBlank) {
@@ -121,6 +125,7 @@ extension ItineraryItem {
                 startsAt: parseISO8601Date(try cursor.getStringOptional(name: "starts_at")),
                 endsAt: parseISO8601Date(try cursor.getStringOptional(name: "ends_at")),
                 notes: try cursor.getStringOptional(name: "notes"),
+                photosJSON: try cursor.getStringOptional(name: "photos_json"),
                 sortOrder: (try? cursor.getIntOptional(name: "sort_order")) ?? 0,
                 createdAt: parseISO8601Date(try cursor.getStringOptional(name: "created_at")),
                 updatedAt: parseISO8601Date(try cursor.getStringOptional(name: "updated_at"))
@@ -140,6 +145,7 @@ struct ItineraryItemDraft: Sendable {
     var startsAt = Date()
     var endsAt = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
     var notes = ""
+    var photos: [PlanPhoto] = []
 
     init(startsAt: Date = Date()) {
         self.startsAt = startsAt
@@ -155,6 +161,7 @@ struct ItineraryItemDraft: Sendable {
         startsAt = item.startsAt ?? Date()
         endsAt = item.endsAt ?? item.startsAt ?? Date()
         notes = item.notes ?? ""
+        photos = item.photos
     }
 
     var travelTimeRequest: TravelTimeRequest? {
@@ -169,6 +176,6 @@ struct ItineraryItemDraft: Sendable {
     }
 
     var isValid: Bool {
-        title.nilIfBlank != nil && endsAt >= startsAt
+        title.nilIfBlank != nil && endsAt >= startsAt && photos.count <= PlanPhoto.maximumCount
     }
 }

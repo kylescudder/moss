@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg'
 import { z } from 'zod'
+import { validatePlanPhotos } from './plan-photos'
 
 export class RequestError extends Error {
   constructor(
@@ -31,6 +32,7 @@ const columns = {
     'starts_at',
     'ends_at',
     'notes',
+    'photos_json',
     'sort_order',
     'deleted_at'
   ]
@@ -59,6 +61,14 @@ export async function uploadChange(
   if (!parsed.success)
     throw new RequestError('invalid_request', 422, 'Invalid sync change.')
   const { table, id, op, data } = parsed.data
+  if (table === 'itinerary_items' && data.photos_json !== undefined) {
+    if (!validatePlanPhotos(data.photos_json))
+      throw new RequestError(
+        'MX003',
+        422,
+        'Invalid plan photos. Choose up to three smaller images.'
+      )
+  }
   if (table === 'trips' && op === 'put') {
     // Serialize the existence check with the transactional lifetime ledger.
     await client.query('select id from profiles where id = $1 for update', [

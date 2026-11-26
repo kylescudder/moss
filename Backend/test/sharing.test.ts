@@ -236,7 +236,8 @@ test('a trip shared with an editor can be read and planned but not deleted or re
       owner_id: owner.id,
       trip_id: tripID,
       kind: 'food',
-      title: 'Lunch'
+      title: 'Lunch',
+      photos_json: '[]'
     }
   })
   expect(added.status).toBe(200)
@@ -244,6 +245,7 @@ test('a trip shared with an editor can be read and planned but not deleted or re
     await call('/api/data/itinerary_items/' + itemID, owner.token)
   ).json()
   expect(item.owner_id).toBe(owner.id)
+  expect(item.photos_json).toBe('[]')
 
   // The editor cannot claim the item for themselves.
   const claimed = await upload(editor.token, {
@@ -291,7 +293,12 @@ test('a viewer reads a shared trip and its plans but every change is refused', a
         table: 'itinerary_items',
         id: itemID,
         op: 'put',
-        data: { trip_id: tripID, kind: 'activity', title: 'Tram 28' }
+        data: {
+          trip_id: tripID,
+          kind: 'activity',
+          title: 'Tram 28',
+          photos_json: '[]'
+        }
       })
     ).status
   ).toBe(200)
@@ -301,6 +308,21 @@ test('a viewer reads a shared trip and its plans but every change is refused', a
   expect(
     (await call('/api/data/itinerary_items/' + itemID, viewer.token)).status
   ).toBe(200)
+
+  const photoEdit = await upload(viewer.token, {
+    table: 'itinerary_items',
+    id: itemID,
+    op: 'patch',
+    data: { photos_json: null }
+  })
+  expect(photoEdit.status).toBe(403)
+  expect(
+    (
+      await (
+        await call('/api/data/itinerary_items/' + itemID, viewer.token)
+      ).json()
+    ).photos_json
+  ).toBe('[]')
 
   const tripEdit = await upload(viewer.token, {
     table: 'trips',
