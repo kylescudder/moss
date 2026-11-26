@@ -12,6 +12,7 @@ including deleted trips.
 - Offline-first SQLite mirrored to PostgreSQL on Herman through self-hosted PowerSync
 - Trips with destination, dates and notes
 - Day-by-day itineraries: flights, stays, food, activities, transport and notes
+- Up to three camera or photo library images per plan, available offline and shared with the trip
 - Share one trip, or every trip you own, with other Moss accounts as editors or viewers; invitees get an email and accept or decline in the app
 - Today screen with the current or next trip and today's plans
 - Home Screen widget (next trip and today) and App Shortcuts to plan a trip or open today

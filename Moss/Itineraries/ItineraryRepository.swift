@@ -84,7 +84,7 @@ final class ItineraryRepository: ObservableObject {
     /// Items belong to the trip's owner, whoever adds them, so they sync to
     /// everyone the trip is shared with.
     func create(_ draft: ItineraryItemDraft, trip: Trip) async -> Bool {
-        guard userID != nil else { return false }
+        guard userID != nil, draft.isValid else { return false }
         let tripID = trip.id
         let now = Date().iso8601
         let sortOrder = items(for: tripID).count
@@ -93,8 +93,8 @@ final class ItineraryRepository: ObservableObject {
                 sql: """
                 insert into itinerary_items
                   (id, owner_id, trip_id, kind, title, location_name, destination_name, transport_mode, starts_at, ends_at,
-                   notes, sort_order, created_at, updated_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   notes, photos_json, sort_order, created_at, updated_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 parameters: [
                     UUID().uuidString.lowercased(),
@@ -108,6 +108,7 @@ final class ItineraryRepository: ObservableObject {
                     draft.startsAt.iso8601,
                     draft.endsAt.iso8601,
                     draft.notes.nilIfBlank,
+                    try PlanPhoto.encode(draft.photos),
                     sortOrder,
                     now,
                     now,
@@ -123,12 +124,13 @@ final class ItineraryRepository: ObservableObject {
     }
 
     func update(_ item: ItineraryItem, with draft: ItineraryItemDraft) async -> Bool {
+        guard draft.isValid else { return false }
         do {
             try await database.execute(
                 sql: """
                 update itinerary_items set
                   kind = ?, title = ?, location_name = ?, destination_name = ?, transport_mode = ?, starts_at = ?, ends_at = ?,
-                  notes = ?, updated_at = ?
+                  notes = ?, photos_json = ?, updated_at = ?
                 where id = ?
                 """,
                 parameters: [
@@ -140,6 +142,7 @@ final class ItineraryRepository: ObservableObject {
                     draft.startsAt.iso8601,
                     draft.endsAt.iso8601,
                     draft.notes.nilIfBlank,
+                    try PlanPhoto.encode(draft.photos),
                     Date().iso8601,
                     item.id.uuidString.lowercased(),
                 ]

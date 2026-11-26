@@ -41,7 +41,7 @@ const app = createApplication({
 const server = Bun.serve({
   port: settings.PORT,
   hostname: '0.0.0.0',
-  maxRequestBodySize: 128 * 1024,
+  maxRequestBodySize: 1024 * 1024,
   idleTimeout: 60,
   fetch: app
 })

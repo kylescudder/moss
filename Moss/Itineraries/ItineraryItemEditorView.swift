@@ -7,6 +7,10 @@ struct ItineraryItemEditorView: View {
     private let itemToEdit: ItineraryItem?
     @State private var draft: ItineraryItemDraft
     @State private var isSaving = false
+    @State private var isImportingPhoto = false
+    @State private var showCamera = false
+    @State private var selectedPhoto: PlanPhoto?
+    @State private var cameraError: String?
     @State private var saveCount = 0
     @State private var travelTimeRequest: TravelTimeRequest?
 
@@ -60,6 +64,9 @@ struct ItineraryItemEditorView: View {
                         .lineLimit(3...8)
                 }
 
+                PlanPhotosSection(photos: $draft.photos, isImporting: $isImportingPhoto, showCamera: $showCamera, selectedPhoto: $selectedPhoto)
+                if let cameraError { Section { Text(cameraError).foregroundStyle(.red) } }
+
                 if let message = services.itinerary.lastError {
                     Section {
                         Text(message)
@@ -67,6 +74,7 @@ struct ItineraryItemEditorView: View {
                     }
                 }
             }
+            .disabled(isSaving)
             .navigationTitle(itemToEdit == nil ? "Add a plan" : "Edit plan")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -77,7 +85,7 @@ struct ItineraryItemEditorView: View {
                     Button("Save") {
                         Task { await save() }
                     }
-                    .disabled(!draft.isValid || isSaving)
+                    .disabled(!draft.isValid || isSaving || isImportingPhoto)
                 }
             }
             .onChange(of: draft.startsAt) { old, start in
@@ -90,6 +98,26 @@ struct ItineraryItemEditorView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: saveCount)
+        }
+        .sheet(item: $selectedPhoto) { PlanPhotoViewer(photo: $0) }
+        .sheet(isPresented: $showCamera) {
+            PlanCameraPicker { image in
+                showCamera = false
+                guard let image else { return }
+                isImportingPhoto = true
+                Task {
+                    defer { isImportingPhoto = false }
+                    do {
+                        guard let data = image.jpegData(compressionQuality: 0.9) else {
+                            throw PlanPhoto.PhotoError.invalidImage
+                        }
+                        let photo = try await Task.detached(priority: .userInitiated) { try PlanPhoto.prepare(data) }.value
+                        if draft.photos.count < PlanPhoto.maximumCount { draft.photos.append(photo) }
+                        cameraError = nil
+                    } catch { cameraError = error.localizedDescription }
+                }
+            }
+            .ignoresSafeArea()
         }
     }
 

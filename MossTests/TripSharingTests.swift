@@ -130,6 +130,46 @@ final class TripSharingTests: XCTestCase {
         XCTAssertEqual(itinerary.items.first?.locationSummary, "Porto Campanhã")
     }
 
+    func testPhotosSurviveOfflineCreationReloadEditingAndRemovalForEveryKind() async throws {
+        let database = makeDatabase()
+        let tripID = try await insertTrip(database, owner: me, title: "Photo trip")
+        let trip = Trip(id: try XCTUnwrap(UUID(uuidString: tripID)), ownerID: try XCTUnwrap(UUID(uuidString: me)), title: "Photo trip", destination: "Porto")
+        let repository = ItineraryRepository(database: database)
+        repository.startWatching(userID: me)
+        defer { repository.stopWatching() }
+        let photo = PlanPhoto(id: UUID(), jpeg: Data([255, 216, 1, 255, 217]))
+        for kind in ItineraryItemKind.allCases {
+            var draft = ItineraryItemDraft()
+            draft.kind = kind
+            draft.title = kind.label
+            draft.photos = [photo]
+            let created = await repository.create(draft, trip: trip)
+            XCTAssertTrue(created)
+        }
+        try await waitUntil { repository.items.count == 6 }
+        repository.stopWatching()
+        repository.startWatching(userID: me)
+        try await waitUntil { repository.items.count == 6 }
+        for item in repository.items {
+            XCTAssertEqual(item.photos, [photo])
+            var draft = ItineraryItemDraft(item: item)
+            XCTAssertEqual(draft.photos, [photo])
+            draft.title += " edited"
+            let updated = await repository.update(item, with: draft)
+            XCTAssertTrue(updated)
+        }
+        await repository.refresh()
+        XCTAssertTrue(repository.items.allSatisfy { $0.photos == [photo] && $0.title.hasSuffix(" edited") })
+        for item in repository.items {
+            var draft = ItineraryItemDraft(item: item)
+            draft.photos = []
+            let removed = await repository.update(item, with: draft)
+            XCTAssertTrue(removed)
+        }
+        await repository.refresh()
+        XCTAssertTrue(repository.items.allSatisfy { $0.photos.isEmpty })
+    }
+
     // MARK: Helpers
 
     private func makeDatabase() -> PowerSyncDatabaseProtocol {

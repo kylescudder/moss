@@ -1,0 +1,2 @@
+ALTER TABLE "itinerary_items" ADD COLUMN "photos_json" text;--> statement-breakpoint
+ALTER TABLE "itinerary_items" ADD CONSTRAINT "itinerary_items_photos_size_check" CHECK ("itinerary_items"."photos_json" is null or octet_length("itinerary_items"."photos_json") <= 500000);
