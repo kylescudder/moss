@@ -28,6 +28,7 @@ struct TripMapView: View {
     @State private var saving: Set<UUID> = []
     @State private var saveFailed = false
     @State private var retry = 0
+    @State private var showsTravelLines = true
 
     private var places: [TripMapPlace] { TripMapPlace.places(for: items) }
     private var locatedItems: [ItineraryItem] {
@@ -49,6 +50,12 @@ struct TripMapView: View {
             } else {
                 Section {
                     Map(position: $position, selection: $selection) {
+                        if showsTravelLines {
+                            ForEach(TripMapLeg.legs(for: places, coordinates: locations.coordinates)) { leg in
+                                MapPolyline(coordinates: leg.coordinates)
+                                    .stroke(Theme.Colors.accent, style: StrokeStyle(lineWidth: 3, dash: [6, 5]))
+                            }
+                        }
                         ForEach(places) { place in
                             if let coordinate = locations.coordinates[place.id],
                                let item = items.first(where: { $0.id == place.itemID }) {
@@ -67,6 +74,12 @@ struct TripMapView: View {
                     Button("Show all pins", systemImage: "arrow.up.left.and.arrow.down.right") {
                         position = .automatic
                         selection = nil
+                    }
+                    Toggle("Travel lines", isOn: $showsTravelLines)
+                    if showsTravelLines {
+                        Text("Dashed lines connect pins in itinerary order. They aren't directions or recorded travel routes.")
+                            .font(.caption)
+                            .foregroundStyle(Theme.Colors.textSecondary)
                     }
                     Text("\(locatedItems.filter { $0.visitedAt != nil }.count) of \(locatedItems.count) plans visited")
                         .font(.headline)

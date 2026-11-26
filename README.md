@@ -8,7 +8,7 @@ including deleted trips.
 
 ## Features
 
-- Whole-trip map with plan pins, transport endpoints and shared manual visit progress.
+- Whole-trip map with plan pins, transport endpoints, optional dashed travel lines in itinerary order and shared manual visit progress.
 
 - Email/password, Sign in with Apple and Google sign-in (Better Auth on the Herman API)
 - Offline-first SQLite mirrored to PostgreSQL on Herman through self-hosted PowerSync

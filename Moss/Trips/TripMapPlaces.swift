@@ -22,6 +22,20 @@ struct TripMapPlace: Identifiable, Equatable, Sendable {
     }
 }
 
+/// Dashed connections communicate itinerary order, not navigable routes.
+struct TripMapLeg: Identifiable {
+    let id: String
+    let coordinates: [CLLocationCoordinate2D]
+
+    static func legs(for places: [TripMapPlace], coordinates: [String: CLLocationCoordinate2D]) -> [Self] {
+        zip(places, places.dropFirst()).compactMap { from, to in
+            guard let start = coordinates[from.id], let end = coordinates[to.id],
+                  start.latitude != end.latitude || start.longitude != end.longitude else { return nil }
+            return Self(id: "\(from.id)→\(to.id)", coordinates: [start, end])
+        }
+    }
+}
+
 @MainActor
 final class TripMapPlaces: ObservableObject {
     @Published private(set) var coordinates: [String: CLLocationCoordinate2D] = [:]
