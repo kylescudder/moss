@@ -74,6 +74,7 @@ struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
     var endsAt: Date?
     var notes: String?
     var photosJSON: String? = nil
+    var visitedAt: Date? = nil
     var sortOrder: Int
     var createdAt: Date?
     var updatedAt: Date?
@@ -87,6 +88,7 @@ struct ItineraryItem: Codable, Identifiable, Hashable, Sendable {
         case transportMode = "transport_mode"
         case startsAt = "starts_at"
         case endsAt = "ends_at"
+        case visitedAt = "visited_at"
         case photosJSON = "photos_json"
         case sortOrder = "sort_order"
         case createdAt = "created_at"
@@ -126,6 +128,7 @@ extension ItineraryItem {
                 endsAt: parseISO8601Date(try cursor.getStringOptional(name: "ends_at")),
                 notes: try cursor.getStringOptional(name: "notes"),
                 photosJSON: try cursor.getStringOptional(name: "photos_json"),
+                visitedAt: parseISO8601Date(try cursor.getStringOptional(name: "visited_at")),
                 sortOrder: (try? cursor.getIntOptional(name: "sort_order")) ?? 0,
                 createdAt: parseISO8601Date(try cursor.getStringOptional(name: "created_at")),
                 updatedAt: parseISO8601Date(try cursor.getStringOptional(name: "updated_at"))

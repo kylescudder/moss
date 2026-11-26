@@ -64,6 +64,13 @@
       "when": 1795695042561,
       "tag": "0008_daily_scorpion",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795728774253,
+      "tag": "0009_plan-visits",
+      "breakpoints": true
     }
   ]
 }

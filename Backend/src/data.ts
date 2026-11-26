@@ -33,6 +33,7 @@ const columns = {
     'ends_at',
     'notes',
     'photos_json',
+    'visited_at',
     'sort_order',
     'deleted_at'
   ]
@@ -68,6 +69,13 @@ export async function uploadChange(
         422,
         'Invalid plan photos. Choose up to three smaller images.'
       )
+  }
+  if (table === 'itinerary_items' && data.visited_at !== undefined) {
+    if (
+      data.visited_at !== null &&
+      !z.iso.datetime({ offset: true }).safeParse(data.visited_at).success
+    )
+      throw new RequestError('MX003', 422, 'Invalid visit date.')
   }
   if (table === 'trips' && op === 'put') {
     // Serialize the existence check with the transactional lifetime ledger.

@@ -54,6 +54,7 @@ enum DatabaseSchema {
             .text("ends_at"),
             .text("notes"),
             .text("photos_json"),
+            .text("visited_at"),
             .integer("sort_order"),
             .text("created_at"),
             .text("updated_at"),

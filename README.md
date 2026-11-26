@@ -8,6 +8,8 @@ including deleted trips.
 
 ## Features
 
+- Whole-trip map with plan pins, transport endpoints and shared manual visit progress.
+
 - Email/password, Sign in with Apple and Google sign-in (Better Auth on the Herman API)
 - Offline-first SQLite mirrored to PostgreSQL on Herman through self-hosted PowerSync
 - Trips with destination, dates and notes
@@ -226,3 +228,5 @@ Each account keeps a separate local database and upload queue. Signing out retai
 The editable Liquid Glass app icon is `Moss/Resources/Moss.icon` (open it with
 Xcode's Icon Composer). The same moss-ball mark is used by the in-app logo and
 the site.
+
+Trip maps require Apple Maps searches to place pins. Visit progress saves offline and syncs with plans; deploy backend migration `0009_plan-visits` and the API before releasing the native feature.

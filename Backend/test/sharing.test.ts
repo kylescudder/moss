@@ -665,3 +665,59 @@ test('every trip and account has an owner row, and the API role cannot write mem
     client.release()
   }
 })
+
+test('visit progress persists, survives plan edits, and respects shared trip roles', async () => {
+  const owner = await account('visit-owner')
+  const editor = await account('visit-editor')
+  const viewer = await account('visit-viewer')
+  const stranger = await account('visit-stranger')
+  const tripID = await createTrip(owner.token)
+  const id = crypto.randomUUID()
+  expect(
+    (
+      await upload(owner.token, {
+        table: 'itinerary_items',
+        id,
+        op: 'put',
+        data: {
+          trip_id: tripID,
+          title: 'Tower',
+          kind: 'activity',
+          location_name: 'Belém, Lisbon'
+        }
+      })
+    ).status
+  ).toBe(200)
+  await shareWith(owner, editor, 'trip', tripID, 'editor')
+  await shareWith(owner, viewer, 'trip', tripID, 'viewer')
+  const patch = (token: string, data: unknown) =>
+    upload(token, { table: 'itinerary_items', id, op: 'patch', data })
+  const read = async (token = owner.token) =>
+    (await call('/api/data/itinerary_items/' + id, token)).json()
+  expect((await read()).visited_at).toBeNull()
+  const visited = '2026-11-26T12:00:00.000Z'
+  expect((await patch(editor.token, { visited_at: visited })).status).toBe(200)
+  expect((await read(viewer.token)).visited_at).toBe(visited)
+  expect((await patch(owner.token, { title: 'Updated plan' })).status).toBe(200)
+  expect(await read()).toMatchObject({
+    visited_at: visited,
+    title: 'Updated plan',
+    location_name: 'Belém, Lisbon'
+  })
+  for (const token of [viewer.token, stranger.token]) {
+    expect((await patch(token, { visited_at: null })).status).toBe(403)
+  }
+  for (const invalid of [
+    'yesterday',
+    'infinity',
+    123,
+    '2026-02-30T12:00:00Z'
+  ]) {
+    expect((await patch(editor.token, { visited_at: invalid })).status).toBe(
+      422
+    )
+  }
+  expect((await read()).visited_at).toBe(visited)
+  expect((await patch(editor.token, { visited_at: null })).status).toBe(200)
+  expect((await read()).visited_at).toBeNull()
+})

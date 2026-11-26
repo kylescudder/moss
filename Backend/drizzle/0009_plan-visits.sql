@@ -1,0 +1,1 @@
+ALTER TABLE "itinerary_items" ADD COLUMN "visited_at" timestamp with time zone;

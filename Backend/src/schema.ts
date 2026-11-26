@@ -71,6 +71,7 @@ export const itineraryItems = pgTable(
     ends_at: timestamp('ends_at', { withTimezone: true }),
     notes: text('notes'),
     photos_json: text('photos_json'),
+    visited_at: timestamp('visited_at', { withTimezone: true }),
     sort_order: integer('sort_order').notNull().default(0),
     ...dates()
   },
