@@ -21,7 +21,7 @@ including deleted trips.
 - Supporter subscription for unlimited trips
 - Light / Dark / System appearance
 - Account deletion
-- Error reporting through Sentry (optional)
+- Product analytics, error tracking and crash reports through PostHog (optional)
 
 ## Stack
 
@@ -33,7 +33,7 @@ including deleted trips.
 | Auth          | Better Auth (email, Sign in with Apple, Google), Brevo email             |
 | Subscriptions | StoreKit 2, verified server-side with Apple's server library             |
 | Push          | APNs through the API or the shared push gateway (`docs/push-gateway.md`) |
-| Error logging | `sentry-cocoa`                                                           |
+| Analytics     | `posthog-ios`                                                            |
 | Project gen   | [XcodeGen](https://github.com/yonaskolb/XcodeGen)                        |
 
 ## Repo layout
@@ -50,7 +50,7 @@ Moss/
   Extensions/      Foundation helpers
   Intents/         AppIntents and App Shortcuts
   Itineraries/     Today tab, itinerary items and their repository
-  Logging/         OSLog/Sentry wrapper
+  Logging/         OSLog/PostHog wrapper
   Models/          Trip, ItineraryItem, Profile
   Notifications/   shared push core and APNs registration
   Resources/       assets, Moss.icon, animations, fonts, StoreKit configuration
@@ -87,7 +87,12 @@ Fill in `Config/Secrets.xcconfig`:
 - `API_URL`: the Moss API origin (the public `BETTER_AUTH_URL` of the Herman API).
 - `POWERSYNC_URL`: the Moss PowerSync origin.
 - `PUSH_GATEWAY_URL`: optional; leave blank to register devices with the API.
-- `SENTRY_DSN`: optional; leave blank to disable Sentry.
+- `POSTHOG_PROJECT_TOKEN`: optional; leave blank to disable PostHog locally.
+- `POSTHOG_HOST`: the PostHog ingestion origin (`https:/$()/eu.i.posthog.com`
+  or `https:/$()/us.i.posthog.com`).
+
+TestFlight builds take both PostHog values from GitHub, not from
+`IOS_SECRETS_XCCONFIG`.
 
 Escape URL slashes as `https:/$()/...` in xcconfig. The example's placeholders
 build fine but show configuration errors instead of signing in or syncing.
@@ -191,7 +196,9 @@ wait for Apple's processing of an earlier upload. CI stamps
 | Setting | Kind | Purpose |
 |---|---|---|
 | `API_BASE_URL`, `POWERSYNC_BASE_URL` | repository variables | Release origins written into the build |
-| `IOS_SECRETS_XCCONFIG` | secret | Release `Secrets.xcconfig` (the origins above replace its URLs) |
+| `POSTHOG_HOST` | repository variable | PostHog ingestion origin written into the build |
+| `POSTHOG_PROJECT_TOKEN` | secret | PostHog project token (`phc_…`) written into the build |
+| `IOS_SECRETS_XCCONFIG` | secret | Release `Secrets.xcconfig` (the values above replace its URLs and PostHog token) |
 | `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_API_KEY_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY_P8` | secrets | App Store Connect API key for upload |
 | `APPLE_TEAM_ID` | secret | Development team written into `project.yml` |
 | `IOS_DISTRIBUTION_CERTIFICATE_BASE64`, `IOS_DISTRIBUTION_CERTIFICATE_PASSWORD`, `IOS_KEYCHAIN_PASSWORD` | secrets | Distribution certificate and temporary keychain |

@@ -41,14 +41,16 @@
 	<string>Moss uses your location to help you understand places near your trip.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Moss saves the trip memories and exports you choose to create.</string>
+	<key>POSTHOG_HOST</key>
+	<string>$(POSTHOG_HOST)</string>
+	<key>POSTHOG_PROJECT_TOKEN</key>
+	<string>$(POSTHOG_PROJECT_TOKEN)</string>
 	<key>POWERSYNC_URL</key>
 	<string>$(POWERSYNC_URL)</string>
 	<key>PUSH_GATEWAY_APPLICATION_ID</key>
 	<string>$(PUSH_GATEWAY_APPLICATION_ID)</string>
 	<key>PUSH_GATEWAY_URL</key>
 	<string>$(PUSH_GATEWAY_URL)</string>
-	<key>SENTRY_DSN</key>
-	<string>$(SENTRY_DSN)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Roboto-Medium.ttf</string>

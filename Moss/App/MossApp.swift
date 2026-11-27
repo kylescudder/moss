@@ -7,7 +7,7 @@ struct MossApp: App {
     @AppStorage("appearance") private var appearance: Appearance = .system
 
     init() {
-        AppBootstrap.configureSentry()
+        AppBootstrap.configureAnalytics()
     }
 
     var body: some Scene {
