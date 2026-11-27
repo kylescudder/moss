@@ -156,6 +156,24 @@ final class ItineraryRepository: ObservableObject {
         }
     }
 
+    /// A narrow patch preserves edits to the plan while visit progress syncs.
+    func setVisited(_ visited: Bool, for item: ItineraryItem) async -> Bool {
+        guard userID != nil else { return false }
+        do {
+            let now = Date().iso8601
+            try await database.execute(
+                sql: "update itinerary_items set visited_at = ?, updated_at = ? where id = ?",
+                parameters: [visited ? now : nil, now, item.id.uuidString.lowercased()]
+            )
+            lastError = nil
+            return true
+        } catch {
+            Log.error(error, category: "itinerary.visit")
+            lastError = "Moss couldn't save your visit. Please try again."
+            return false
+        }
+    }
+
     func softDelete(_ item: ItineraryItem) async {
         do {
             let now = Date().iso8601

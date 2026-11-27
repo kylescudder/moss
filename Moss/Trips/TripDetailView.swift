@@ -67,6 +67,14 @@ struct TripDetailView: View {
                 .padding(.vertical, Theme.Spacing.xs)
             }
 
+            Section {
+                NavigationLink {
+                    TripMapScreen(trip: trip)
+                } label: {
+                    Label("Trip map", systemImage: "map")
+                }
+            }
+
             if days.isEmpty {
                 Section {
                     EmptyState(
@@ -179,6 +187,11 @@ struct ItineraryItemRow: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 Text(item.title)
                     .font(.headline)
+                if item.visitedAt != nil {
+                    Label("Visited", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(Theme.Colors.accent)
+                }
                 if let locationSummary = item.locationSummary {
                     Text(locationSummary)
                         .footnoteSecondary()
