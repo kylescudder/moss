@@ -113,9 +113,9 @@ final class AppServices: ObservableObject {
 
     private func applyAuth(state: AuthClient.State) async {
         guard auth.state == state else { return }
+        Analytics.authStateChanged(state)
         guard auth.canAccessMainApp, case let .signedIn(userID, _) = state else {
             push.sessionEnded()
-            Analytics.reset()
             billing.resetForSignOut()
             profile.stopWatching()
             trips.stopWatching()
@@ -126,7 +126,6 @@ final class AppServices: ObservableObject {
             return
         }
         let id = userID.uuidString.lowercased()
-        Analytics.identify(userID: id)
         profile.startWatching(userID: id)
         trips.startWatching(userID: id)
         itinerary.startWatching(userID: id)
