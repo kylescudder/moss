@@ -65,7 +65,7 @@ shared PostgreSQL server. Read `Backend/deploy/README.md` before release work.
 Merging a `Backend/` change to `main` releases the API, migrations, Compose files
 and PowerSync config together through deploy-core.
 
-- Native builds require `API_URL`, `POWERSYNC_URL`, optional `SENTRY_DSN`.
+- Native builds require `API_URL`, `POWERSYNC_URL`, optional `POSTHOG_PROJECT_TOKEN` and `POSTHOG_HOST` (TestFlight takes these from the `POSTHOG_PROJECT_TOKEN` secret and `POSTHOG_HOST` variable).
 - `AuthClient` uses `APIClient` and a Keychain session, binds cached data to the
   original UUID, and preserves SQLite/queues for reauthentication. Only
   "Sign out and remove local data" and account deletion clear local data; never
@@ -98,7 +98,7 @@ identical across all application repositories.
 
 ## Secrets and configuration
 
-- iOS build values live in `Config/Secrets.xcconfig` (git-ignored, copied from `Config/Secrets.xcconfig.example`) and flow through generated `Info.plist` properties into `Moss/App/AppSecrets.swift`. **xcconfig escaping gotcha**: write a URL such as `https://…` as `https:/$()/…`, otherwise `//` starts a comment. `API_URL` is required for auth and the API, `POWERSYNC_URL` is required for data sync, and an empty `SENTRY_DSN` intentionally disables Sentry.
+- iOS build values live in `Config/Secrets.xcconfig` (git-ignored, copied from `Config/Secrets.xcconfig.example`) and flow through generated `Info.plist` properties into `Moss/App/AppSecrets.swift`. **xcconfig escaping gotcha**: write a URL such as `https://…` as `https:/$()/…`, otherwise `//` starts a comment. `API_URL` is required for auth and the API, `POWERSYNC_URL` is required for data sync, and an empty `POSTHOG_PROJECT_TOKEN` intentionally disables PostHog.
 - `AppSecrets` detects empty, unresolved, and placeholder API and PowerSync values. Keep those graceful configuration-error paths intact; simulator and pull-request builds deliberately use the example xcconfig.
 - Backend secrets (database URLs, Better Auth, Brevo, Apple sign-in and IAP verification) live in the API's protected `api.env` on Herman; `Backend/deploy/api.env.example` lists them.
 - The committed `Moss/Resources/StoreKit/Moss.storekit` supplies simulator product data. App Store Connect remains authoritative for TestFlight and production product `app.moss.supporter.monthly`.
@@ -107,7 +107,7 @@ identical across all application repositories.
 
 ### iOS app composition
 
-- `MossApp` creates one `@StateObject AppServices`, injects it with `environmentObject`, installs `AppDelegate` for APNs registration callbacks, applies the saved appearance, and configures Sentry through `AppBootstrap`.
+- `MossApp` creates one `@StateObject AppServices`, injects it with `environmentObject`, installs `AppDelegate` for APNs registration callbacks, applies the saved appearance, and configures PostHog through `AppBootstrap`.
 - `AppServices` (`Moss/App/AppServices.swift`) is the composition root. It owns `AuthClient`, `PowerSyncManager`, `SyncIssueStore`, `BillingRepository`, `TripsRepository`, `ItineraryRepository`, `PushManager`, `ProfileRepository` and the two `SharingRepository` instances (`tripSharing`, `librarySharing`). It re-broadcasts each child's `objectWillChange`, so views can observe the single environment object, and replaces the account repositories through `sync.accountDatabaseDidChange` when the signed-in account changes.
 - `RootView` switches on auth state (`.unknown` / `.signedOut` / `.signedIn`) and handles password-recovery presentation, sync issues and incoming URLs. The signed-in `MainTabView` is Today / Trips / Settings.
 - On sign-in, `AppServices.applyAuth` starts the profile, trip, itinerary and sharing watches, activates push, synchronizes StoreKit entitlements and refreshes local snapshots. Subscription state is `.active` only after both local StoreKit verification and server confirmation succeed; mirror delays remain `.verifying`. On sign-out it ends the push session, stops the watches and resets in-memory subscription state.
@@ -174,7 +174,7 @@ Complimentary billing access follows `Scripts/SHARED_IOS_CORE.md`; see
 
 ### Other notable wiring
 
-- `Log` (`Moss/Logging/Logger.swift`) is the OSLog/Sentry wrapper. Sentry setup is a no-op when `SENTRY_DSN` is empty; keep repository and service errors going through `Log` rather than ad hoc prints.
+- `Log` (`Moss/Logging/Logger.swift`) is the OSLog/PostHog wrapper. Errors and warnings go to PostHog error tracking; breadcrumbs (and `Log.event`) become PostHog exception steps attached to every error and crash report, never sent alone. PostHog is a no-op when `POSTHOG_PROJECT_TOKEN` is empty; keep repository and service errors going through `Log` rather than ad hoc prints.
 - `Theme`, `Card`, `PrimaryButton`, `EmptyState` and `LoadingView` under `Moss/Components/` are the shared UI primitives. Reuse them before introducing one-off colors, spacing, or loading treatments. Moss's brand colors (`moss`, `lichen`), loading animation (`moss_spinner.lottie`) and `Theme.CardStyle` (roomy, full-width, borderless `Card`) live in `Theme+App.swift`; otherwise use the shared semantic colors (`textPrimary`, `textSecondary`, `accent`, `separator`).
 - The app and widget must retain the same `group.app.moss` app-group entitlement. The main app additionally has Sign in with Apple, Associated Domains and APNs entitlements.
 - The app is iOS/iPadOS 17+, portrait-only on iPhone, and supports all standard orientations on iPad. `Info.plist` is committed (XcodeGen rewrites it with sorted keys); `project.yml` layers generated properties, secrets, URL schemes, and background modes onto it.

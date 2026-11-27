@@ -44,6 +44,14 @@ import LegalArticle from "../components/LegalArticle.astro";
         and transaction identifiers needed to unlock paid features and keep
         access in sync.
       </li>
+      <li>
+        <strong>Usage and diagnostics.</strong> The app sends PostHog usage
+        events, such as when the app is installed, opened or updated, and
+        reports of errors and crashes with the recent in-app steps that led to
+        them. These include your device model, iOS version, app version and,
+        while you are signed in, your account ID. We do not add your name or
+        email address to them.
+      </li>
     </ul>
 
     <p>
@@ -123,11 +131,11 @@ import LegalArticle from "../components/LegalArticle.astro";
       email address and the content of those emails; Apple and Google for
       sign-in when selected; Apple for purchases, subscription status and
       notifications; Apple Maps for place searches and travel-time estimates when
-      requested; Sentry, which receives crash, error and performance
-      diagnostics from the app, such as the device model, app version, the
-      error and the requests that led to it; and Google Fonts for website
-      typefaces. We may also disclose
-      information when required by law.
+      requested; PostHog, which receives app usage events and error and crash
+      reports from the app, such as the device model, app version, your
+      account ID, the error and the in-app steps that led to it; and Google
+      Fonts for website typefaces. We may also disclose information when
+      required by law.
     </p>
     <p>
       If you share a trip, or all your trips, with other Moss users, the people

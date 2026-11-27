@@ -113,6 +113,7 @@ final class AppServices: ObservableObject {
 
     private func applyAuth(state: AuthClient.State) async {
         guard auth.state == state else { return }
+        Analytics.authStateChanged(state)
         guard auth.canAccessMainApp, case let .signedIn(userID, _) = state else {
             push.sessionEnded()
             billing.resetForSignOut()
